@@ -1,0 +1,31 @@
+{
+    "name": "wardrobe/core",
+    "description": "A Minimal Blog App",
+    "keywords": [
+        "blog",
+        "laravel",
+        "cms"
+    ],
+    "authors": [
+        {
+            "name": "Eric L Barnes",
+            "email": "eric@ericlbarnes.com",
+            "role": "Developer"
+        },
+        {
+            "name": "Ryan Tablada",
+            "email": "ryan.tablada@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.0",
+        "laravel/framework": "4.0.x"
+    },
+    "autoload": {
+        "psr-0": {
+            "Wardrobe\\Core": "src/"
+        }
+    },
+    "minimum-stability": "dev"
+}
