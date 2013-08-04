@@ -1,8 +1,6 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-
-class CreatePostsTable extends Migration {
+class CreatePostsTable extends WardrobeMigration {
 
 	/**
 	 * Run the migrations.
@@ -34,5 +32,4 @@ class CreatePostsTable extends Migration {
 	{
 		Schema::drop('posts');
 	}
-
 }

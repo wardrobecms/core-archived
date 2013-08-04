@@ -1,8 +1,6 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-
-class AddUserToPosts extends Migration {
+class AddUserToPosts extends WardrobeMigration {
 
 	/**
 	 * Run the migrations.
