@@ -1,8 +1,9 @@
 <?php namespace Wardrobe\Core;
 
 use Illuminate\Support\ServiceProvider;
+use Config;
 
-class CoreServiceProvider extends ServiceProvider {
+class WardrobeServiceProvider extends ServiceProvider {
 
 	/**
 	 * Indicates if loading of the provider is deferred.
@@ -19,6 +20,7 @@ class CoreServiceProvider extends ServiceProvider {
 	public function boot()
 	{
 		$this->package('wardrobe/core');
+		$this->setConnection();
 	}
 
 	/**
@@ -39,6 +41,16 @@ class CoreServiceProvider extends ServiceProvider {
 	public function provides()
 	{
 		return array();
+	}
+
+	public function setConnection()
+	{
+		$connection = Config::get('core::database.default');
+
+		if ($connection !== 'default') {
+			$wardrobeConfig = Config::get('core::database.connections.'.$connection);
+			Config::set('database.connections.wardrobe', $wardrobeConfig);
+		}
 	}
 
 }
