@@ -1,8 +1,6 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-
-class CreateTagsTable extends Migration {
+class CreateTagsTable extends WardrobeMigration {
 
 	/**
 	 * Run the migrations.

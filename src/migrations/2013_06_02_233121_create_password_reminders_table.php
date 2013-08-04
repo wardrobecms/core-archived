@@ -1,8 +1,6 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-
-class CreatePasswordRemindersTable extends Migration {
+class CreatePasswordRemindersTable extends WardrobeMigration {
 
 	/**
 	 * Run the migrations.
