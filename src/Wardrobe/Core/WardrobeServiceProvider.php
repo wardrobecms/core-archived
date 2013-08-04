@@ -49,8 +49,12 @@ class WardrobeServiceProvider extends ServiceProvider {
 
 		if ($connection !== 'default') {
 			$wardrobeConfig = Config::get('core::database.connections.'.$connection);
-			Config::set('database.connections.wardrobe', $wardrobeConfig);
+		} else {
+			$connection = Config::get('database.default');
+			$wardrobeConfig = Config::get('database.connections.'.$connection);
 		}
+
+		Config::set('database.connections.wardrobe', $wardrobeConfig);
 	}
 
 }
