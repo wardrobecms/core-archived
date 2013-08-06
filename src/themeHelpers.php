@@ -13,6 +13,20 @@ function site_title()
 }
 
 /**
+ * Wardrobe Path
+ *
+ * Helper that allows you to easily get a theme path inside the views.
+ * Example: @extends(theme_path('layout'))
+ *
+ * @param string $file - The file to load
+ * @return string
+ */
+function wardrobe_path($file = null)
+{
+	return 'packages/wardrobe/core/'.$file;
+}
+
+/**
  * Theme Path
  *
  * Helper that allows you to easily get a theme path inside the views.
@@ -23,13 +37,13 @@ function site_title()
  */
 function theme_path($file = null)
 {
-	return 'packages/wardrobe/core/themes/'.Config::get('core::wardrobe.theme').'/'.$file;
+	return wardrobe_path('themes/'.Config::get('core::wardrobe.theme').'/'.$file);
 }
 
 /**
- * Theme Path
+ * Theme View Path
  *
- * Helper that allows you to easily get a theme path inside the views.
+ * Helper that allows you to easily get a theme view path inside the views.
  * Example: @extends(theme_path('layout'))
  *
  * @param string $file - The file to load
