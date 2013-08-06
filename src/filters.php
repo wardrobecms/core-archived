@@ -1,6 +1,6 @@
 <?php
 
-Route::filter('auth', function()
+Route::filter('wardrobe.auth', function()
 {
 	if (Auth::guest())
 	{
