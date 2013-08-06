@@ -45,7 +45,9 @@ class AdminController extends BaseController {
 	 */
 	protected function loadLanguage()
 	{
-		$locale = require app_path().'/lang/'.Config::get('app.locale').'/wardrobe.php';
+		// $locale = require app_path().'/lang/'.Config::get('app.locale').'/wardrobe.php';
+		$locale = Lang::get('core::wardrobe');
+		var_dump($locale); die();
 		return $locale;
 	}
 }
