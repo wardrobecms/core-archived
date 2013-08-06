@@ -24,7 +24,8 @@
     },
     "autoload": {
         "psr-0": {
-            "Wardrobe\\Core": "src/"
+            "Wardrobe\\Core": "src/",
+            "Wardrobe\\Database": "src/"
         }
     },
     "minimum-stability": "dev"

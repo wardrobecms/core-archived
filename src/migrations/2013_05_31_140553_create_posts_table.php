@@ -1,6 +1,6 @@
 <?php
 
-class CreatePostsTable extends WardrobeMigration {
+class CreatePostsTable extends Migration {
 
 	/**
 	 * Run the migrations.

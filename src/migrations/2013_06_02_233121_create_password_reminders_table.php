@@ -1,6 +1,6 @@
 <?php
 
-class CreatePasswordRemindersTable extends WardrobeMigration {
+class CreatePasswordRemindersTable extends Migration {
 
 	/**
 	 * Run the migrations.

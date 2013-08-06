@@ -1,6 +1,6 @@
 <?php
 
-class AddUserToPosts extends WardrobeMigration {
+class AddUserToPosts extends Migration {
 
 	/**
 	 * Run the migrations.
