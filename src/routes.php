@@ -11,3 +11,13 @@ Route::group(Config::get('core::routes.blog_group_rules'), function() use ($ward
 	Route::get('tag/{tag}', $wardrobeControllers.'PostController@getTag');
 	Route::get('archive', $wardrobeControllers.'PostController@getIndex');
 });
+
+Route::group(Config::get('core::routes.admin_group_rules'), function() use ($wardrobeControllers)
+{
+
+});
+
+Route::group(Config::get('core::routes.api_group_rules'), function() use ($wardrobeControllers)
+{
+
+});
