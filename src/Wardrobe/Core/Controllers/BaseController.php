@@ -1,6 +1,6 @@
 <?php namespace Wardrobe\Core\Controllers;
 
-use Controller, Config, View;
+use Controller, Config, View, Validator;
 
 class BaseController extends Controller {
 
@@ -21,6 +21,9 @@ class BaseController extends Controller {
 		$this->theme = Config::get('core::wardrobe.theme');
 
 		View::addLocation(public_path().'/packages/wardrobe/core');
+
+		$presence = Validator::getPresenceVerifier();
+		$presence->setConnection('wardrobe');
 
 		// Redirect to /install if in framework and not installed
 		if (Config::get('core::wardrobe.in_framework') === true) {
