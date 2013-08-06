@@ -36,6 +36,11 @@ class WardrobeServiceProvider extends ServiceProvider {
 		$this->app->singleton('Wardrobe\Core\Repositories\PostRepositoryInterface', 'Wardrobe\Core\Repositories\DbPostRepository');
 
 		$this->app->singleton('Wardrobe\Core\Repositories\UserRepositoryInterface', 'Wardrobe\Core\Repositories\DbUserRepository');
+
+		$this->app->bind('Wardrobe', function()
+		{
+			return new \Wardrobe\Facades\Wardrobe(new Repositories\DbPostRepository);
+		});
 	}
 
 	/**
