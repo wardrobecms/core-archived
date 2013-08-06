@@ -1,0 +1,24 @@
+@import url(//fonts.googleapis.com/css?family=Old+Standard+TT:400,400italic,700);
+
+body {
+	background: #f9f9f5; /*url(bedge_grunge_@2X.png);*/
+	font-family: 'Old Standard TT', "Crimson Text", "Times New Roman", Georgia, serif;
+	color: #555;
+}
+
+.CodeMirror pre {
+	font-family: 'Old Standard TT', "Crimson Text", "Times New Roman", Georgia, serif;
+	font-weight: 400;
+	font-size: 22px;
+  line-height: 1.3em;
+  color: #111;
+}
+
+#write .info input,
+#write .info textarea {
+	font-family: 'Old Standard TT', "Crimson Text", "Times New Roman", Georgia, serif;
+	font-weight: 400;
+	font-size: 22px;
+  line-height: 1.3em;
+	color: #555;
+}
