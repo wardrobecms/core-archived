@@ -1,7 +1,7 @@
 <?php
 
 return array(
-	'default' => 'sqlite',
+	'default' => 'default',
 
 	'connections' => array(
 
