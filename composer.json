@@ -20,7 +20,9 @@
     ],
     "require": {
         "php": ">=5.3.0",
-        "laravel/framework": "4.0.x"
+        "laravel/framework": "4.0.x",
+        "dflydev/markdown": "1.0.*@dev",
+        "symfony/yaml": "2.4.*@dev"
     },
     "autoload": {
         "psr-0": {
