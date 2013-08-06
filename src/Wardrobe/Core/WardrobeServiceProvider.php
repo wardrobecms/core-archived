@@ -21,6 +21,8 @@ class WardrobeServiceProvider extends ServiceProvider {
 	{
 		$this->package('wardrobe/core');
 		$this->setConnection();
+
+		require __DIR__.'/../../routes.php';
 	}
 
 	/**
