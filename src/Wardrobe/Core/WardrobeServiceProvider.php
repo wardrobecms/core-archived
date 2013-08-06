@@ -21,8 +21,21 @@ class WardrobeServiceProvider extends ServiceProvider {
 	{
 		$this->package('wardrobe/core');
 		$this->setConnection();
+		$this->bindRepositories();
 
 		require __DIR__.'/../../routes.php';
+	}
+
+	/**
+	 * Bind repositories.
+	 *
+	 * @return  void
+	 */
+	protected function bindRepositories()
+	{
+		$this->app->singleton('Wardrobe\Core\Repositories\PostRepositoryInterface', 'Wardrobe\Core\Repositories\DbPostRepository');
+
+		$this->app->singleton('Wardrobe\Core\Repositories\UserRepositoryInterface', 'Wardrobe\Core\Repositories\DbUserRepository');
 	}
 
 	/**
