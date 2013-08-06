@@ -1,1 +1,1 @@
-@include('themes.default.atom')
+@include('core::atom')

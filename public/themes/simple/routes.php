@@ -13,5 +13,5 @@
 
 Route::get('/about', function()
 {
-    return View::make(theme_path('about'));
+    return View::make(theme_view('about'));
 });
