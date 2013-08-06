@@ -23,6 +23,7 @@ class WardrobeServiceProvider extends ServiceProvider {
 		$this->setConnection();
 		$this->bindRepositories();
 
+		require __DIR__.'/../../themeHelpers.php';
 		require __DIR__.'/../../routes.php';
 	}
 

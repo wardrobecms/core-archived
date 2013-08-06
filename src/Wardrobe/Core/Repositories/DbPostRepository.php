@@ -1,8 +1,8 @@
 <?php namespace Wardrobe\Core\Repositories;
 
 use Config, Cache, DateTime, Validator;
-use Wardrobe\Post;
-use Wardrobe\Tag;
+use Wardrobe\Core\Models\Post;
+use Wardrobe\Core\Models\Tag;
 
 class DbPostRepository implements PostRepositoryInterface {
 
