@@ -31,7 +31,7 @@ class PostController extends BaseController {
 	 *
 	 * @return Response
 	 */
-	public function getIndex()
+	public function index()
 	{
 		$search = trim(Input::get('q'));
 		if ($search)
@@ -53,7 +53,7 @@ class PostController extends BaseController {
 	 *
 	 * @return Response
 	 */
-	public function getTag($tag)
+	public function tag($tag)
 	{
 		$posts = $this->posts->activeByTag($tag, Config::get('wardrobe.per_page'));
 
@@ -67,7 +67,7 @@ class PostController extends BaseController {
 	 *
 	 * @return Response
 	 */
-	public function getShow($slug)
+	public function show($slug)
 	{
 		$post = $this->posts->findBySlug($slug);
 
@@ -86,7 +86,7 @@ class PostController extends BaseController {
 	 *
 	 * @return Response
 	 */
-	public function getPreview($id)
+	public function preview($id)
 	{
 		$post = $this->posts->find($id);
 

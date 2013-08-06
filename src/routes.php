@@ -6,10 +6,10 @@ Route::group(Config::get('core::routes.blog_group_rules'), function() use ($ward
 {
 	Route::get('/', array('uses' => $wardrobeControllers.'HomeController@index', 'as' => 'wardrobe.index'));
 
-	Route::get('post/{slug}', $wardrobeControllers.'PostController@getShow');
-	Route::get('post/preview/{id}', $wardrobeControllers.'PostController@getPreview');
-	Route::get('tag/{tag}', $wardrobeControllers.'PostController@getTag');
-	Route::get('archive', $wardrobeControllers.'PostController@getIndex');
+	Route::get('post/{slug}', array('uses' => $wardrobeControllers.'PostController@show', 'as' => 'wardrobe.posts.show'));
+	Route::get('post/preview/{id}', array('uses' => $wardrobeControllers.'PostController@preview', 'as' => 'wardrobe.posts.preview'));
+	Route::get('tag/{tag}', array('uses' => $wardrobeControllers.'PostController@tag', 'as' => 'wardrobe.posts.tags'));
+	Route::get('archive', array('uses' => $wardrobeControllers.'PostController@index', 'as' => 'wardrobe.posts.archive'));
 });
 
 Route::group(Config::get('core::routes.admin_group_rules'), function() use ($wardrobeControllers)
