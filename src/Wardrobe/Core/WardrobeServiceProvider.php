@@ -25,6 +25,7 @@ class WardrobeServiceProvider extends ServiceProvider {
 
 		require __DIR__.'/../../themeHelpers.php';
 		require __DIR__.'/../../routes.php';
+		require __DIR__.'/../../filters.php';
 	}
 
 	/**
