@@ -1,4 +1,4 @@
-@extends(theme_path('layout'))
+@extends(theme_view('layout'))
 
 @section('title')
   Archives
@@ -18,7 +18,7 @@
     @endif
 
     @foreach ($posts as $post)
-      @include(theme_path('inc.post'))
+      @include(theme_view('inc.post'))
     @endforeach
 
     {{ $posts->links() }}

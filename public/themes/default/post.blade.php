@@ -1,4 +1,4 @@
-@extends(theme_path('layout'))
+@extends(theme_view('layout'))
 
 @section('title')
   {{ $post->title }}
@@ -10,7 +10,7 @@
 
     {{ $post->parsed_content }}
 
-    @include(theme_path('inc.tags'))
+    @include(theme_view('inc.tags'))
   </section>
 @stop
 

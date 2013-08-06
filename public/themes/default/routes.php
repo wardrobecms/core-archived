@@ -13,10 +13,10 @@
 
 Route::get('/about', function()
 {
-    return View::make(theme_path('about'));
+    return View::make(theme_view('about'));
 });
 
 Route::get('/tags', function()
 {
-    return View::make(theme_path('tags'));
+    return View::make(theme_view('tags'));
 });

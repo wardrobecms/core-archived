@@ -35,7 +35,7 @@ function theme_path($file = null)
  * @param string $file - The file to load
  * @return string
  */
-function theme_views($file = null)
+function theme_view($file = null)
 {
 	return 'themes/'.Config::get('core::wardrobe.theme').'/'.$file;
 }
