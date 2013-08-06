@@ -23,5 +23,5 @@ function site_title()
  */
 function theme_path($file = null)
 {
-	return 'themes/'.Config::get('core::wardrobe.theme').'/'.$file;
+	return 'packages/wardrobe/core/themes/'.Config::get('core::wardrobe.theme').'/'.$file;
 }
