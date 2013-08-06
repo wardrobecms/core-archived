@@ -6,6 +6,6 @@ Route::filter('wardrobe.auth', function()
 	{
 		if (Request::ajax()) return Response::make('Unauthorized', 401);
 
-		return Redirect::guest(route('wardrobe.login', null, false));
+		return Redirect::guest(route('wardrobe.admin.login', null, false));
 	}
 });
