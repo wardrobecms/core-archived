@@ -40,7 +40,7 @@ class WardrobeServiceProvider extends ServiceProvider {
 
 		$this->app->bind('Wardrobe', function()
 		{
-			return new \Wardrobe\Facades\Wardrobe(new Repositories\DbPostRepository);
+			return new \Wardrobe\Core\Facades\Wardrobe(new Repositories\DbPostRepository);
 		});
 	}
 
