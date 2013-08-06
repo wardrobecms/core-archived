@@ -14,7 +14,9 @@ Route::group(Config::get('core::routes.blog_group_rules'), function() use ($ward
 
 Route::group(Config::get('core::routes.admin_group_rules'), function() use ($wardrobeControllers)
 {
-
+	Route::get('/', $wardrobeControllers.'AdminController@getIndex');
+	Route::get('logout', $wardrobeControllers.'LoginController@getLogout');
+	Route::get('login', $wardrobeControllers.'LoginController');
 });
 
 Route::group(Config::get('core::routes.api_group_rules'), function() use ($wardrobeControllers)
