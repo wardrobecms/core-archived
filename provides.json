@@ -1,0 +1,11 @@
+{
+	"providers": [
+		"Wardrobe\Core\WardrobeServiceProvider"
+	],
+	"aliases": [
+		{
+			"alias": "Wardrobe",
+			"facade": "Wardrobe\Core\Facades\WardrobeFacade"
+		}
+	]
+}
