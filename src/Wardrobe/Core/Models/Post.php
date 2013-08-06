@@ -26,7 +26,7 @@ class Post extends BaseModel {
 	 */
 	public function tags()
 	{
-		return $this->hasMany('\Wardrobe\Tag', 'post_id');
+		return $this->hasMany('Wardrobe\Core\Models\Tag', 'post_id');
 	}
 
 	/**
@@ -36,7 +36,7 @@ class Post extends BaseModel {
 	 */
 	public function user()
 	{
-		return $this->belongsTo('Wardrobe\User');
+		return $this->belongsTo('Wardrobe\Core\Models\User');
 	}
 
 	/**

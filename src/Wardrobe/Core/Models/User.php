@@ -33,7 +33,7 @@ class User extends BaseModel implements UserInterface, RemindableInterface {
 	 */
 	public function posts()
 	{
-		return $this->hasMany('Wardrobe\Post');
+		return $this->hasMany('Wardrobe\Core\Models\Post');
 	}
 
 	/**

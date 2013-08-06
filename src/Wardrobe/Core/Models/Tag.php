@@ -30,7 +30,7 @@ class Tag extends BaseModel {
 	 */
 	public function posts()
 	{
-		return $this->belongsTo('Wardrobe\Post');
+		return $this->belongsTo('Wardrobe\Core\Models\Post');
 	}
 
 }
