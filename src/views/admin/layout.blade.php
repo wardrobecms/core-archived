@@ -5,7 +5,7 @@
   <meta name="env" content="{{ App::environment() }}">
   <meta name="token" content="{{ Session::token() }}">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" type="text/css" href="{{ asset('/admin/style.css') }}">
+  <link rel="stylesheet" type="text/css" href="{{ asset(wardrobe_path('admin/style.css')) }}">
 </head>
 <body>
   <div id="header-region"></div>
