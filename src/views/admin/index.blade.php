@@ -1,4 +1,4 @@
-@extends('admin.layout')
+@extends('core::admin.layout')
 
 @section('title')
 	Admin
