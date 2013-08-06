@@ -27,7 +27,7 @@ interface UserRepositoryInterface {
 	 * @param  int  $active
 	 * @return User
 	 */
-	public function create($first_name, $last_name, $email, $password, $active);
+	public function create($first_name, $last_name, $email, $active, $password);
 
 	/**
 	 * Update a user
