@@ -2,10 +2,11 @@
 
 use Wardrobe\Core\Controllers\BaseController;
 
+use Input, Response, Auth;
 use Carbon\Carbon;
-use Wardrobe\Repositories\PostRepositoryInterface;
+use Wardrobe\Core\Repositories\PostRepositoryInterface;
 
-class ApiPostController extends BaseController {
+class PostController extends BaseController {
 
 	/**
 	 * The post repository implementation.

@@ -5,7 +5,7 @@ use Wardrobe\Core\Controllers\BaseController;
 use Carbon\Carbon;
 use Wardrobe\Repositories\UserRepositoryInterface;
 
-class ApiUserController extends BaseController {
+class UserController extends BaseController {
 
 	/**
 	 * The user repository implementation.

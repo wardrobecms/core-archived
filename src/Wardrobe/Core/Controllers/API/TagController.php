@@ -2,10 +2,11 @@
 
 use Wardrobe\Core\Controllers\BaseController;
 
-use Wardrobe\Tag;
-use Wardrobe\Repositories\PostRepositoryInterface;
+use Response;
+use Wardrobe\Core\Tag;
+use Wardrobe\Core\Repositories\PostRepositoryInterface;
 
-class ApiTagController extends BaseController {
+class TagController extends BaseController {
 
 	/**
 	 * The post repository implementation.

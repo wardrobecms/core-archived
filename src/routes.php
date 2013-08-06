@@ -22,8 +22,9 @@ Route::group(Config::get('core::routes.admin_group_rules'), function() use ($war
 
 Route::group(Config::get('core::routes.api_group_rules'), function() use ($wardrobeControllers)
 {
-	Route::resource('api/post', $wardrobeControllers.'Api\PostController');
-	Route::resource('api/tag', $wardrobeControllers.'Api\TagController');
-	Route::resource('api/user', $wardrobeControllers.'Api\UserController');
-	Route::controller('api/dropzone', $wardrobeControllers.'Api\DropzoneController');
+	Route::get('/', array('as' => 'wardrobe.api.home'));
+	Route::resource('post', $wardrobeControllers.'Api\PostController');
+	Route::resource('tag', $wardrobeControllers.'Api\TagController');
+	Route::resource('user', $wardrobeControllers.'Api\UserController');
+	Route::controller('dropzone', $wardrobeControllers.'Api\DropzoneController');
 });

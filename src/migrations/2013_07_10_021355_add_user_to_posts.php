@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Database\Migrations\Migration;
+
 class AddUserToPosts extends Migration {
 
 	/**
