@@ -28,7 +28,7 @@ class BaseController extends Controller {
 		// Redirect to /install if in framework and not installed
 		if (Config::get('core::wardrobe.in_framework') === true) {
 
-			if (Config::get("wardrobe.installed") !== true)
+			if (Config::get("core::wardrobe.installed") !== true)
 			{
 				header('Location: install');
 				exit;
