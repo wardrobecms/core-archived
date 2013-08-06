@@ -26,7 +26,7 @@ class AdminController extends BaseController {
 
 		$this->users = $users;
 
-		$this->beforeFilter('wardrobe.auth');
+		$this->beforeFilter('core::wardrobe.auth');
 	}
 
 	/**

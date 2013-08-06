@@ -68,7 +68,7 @@ class LoginController extends BaseController {
 	 */
 	public function remindForm()
 	{
-		return View::make('admin.auth.forgot');
+		return View::make('core::admin.auth.forgot');
 	}
 
 	/**
