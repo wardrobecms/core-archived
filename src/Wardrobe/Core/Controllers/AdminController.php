@@ -26,7 +26,7 @@ class AdminController extends BaseController {
 
 		$this->users = $users;
 
-		$this->beforeFilter('core::wardrobe.auth');
+		$this->beforeFilter('wardrobe.auth');
 	}
 
 	/**
@@ -34,7 +34,7 @@ class AdminController extends BaseController {
 	 */
 	public function index()
 	{
-		return View::make('admin.index')
+		return View::make('core::admin.index')
 			->with('users', $this->users->all())
 			->with('user', Auth::user())
 			->with('locale', $this->loadLanguage());
