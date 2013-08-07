@@ -22,7 +22,7 @@ Route::group(Config::get('core::routes.admin_group_rules'), function() use ($war
 
 Route::group(Config::get('core::routes.api_group_rules'), function() use ($wardrobeControllers)
 {
-	Route::get('/', array('as' => 'wardrobe.api.home'));
+	Route::get('/', array('as' => 'wardrobe.api.index'));
 	Route::resource('post', $wardrobeControllers.'Api\PostController');
 	Route::resource('tag', $wardrobeControllers.'Api\TagController');
 	Route::resource('user', $wardrobeControllers.'Api\UserController');
