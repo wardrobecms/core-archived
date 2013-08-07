@@ -20,7 +20,7 @@ class BaseController extends Controller {
 	{
 		$this->theme = Config::get('core::wardrobe.theme');
 
-		View::addLocation(public_path().'/packages/wardrobe/core');
+		View::addLocation(public_path().Config::get('core::wardrobe.theme_dir'));
 
 		$presence = Validator::getPresenceVerifier();
 		$presence->setConnection('wardrobe');
