@@ -56,6 +56,11 @@ class WardrobeServiceProvider extends ServiceProvider {
         $this->commands('wardrobe.console.theme');
 	}
 
+	public function register()
+	{
+
+	}
+
 	/**
 	 * Get the services provided by the provider.
 	 *
