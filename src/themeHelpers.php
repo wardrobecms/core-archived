@@ -23,7 +23,7 @@ function site_title()
  */
 function wardrobe_path($file = null)
 {
-	return 'packages/wardrobe/core/'.$file;
+	return Config::get('core::wardrobe.theme_dir').'/'.$file;
 }
 
 /**
