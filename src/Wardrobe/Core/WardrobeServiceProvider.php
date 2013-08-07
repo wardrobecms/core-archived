@@ -22,6 +22,7 @@ class WardrobeServiceProvider extends ServiceProvider {
 		$this->package('wardrobe/core');
 		$this->setConnection();
 		$this->bindRepositories();
+		$this->bootCommands();
 
 		require __DIR__.'/../../themeHelpers.php';
 		require __DIR__.'/../../routes.php';
@@ -45,14 +46,14 @@ class WardrobeServiceProvider extends ServiceProvider {
 		});
 	}
 
-	/**
-	 * Register the service provider.
-	 *
-	 * @return void
-	 */
-	public function register()
+	protected function bootCommands()
 	{
-		//
+		$this->app['wardrobe.console.theme'] = $this->app->share(function($app)
+        {
+            return new Console\ThemeCommand;
+        });
+
+        $this->commands('wardrobe.console.theme');
 	}
 
 	/**
