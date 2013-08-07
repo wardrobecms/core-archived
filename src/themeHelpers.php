@@ -23,7 +23,7 @@ function site_title()
  */
 function wardrobe_path($file = null)
 {
-	return Config::get('core::wardrobe.theme_dir').'/'.$file;
+	return asset('/packages/wardrobe/core/'.$file);
 }
 
 /**
@@ -37,7 +37,7 @@ function wardrobe_path($file = null)
  */
 function theme_path($file = null)
 {
-	return wardrobe_path(Config::get('core::wardrobe.theme').'/'.$file);
+	return asset('/'.Config::get('core::wardrobe.theme_dir').'/'.Config::get('core::wardrobe.theme').'/'.$file);
 }
 
 /**
