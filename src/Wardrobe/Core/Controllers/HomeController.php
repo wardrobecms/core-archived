@@ -35,7 +35,7 @@ class HomeController extends BaseController {
 	{
 		$posts = $this->posts->active(Config::get('core::wardrobe.per_page'));
 
-		return View::make('themes.'.$this->theme.'.index', compact('posts'));
+		return View::make($this->theme.'.index', compact('posts'));
 	}
 
 }

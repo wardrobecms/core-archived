@@ -43,7 +43,7 @@ class PostController extends BaseController {
 			$posts = $this->posts->active(Config::get('wardrobe.per_page'));
 		}
 
-		return View::make('themes.'.$this->theme.'.archive', compact('posts', 'search'));
+		return View::make($this->theme.'.archive', compact('posts', 'search'));
 	}
 
 	/**
@@ -57,7 +57,7 @@ class PostController extends BaseController {
 	{
 		$posts = $this->posts->activeByTag($tag, Config::get('wardrobe.per_page'));
 
-		return View::make('themes.'.$this->theme.'.archive', compact('posts', 'tag'));
+		return View::make($this->theme.'.archive', compact('posts', 'tag'));
 	}
 
 	/**
@@ -76,7 +76,7 @@ class PostController extends BaseController {
 			return App::abort(404, 'Page not found');
 		}
 
-		return View::make('themes.'.$this->theme.'.post', compact('post'));
+		return View::make($this->theme.'.post', compact('post'));
 	}
 
 	/**
@@ -95,7 +95,7 @@ class PostController extends BaseController {
 			return App::abort(404, 'Page not found');
 		}
 
-		return View::make('themes.'.$this->theme.'.post', compact('post'));
+		return View::make($this->theme.'.post', compact('post'));
 	}
 
 }

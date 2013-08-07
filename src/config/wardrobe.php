@@ -21,7 +21,7 @@ return array(
 	| Set this to the directory of the theme you want active. No slashes.
 	|
 	*/
-	'theme' => '##theme##',
+	'theme' => 'default',
 
 	/*
 	|--------------------------------------------------------------------------
@@ -31,7 +31,7 @@ return array(
 	| Set this to your sites title
 	|
 	*/
-	'title' => '##title##',
+	'title' => 'Blog',
 
 	/*
 	|--------------------------------------------------------------------------
@@ -41,7 +41,7 @@ return array(
 	| Set this to the number of posts you want per page.
 	|
 	*/
-	'per_page' => '##per_page##',
+	'per_page' => 5,
 
 	/*
 	|--------------------------------------------------------------------------
@@ -51,7 +51,7 @@ return array(
 	| This sets a flag so that it can only be installed once.
 	|
 	*/
-	'installed' => '##installed##',
+	'installed' => true,
 
 	/*
 	|--------------------------------------------------------------------------
@@ -61,5 +61,5 @@ return array(
 	| Checks if this is installed in wardrobe/wardrobe
 	|
 	*/
-	'in_framework' => '##in_framework##'
+	'in_framework' => true,
 );

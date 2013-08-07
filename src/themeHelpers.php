@@ -37,7 +37,7 @@ function wardrobe_path($file = null)
  */
 function theme_path($file = null)
 {
-	return wardrobe_path('themes/'.Config::get('core::wardrobe.theme').'/'.$file);
+	return wardrobe_path(Config::get('core::wardrobe.theme').'/'.$file);
 }
 
 /**
