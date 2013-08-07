@@ -1,5 +1,6 @@
 <?php namespace Wardrobe\Core\Console;
 
+use Config;
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
