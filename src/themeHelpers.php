@@ -51,7 +51,7 @@ function theme_path($file = null)
  */
 function theme_view($file = null)
 {
-	return 'themes/'.Config::get('core::wardrobe.theme').'/'.$file;
+	return Config::get('core::wardrobe.theme').'.'.$file;
 }
 
 use dflydev\markdown\MarkdownExtraParser;
