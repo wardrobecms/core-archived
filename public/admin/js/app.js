@@ -607,7 +607,7 @@ this.Wardrobe.module("Entities", function(Entities, App, Backbone, Marionette, $
     }
 
     Post.prototype.urlRoot = function() {
-      return App.request("get:base:url") + "/api/post";
+      return App.request("get:base:url") + "/post";
     };
 
     return Post;
@@ -624,7 +624,7 @@ this.Wardrobe.module("Entities", function(Entities, App, Backbone, Marionette, $
     PostCollection.prototype.model = Entities.Post;
 
     PostCollection.prototype.url = function() {
-      return App.request("get:base:url") + "/api/post";
+      return App.request("get:base:url") + "/post";
     };
 
     return PostCollection;
@@ -676,7 +676,7 @@ this.Wardrobe.module("Entities", function(Entities, App, Backbone, Marionette, $
     }
 
     Tag.prototype.urlRoot = function() {
-      return App.request("get:base:url") + "/api/tag";
+      return App.request("get:base:url") + "/tag";
     };
 
     return Tag;
@@ -693,7 +693,7 @@ this.Wardrobe.module("Entities", function(Entities, App, Backbone, Marionette, $
     TagCollection.prototype.model = Entities.Tag;
 
     TagCollection.prototype.url = function() {
-      return App.request("get:base:url") + "/api/tag";
+      return App.request("get:base:url") + "/tag";
     };
 
     return TagCollection;
@@ -736,7 +736,7 @@ this.Wardrobe.module("Entities", function(Entities, App, Backbone, Marionette, $
     }
 
     User.prototype.urlRoot = function() {
-      return App.request("get:base:url") + "/api/user";
+      return App.request("get:base:url") + "/user";
     };
 
     return User;
@@ -753,7 +753,7 @@ this.Wardrobe.module("Entities", function(Entities, App, Backbone, Marionette, $
     UsersCollection.prototype.model = Entities.User;
 
     UsersCollection.prototype.url = function() {
-      return App.request("get:base:url") + "/api/user";
+      return App.request("get:base:url") + "/user";
     };
 
     return UsersCollection;

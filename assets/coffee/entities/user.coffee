@@ -2,12 +2,12 @@
 
   class Entities.User extends App.Entities.Model
     urlRoot: ->
-      App.request("get:base:url") + "/api/user"
+      App.request("get:base:url") + "/user"
 
   class Entities.UsersCollection extends App.Entities.Collection
     model: Entities.User
     url: ->
-      App.request("get:base:url") + "/api/user"
+      App.request("get:base:url") + "/user"
 
   API =
     setCurrentUser: (currentUser) ->

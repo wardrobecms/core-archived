@@ -2,12 +2,12 @@
 
   class Entities.Tag extends App.Entities.Model
     urlRoot: ->
-      App.request("get:base:url") + "/api/tag"
+      App.request("get:base:url") + "/tag"
 
   class Entities.TagCollection extends App.Entities.Collection
     model: Entities.Tag
     url: ->
-      App.request("get:base:url") + "/api/tag"
+      App.request("get:base:url") + "/tag"
 
   API =
     getAll: (cb) ->
