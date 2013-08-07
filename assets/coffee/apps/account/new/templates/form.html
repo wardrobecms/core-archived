@@ -1,0 +1,46 @@
+<form class="form-horizontal center">
+  <div id="js-errors" class="hide">
+    <div class="alert alert-error">
+      <button type="button" class="close" data-dismiss="alert">×</button>
+      <span></span>
+    </div>
+  </div>
+  <div class="alert alert-success hide">
+    <%= Lang.account_saved %>
+  </div>
+  <div class="control-group">
+    <label class="control-label" for="first_name"><%= Lang.account_first_name %></label>
+    <div class="controls">
+      <input type="text" id="first_name" name="first_name" placeholder="<%= Lang.account_first_name %>">
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label" for="last_name"><%= Lang.account_last_name %></label>
+    <div class="controls">
+      <input type="text" id="last_name" name="last_name" placeholder="<%= Lang.account_last_name %>">
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label" for="email"><%= Lang.account_email %></label>
+    <div class="controls">
+      <input type="text" id="email" name="email" placeholder="<%= Lang.account_email %>">
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label" for="password"><%= Lang.account_password %></label>
+    <div class="controls">
+      <input id="password" type="password" name="password" value="">
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label" for="password_confirm"><%= Lang.account_password_confirm %></label>
+    <div class="controls">
+      <input id="password_confirm" type="password" name="password_confirm" value="">
+    </div>
+  </div>
+  <div class="control-group">
+    <div class="controls">
+      <button type="submit" class="btn save"><%= Lang.account_add %></button>
+    </div>
+  </div>
+</form>
