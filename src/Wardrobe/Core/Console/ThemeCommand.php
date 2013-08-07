@@ -40,7 +40,7 @@ class ThemeCommand extends Command {
 	{
 		$assetPath = public_path().'/packages/wardrobe/core/themes';
 		$themePath = public_path().'/'.Config::get('core::wardrobe.theme_dir');
-		passthru("cp -r {$assetPath} {$themePath}");
+		File::copy($assetPath, $themePath);
 	}
 
 }
