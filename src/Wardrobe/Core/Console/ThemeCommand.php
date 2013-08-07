@@ -40,7 +40,28 @@ class ThemeCommand extends Command {
 	{
 		$assetPath = public_path().'/packages/wardrobe/core/themes';
 		$themePath = public_path().'/'.Config::get('core::wardrobe.theme_dir');
-		File::copy($assetPath, $themePath);
+		$this->copyDir($assetPath, $themePath);
 	}
 
+	protected function copyDir($from, $to)
+	{
+		$files = File::allFiles($from);
+
+		$this->checkDirectory($to);
+
+		foreach ($files as $file) {
+			$original = (string) $file;
+			$filename = $file->getRelativePathname();
+			$this->checkDirectory("{$to}/{$file->getRelativePath()}");
+			File::copy($file, "{$to}/{$filename}");
+			$this->info("Copied {$filename}");
+		}
+	}
+
+	protected function checkDirectory($dir)
+	{
+		if (!File::isDirectory($dir)) {
+			File::makeDirectory($dir);
+		}
+	}
 }
