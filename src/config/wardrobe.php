@@ -61,5 +61,5 @@ return array(
 	| Checks if this is installed in wardrobe/wardrobe
 	|
 	*/
-	'in_framework' => true,
+	'in_framework' => false,
 );
