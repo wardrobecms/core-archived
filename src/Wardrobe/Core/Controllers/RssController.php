@@ -1,6 +1,7 @@
-<?php
+<?php namespace Wardrobe\Core\Controllers;
 
-use Wardrobe\Repositories\PostRepositoryInterface;
+use Response;
+use Wardrobe\Core\Repositories\PostRepositoryInterface;
 
 class RssController extends BaseController {
 
