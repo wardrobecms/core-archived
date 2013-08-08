@@ -2,12 +2,12 @@
 
   class Entities.Post extends App.Entities.Model
     urlRoot: ->
-      App.request("get:base:url") + "/post"
+      App.request("get:url:api") + "/post"
 
   class Entities.PostCollection extends App.Entities.Collection
     model: Entities.Post
     url: ->
-      App.request("get:base:url") + "/post"
+      App.request("get:url:api") + "/post"
 
   API =
     getAll: ->

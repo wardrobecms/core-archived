@@ -25,7 +25,7 @@
       submitBtnText: ->
         if @active? or @active is "1" then "Publish Post" else "Save Post"
       previewUrl: ->
-        "#{App.request("get:base:url")}/post/preview/#{@id}"
+        "#{App.request("get:url:blog")}/post/preview/#{@id}"
 
     # When the dom is shown setup all the plugins
     onShow: ->
@@ -216,7 +216,7 @@
     # Setup the image uploading.
     imageUpload: (editor) ->
       options =
-        uploadUrl: App.request("get:base:url") + "/dropzone/image"
+        uploadUrl: App.request("get:url:api") + "/dropzone/image"
         allowedTypes: ["image/jpeg", "image/png", "image/jpg", "image/gif"]
         progressText: "![Uploading file...]()"
         urlText: "![file]({filename})"

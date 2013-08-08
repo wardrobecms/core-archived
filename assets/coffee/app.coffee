@@ -8,7 +8,9 @@
     App.csrfToken = $("meta[name='token']").attr('content')
     @currentUser = App.request "set:current:user", options.user
     @allUsers = App.request "set:all:users", options.users
-    @baseUrl = options.base_url
+    @apiUrl = options.api_url
+    @adminUrl = options.admin_url
+    @blogUrl = options.blog_url
 
   # Set a handler so that other parts of the app can grab the current user.
   App.reqres.setHandler "get:current:user", ->
@@ -17,8 +19,14 @@
   App.reqres.setHandler "get:all:users", ->
     App.allUsers
 
-  App.reqres.setHandler "get:base:url", ->
-    App.baseUrl
+  App.reqres.setHandler "get:url:api", ->
+    App.apiUrl
+
+  App.reqres.setHandler "get:url:admin", ->
+    App.adminUrl
+
+  App.reqres.setHandler "get:url:blog", ->
+    App.blogUrl
 
   # Main regions used throughout the admin.
   App.addRegions

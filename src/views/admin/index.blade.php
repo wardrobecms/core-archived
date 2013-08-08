@@ -14,9 +14,9 @@
 			Wardrobe.start({
 				user: {{ $user }},
 				users: {{ $users }},
-				api_url: "{{ route('wardrobe.api.index') }}"
-				admin_url: "{{ route('wardrobe.admin.index') }}"
-				blog_url: "{{ route('wardrobe.index') }}"
+				api_url: "{{ route('wardrobe.api.index') }}",
+				admin_url: "{{ route('wardrobe.admin.index') }}",
+				blog_url: "{{ route('wardrobe.index') }}",
 			});
 		});
 		window.Lang = {@foreach($locale as $key => $item) {{ $key }}: "{{ $item }}", @endforeach}

@@ -406,7 +406,9 @@ this.Wardrobe = (function(Backbone, Marionette) {
     App.csrfToken = $("meta[name='token']").attr('content');
     this.currentUser = App.request("set:current:user", options.user);
     this.allUsers = App.request("set:all:users", options.users);
-    return this.baseUrl = options.base_url;
+    this.apiUrl = options.api_url;
+    this.adminUrl = options.admin_url;
+    return this.blogUrl = options.blog_url;
   });
   App.reqres.setHandler("get:current:user", function() {
     return App.currentUser;
@@ -414,8 +416,14 @@ this.Wardrobe = (function(Backbone, Marionette) {
   App.reqres.setHandler("get:all:users", function() {
     return App.allUsers;
   });
-  App.reqres.setHandler("get:base:url", function() {
-    return App.baseUrl;
+  App.reqres.setHandler("get:url:api", function() {
+    return App.apiUrl;
+  });
+  App.reqres.setHandler("get:url:admin", function() {
+    return App.adminUrl;
+  });
+  App.reqres.setHandler("get:url:blog", function() {
+    return App.blogUrl;
   });
   App.addRegions({
     headerRegion: "#header-region",
@@ -607,7 +615,7 @@ this.Wardrobe.module("Entities", function(Entities, App, Backbone, Marionette, $
     }
 
     Post.prototype.urlRoot = function() {
-      return App.request("get:base:url") + "/post";
+      return App.request("get:url:api") + "/post";
     };
 
     return Post;
@@ -624,7 +632,7 @@ this.Wardrobe.module("Entities", function(Entities, App, Backbone, Marionette, $
     PostCollection.prototype.model = Entities.Post;
 
     PostCollection.prototype.url = function() {
-      return App.request("get:base:url") + "/post";
+      return App.request("get:url:api") + "/post";
     };
 
     return PostCollection;
@@ -676,7 +684,7 @@ this.Wardrobe.module("Entities", function(Entities, App, Backbone, Marionette, $
     }
 
     Tag.prototype.urlRoot = function() {
-      return App.request("get:base:url") + "/tag";
+      return App.request("get:url:api") + "/tag";
     };
 
     return Tag;
@@ -693,7 +701,7 @@ this.Wardrobe.module("Entities", function(Entities, App, Backbone, Marionette, $
     TagCollection.prototype.model = Entities.Tag;
 
     TagCollection.prototype.url = function() {
-      return App.request("get:base:url") + "/tag";
+      return App.request("get:url:api") + "/tag";
     };
 
     return TagCollection;
@@ -736,7 +744,7 @@ this.Wardrobe.module("Entities", function(Entities, App, Backbone, Marionette, $
     }
 
     User.prototype.urlRoot = function() {
-      return App.request("get:base:url") + "/user";
+      return App.request("get:url:api") + "/user";
     };
 
     return User;
@@ -753,7 +761,7 @@ this.Wardrobe.module("Entities", function(Entities, App, Backbone, Marionette, $
     UsersCollection.prototype.model = Entities.User;
 
     UsersCollection.prototype.url = function() {
-      return App.request("get:base:url") + "/user";
+      return App.request("get:url:api") + "/user";
     };
 
     return UsersCollection;
@@ -1365,7 +1373,7 @@ this.Wardrobe.module("DropzoneApp", function(DropzoneApp, App, Backbone, Marione
     setupDropzone: function() {
       var myDropzone;
       myDropzone = new Dropzone(document.body, {
-        url: App.request("get:base:url") + "/dropzone",
+        url: App.request("get:url:api") + "/dropzone",
         method: "POST",
         clickable: false
       });
@@ -1457,7 +1465,7 @@ this.Wardrobe.module("HeaderApp.List", function(List, App, Backbone, Marionette,
 
     Header.prototype.templateHelpers = {
       logoutUrl: function() {
-        return "" + (App.request("get:base:url")) + "/wardrobe/logout";
+        return "" + (App.request("get:url:admin")) + "/wardrobe/logout";
       }
     };
 
@@ -1523,7 +1531,7 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
         }
       },
       previewUrl: function() {
-        return "" + (App.request("get:base:url")) + "/post/preview/" + this.id;
+        return "" + (App.request("get:url:blog")) + "/post/preview/" + this.id;
       }
     };
 
@@ -1761,7 +1769,7 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
     PostView.prototype.imageUpload = function(editor) {
       var options;
       options = {
-        uploadUrl: App.request("get:base:url") + "/dropzone/image",
+        uploadUrl: App.request("get:url:api") + "/dropzone/image",
         allowedTypes: ["image/jpeg", "image/png", "image/jpg", "image/gif"],
         progressText: "![Uploading file...]()",
         urlText: "![file]({filename})",
@@ -1957,7 +1965,7 @@ this.Wardrobe.module("PostApp.List", function(List, App, Backbone, Marionette, $
 
     PostItem.prototype.templateHelpers = {
       previewUrl: function() {
-        return "" + (App.request("get:base:url")) + "/post/preview/" + this.id;
+        return "" + (App.request("get:url:blog")) + "/post/preview/" + this.id;
       },
       status: function() {
         if (parseInt(this.active) === 1 && this.publish_date > moment().format('YYYY-MM-DD HH:mm:ss')) {

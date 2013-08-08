@@ -28,7 +28,7 @@
 
     templateHelpers:
       previewUrl: ->
-        "#{App.request("get:base:url")}/post/preview/#{@id}"
+        "#{App.request("get:url:blog")}/post/preview/#{@id}"
 
       status: ->
         if parseInt(@active) is 1 and @publish_date > moment().format('YYYY-MM-DD HH:mm:ss')

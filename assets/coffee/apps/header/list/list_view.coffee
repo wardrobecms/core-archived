@@ -14,7 +14,7 @@
     # Helpers used by the view
     templateHelpers:
       logoutUrl: ->
-        "#{App.request("get:base:url")}/wardrobe/logout"
+        "#{App.request("get:url:admin")}/wardrobe/logout"
 
     generateAvatar: (user) ->
       $avEl = @$(".avatar")

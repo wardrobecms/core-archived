@@ -3,7 +3,7 @@
   API =
     setupDropzone: ->
       myDropzone = new Dropzone(document.body,
-        url: App.request("get:base:url") + "/dropzone"
+        url: App.request("get:url:api") + "/dropzone"
         method: "POST"
         clickable: false
       )
