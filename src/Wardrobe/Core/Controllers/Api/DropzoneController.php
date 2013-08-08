@@ -65,13 +65,14 @@ class DropzoneController extends BaseController {
 	public function postImage()
 	{
 		$file = Input::file('file');
-		$destinationPath = public_path().'/img/';
+		$imageDir = Config::get('core::wardrobe.image_dir');
+		$destinationPath = public_path(). "/{$imageDir}/";
 		$filename = $file->getClientOriginalName();
 		if (Input::file('file')->move($destinationPath, $filename))
 		{
 			// @note - Using the absolute url so it loads images when ran in sub folder
 			// this will make exporting less portable and may need to re-address at a later point.
-			return Response::json(array('filename' => url('/img/'.$filename)));
+			return Response::json(array('filename' => url("/{$imageDir}/".$filename)));
 		}
 		return Response::json(array('error' => 'Upload failed. Please ensure your public/img directory is writable.'));
 	}
