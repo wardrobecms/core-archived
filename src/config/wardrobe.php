@@ -18,7 +18,7 @@ return array(
 	| Image Uploads Directory
 	|--------------------------------------------------------------------------
 	|
-	| Set this to the directory where your themes will be located in your public
+	| Set this to the directory where your images will be located in your public
 	| folder.
 	|
 	*/
