@@ -14,7 +14,7 @@
 			</p>
 		</div>
 		@endif
-		<form method="post" action="{{ url('/wardrobe/login') }}" class="form-horizontal">
+		<form method="post" action="{{ route('wardrobe.admin.login') }}" class="form-horizontal">
 			<p>
 				<input type="text" id="inputEmail" name="email" placeholder="{{ Lang::get('core::wardrobe.login_email') }}" value="{{ Input::old('email') }}">
 			</p>
