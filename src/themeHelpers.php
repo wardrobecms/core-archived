@@ -67,3 +67,8 @@ if ( ! function_exists('md'))
 	}
 }
 
+function wardrobe_url($link)
+{
+	return route('wardrobe.index');
+}
+
