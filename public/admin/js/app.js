@@ -1525,9 +1525,9 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
     PostView.prototype.templateHelpers = {
       submitBtnText: function() {
         if ((this.active != null) || this.active === "1") {
-          return "Publish Post";
+          return Lang.post_publish;
         } else {
-          return "Save Post";
+          return Lang.post_save;
         }
       },
       previewUrl: function() {
@@ -1760,9 +1760,9 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
 
     PostView.prototype.changeBtn = function(e) {
       if (e.currentTarget.value === "1") {
-        return this.$(".publish").text("Publish Post");
+        return this.$(".publish").text(Lang.post_publish);
       } else {
-        return this.$(".publish").text("Save Post");
+        return this.$(".publish").text(Lang.post_save);
       }
     };
 

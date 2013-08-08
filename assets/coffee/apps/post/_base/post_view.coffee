@@ -23,7 +23,7 @@
     # Helpers used by the view
     templateHelpers:
       submitBtnText: ->
-        if @active? or @active is "1" then "Publish Post" else "Save Post"
+        if @active? or @active is "1" then Lang.post_publish else Lang.post_save
       previewUrl: ->
         "#{App.request("get:url:blog")}/post/preview/#{@id}"
 
@@ -209,9 +209,9 @@
     # Toggle the save button text based on status
     changeBtn: (e) ->
       if e.currentTarget.value is "1"
-        @$(".publish").text "Publish Post"
+        @$(".publish").text Lang.post_publish
       else
-        @$(".publish").text "Save Post"
+        @$(".publish").text Lang.post_save
 
     # Setup the image uploading.
     imageUpload: (editor) ->
