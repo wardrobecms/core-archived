@@ -69,7 +69,7 @@ if ( ! function_exists('md'))
 
 function wardrobe_url($link)
 {
-	if(substr($link, 0) == '/') {
+	if($link[0] == '/') {
     	$link = substr($link, 1);
 	}
 	return route('wardrobe.index')."/{$link}";
