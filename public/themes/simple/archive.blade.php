@@ -15,7 +15,7 @@
     <ul class="archive">
       @foreach ($posts as $post)
         <li>
-          <span>{{ date("M d, Y", strtotime($post->publish_date)) }}</span> <strong><a href="{{ wardrobe_url('post/' . $post->slug) }}">{{ $post->title }}</a></strong>
+          <span>{{ date("M d, Y", strtotime($post->publish_date)) }}</span> <strong><a href="{{ wardrobe_url('/post/' . $post->slug) }}">{{ $post->title }}</a></strong>
         </li>
       @endforeach
     </ul>
