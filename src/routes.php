@@ -30,3 +30,11 @@ Route::group(Config::get('core::routes.api_group_rules'), function() use ($wardr
 	Route::resource('user', $wardrobeControllers.'Api\UserController');
 	Route::controller('dropzone', $wardrobeControllers.'Api\DropzoneController');
 });
+
+if (Config::get('core::wardrobe.handles_404')) {
+	App::missing(function($exception)
+	{
+		View::addLocation(public_path().'/'.Config::get('core::wardrobe.theme_dir'));
+		return Response::view(theme_view('404'), array(), 404);
+	});
+}
