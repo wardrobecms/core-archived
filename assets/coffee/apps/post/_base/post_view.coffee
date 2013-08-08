@@ -216,7 +216,7 @@
     # Setup the image uploading.
     imageUpload: (editor) ->
       options =
-        uploadUrl: App.request("get:base:url") + "/api/dropzone/image"
+        uploadUrl: App.request("get:base:url") + "/dropzone/image"
         allowedTypes: ["image/jpeg", "image/png", "image/jpg", "image/gif"]
         progressText: "![Uploading file...]()"
         urlText: "![file]({filename})"
