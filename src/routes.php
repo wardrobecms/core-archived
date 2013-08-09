@@ -27,6 +27,7 @@ Route::group(Config::get('core::routes.api_group_rules'), function() use ($wardr
 	Route::get('/', array('as' => 'wardrobe.api.index'));
 	Route::resource('post', $wardrobeControllers.'Api\PostController');
 	Route::resource('tag', $wardrobeControllers.'Api\TagController');
+	Route::resource('meta', $wardrobeControllers.'Api\MetaController');
 	Route::resource('user', $wardrobeControllers.'Api\UserController');
 	Route::controller('dropzone', $wardrobeControllers.'Api\DropzoneController');
 });

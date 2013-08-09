@@ -3,6 +3,7 @@
 use Config, Cache, DateTime, Validator;
 use Wardrobe\Core\Models\Post;
 use Wardrobe\Core\Models\Tag;
+use Wardrobe\Core\Models\Meta;
 
 class DbPostRepository implements PostRepositoryInterface {
 
@@ -201,6 +202,16 @@ class DbPostRepository implements PostRepositoryInterface {
 	public function allTags()
 	{
 		return Tag::orderBy('tag', 'asc')->groupBy('tag')->distinct()->get()->toArray();
+	}
+
+	/**
+	 * Get a list of all of the meta used by the blog.
+	 *
+	 * @return array
+	 */
+	public function allMeta()
+	{
+		return Meta::orderBy('key', 'asc')->groupBy('key')->distinct()->get()->toArray();
 	}
 
 	/**
