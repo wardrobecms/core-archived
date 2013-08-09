@@ -3,14 +3,21 @@
   class New.Controller extends App.Controllers.Base
 
     initialize: (options) ->
-      post = App.request "new:post:entity"
+      @post = App.request "new:post:entity"
 
-      @listenTo post, "created", ->
+      @listenTo @post, "created", ->
         App.vent.trigger "post:created", post
 
-      view = @getNewView post
-      @show view
+      @layout = @getLayoutView @post
 
-    getNewView: (post) ->
+      @listenTo @layout, "show", =>
+        @showMeta()
+
+      @show @layout
+
+    getLayoutView: (post) ->
       new New.Post
         model: post
+
+    showMeta: ->
+      App.execute "show:meta", @layout.fieldsRegion, @post

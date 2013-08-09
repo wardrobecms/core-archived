@@ -114,12 +114,13 @@ class DbPostRepository implements PostRepositoryInterface {
 	 * @param  string  $content
 	 * @param  string  $slug
 	 * @param  array  $tags
+	 * @param  array  $meta
 	 * @param  bool  $active
 	 * @param  int  $user_id
 	 * @param  DateTime  $publish_date
 	 * @return Post
 	 */
-	public function create($title, $content, $slug, array $tags, $active, $user_id, DateTime $publish_date)
+	public function create($title, $content, $slug, array $tags, array $meta, $active, $user_id, DateTime $publish_date)
 	{
 		$post = Post::create(compact('title', 'content', 'slug', 'active', 'user_id', 'publish_date'));
 
