@@ -146,7 +146,7 @@ __p += '\n\n        <button class="btn btn-mini btn-success publish pull-right">
 ((__t = ( Lang.post_content )) == null ? '' : __t) +
 '"></textarea>\n      <div class="tags-bar hide">\n        <input type="text" id="js-tags" name="tags" class="tags" style="width: 90%" value="" placeholder="' +
 ((__t = ( Lang.post_tags )) == null ? '' : __t) +
-'">\n      </div>\n    </div>\n  </div>\n</form>\n\n<div id="date-form" style="display: none">\n  <form class="form-inline">\n    <label for="date">' +
+'">\n      </div>\n    </div>\n    <div class="extra-fields"></div>\n  </div>\n</form>\n\n<div id="date-form" style="display: none">\n  <form class="form-inline">\n    <label for="date">' +
 ((__t = ( Lang.post_publish_date )) == null ? '' : __t) +
 '</label><br>\n    <input type="text" name="date" class="js-date" id="date" value="" placeholder="Next Thursday 10am">\n    <button class="btn js-setdate">' +
 ((__t = ( Lang.post_publish_date_set )) == null ? '' : __t) +
@@ -201,6 +201,26 @@ __p += '<td class="title">\n  <img src="" class="avatar img-polaroid" width="18"
 '" target="_blank" title="Preview"><i class="icon-zoom-in"></i></a>\n  <a href="#" class="delete" title="' +
 ((__t = ( Lang.post_delete )) == null ? '' : __t) +
 '"><i class="icon-trash"></i></a>\n</td>\n';
+
+}
+return __p
+};
+
+this["JST"]["post/meta/templates/grid.html"] = function(obj) {
+obj || (obj = {});
+var __t, __p = '', __e = _.escape;
+with (obj) {
+__p += '<h3>Extra Fields</h3>\n<div class="fields"></div>\n<a href="#" class="btn js-add-field"><i class="icon-plus"></i> Add Field</a>';
+
+}
+return __p
+};
+
+this["JST"]["post/meta/templates/item.html"] = function(obj) {
+obj || (obj = {});
+var __t, __p = '', __e = _.escape;
+with (obj) {
+__p += '<div class="col">\n  <select name="meta[][key]" class="js-key meta-key">\n    <optgroup label="Existing">\n      <option value="test">Test</option>\n      <option value="test2">Test2</option>\n    </optgroup>\n  </select>\n  <!-- <input type="text" name="meta[][key]" class="js-key meta-key" placeholder="Key"> -->\n</div>\n<div class="col">\n  <textarea name="meta[][value]" placeholder="Value" class="js-value"></textarea>\n</div>';
 
 }
 return __p
@@ -667,6 +687,45 @@ this.Wardrobe.module("Entities", function(Entities, App, Backbone, Marionette, $
   });
   return App.reqres.setHandler("new:post:entity", function() {
     return API.newPost();
+  });
+});
+
+var __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+this.Wardrobe.module("Entities", function(Entities, App, Backbone, Marionette, $, _) {
+  var API;
+  Entities.Meta = (function(_super) {
+
+    __extends(Meta, _super);
+
+    function Meta() {
+      return Meta.__super__.constructor.apply(this, arguments);
+    }
+
+    return Meta;
+
+  })(App.Entities.Model);
+  Entities.MetaCollection = (function(_super) {
+
+    __extends(MetaCollection, _super);
+
+    function MetaCollection() {
+      return MetaCollection.__super__.constructor.apply(this, arguments);
+    }
+
+    MetaCollection.prototype.model = Entities.Meta;
+
+    return MetaCollection;
+
+  })(App.Entities.Collection);
+  API = {
+    setAll: function(meta) {
+      return new Entities.MetaCollection(meta);
+    }
+  };
+  return App.reqres.setHandler("set:all:meta", function(meta) {
+    return API.setAll(meta);
   });
 });
 
@@ -1506,6 +1565,10 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
 
     PostView.prototype.className = "span12";
 
+    PostView.prototype.regions = {
+      fieldsRegion: ".extra-fields"
+    };
+
     PostView.prototype.initialize = function() {
       return this.tagsShown = false;
     };
@@ -1783,7 +1846,7 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
 
     return PostView;
 
-  })(App.Views.ItemView);
+  })(App.Views.Layout);
 });
 
 var __hasProp = {}.hasOwnProperty,
@@ -2027,6 +2090,124 @@ this.Wardrobe.module("PostApp.List", function(List, App, Backbone, Marionette, $
 var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
+this.Wardrobe.module("PostApp.Meta", function(Meta, App, Backbone, Marionette, $, _) {
+  return Meta.Controller = (function(_super) {
+
+    __extends(Controller, _super);
+
+    function Controller() {
+      return Controller.__super__.constructor.apply(this, arguments);
+    }
+
+    Controller.prototype.initialize = function(options) {
+      var metaItems, view;
+      if (options == null) {
+        options = {};
+      }
+      metaItems = this.buildCollection(options.model);
+      view = this.getView(metaItems);
+      return this.show(view);
+    };
+
+    Controller.prototype.buildCollection = function(model) {
+      return App.request("set:all:meta", [
+        {
+          key: "",
+          value: ""
+        }
+      ]);
+    };
+
+    Controller.prototype.getView = function(items) {
+      return new Meta.Grid({
+        collection: items
+      });
+    };
+
+    return Controller;
+
+  })(App.Controllers.Base);
+});
+
+var __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+this.Wardrobe.module("PostApp.Meta", function(Meta, App, Backbone, Marionette, $, _) {
+  Meta.ItemView = (function(_super) {
+
+    __extends(ItemView, _super);
+
+    function ItemView() {
+      return ItemView.__super__.constructor.apply(this, arguments);
+    }
+
+    ItemView.prototype.className = "field";
+
+    ItemView.prototype.template = "post/meta/templates/item";
+
+    ItemView.prototype.onShow = function() {
+      this.fillForm();
+      this.setUpTags();
+      return this.$("textarea.js-value").autosize({
+        classname: "expand"
+      }).focus();
+    };
+
+    ItemView.prototype.fillForm = function() {
+      this.$(".js-key").val(this.model.get("key"));
+      return this.$(".js-value").val(this.model.get("value"));
+    };
+
+    ItemView.prototype.setUpTags = function(tags) {
+      return this.$(".js-key").selectize({
+        create: true,
+        sortField: 'text'
+      });
+    };
+
+    return ItemView;
+
+  })(App.Views.ItemView);
+  return Meta.Grid = (function(_super) {
+
+    __extends(Grid, _super);
+
+    function Grid() {
+      return Grid.__super__.constructor.apply(this, arguments);
+    }
+
+    Grid.prototype.className = "extra-fields";
+
+    Grid.prototype.template = "post/meta/templates/grid";
+
+    Grid.prototype.itemView = Meta.ItemView;
+
+    Grid.prototype.itemViewContainer = ".fields";
+
+    Grid.prototype.events = {
+      "click .js-add-field": "addField"
+    };
+
+    Grid.prototype.initialize = function() {
+      return console.log(this.collection.length);
+    };
+
+    Grid.prototype.addField = function(e) {
+      e.preventDefault();
+      return this.collection.add({
+        key: "",
+        value: ""
+      });
+    };
+
+    return Grid;
+
+  })(App.Views.CompositeView);
+});
+
+var __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
 this.Wardrobe.module("PostApp.New", function(New, App, Backbone, Marionette, $, _) {
   return New.Controller = (function(_super) {
 
@@ -2037,19 +2218,26 @@ this.Wardrobe.module("PostApp.New", function(New, App, Backbone, Marionette, $, 
     }
 
     Controller.prototype.initialize = function(options) {
-      var post, view;
-      post = App.request("new:post:entity");
-      this.listenTo(post, "created", function() {
+      var _this = this;
+      this.post = App.request("new:post:entity");
+      this.listenTo(this.post, "created", function() {
         return App.vent.trigger("post:created", post);
       });
-      view = this.getNewView(post);
-      return this.show(view);
+      this.layout = this.getLayoutView(this.post);
+      this.listenTo(this.layout, "show", function() {
+        return _this.showMeta();
+      });
+      return this.show(this.layout);
     };
 
-    Controller.prototype.getNewView = function(post) {
+    Controller.prototype.getLayoutView = function(post) {
       return new New.Post({
         model: post
       });
+    };
+
+    Controller.prototype.showMeta = function() {
+      return App.execute("show:meta", this.layout.fieldsRegion, this.post);
     };
 
     return Controller;
@@ -2140,8 +2328,20 @@ this.Wardrobe.module("PostApp", function(PostApp, App, Backbone, Marionette, $, 
         type = ".posts";
       }
       return $('ul.nav li').removeClass("active").find(type).parent().addClass("active");
+    },
+    loadMeta: function(region, model) {
+      if (model == null) {
+        model = null;
+      }
+      return new PostApp.Meta.Controller({
+        region: region,
+        model: model
+      });
     }
   };
+  App.commands.setHandler("show:meta", function(region, model) {
+    return API.loadMeta(region, model);
+  });
   App.vent.on("post:load", function() {
     App.navigate("post");
     return API.list();

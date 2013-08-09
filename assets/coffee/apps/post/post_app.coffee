@@ -25,6 +25,14 @@
     setActive: (type = ".posts") ->
       $('ul.nav li').removeClass("active").find(type).parent().addClass("active")
 
+    loadMeta: (region, model = null) ->
+      new PostApp.Meta.Controller
+        region: region
+        model: model
+
+  App.commands.setHandler "show:meta", (region, model) ->
+    API.loadMeta region, model
+
   App.vent.on "post:load", ->
     App.navigate "post"
     API.list()

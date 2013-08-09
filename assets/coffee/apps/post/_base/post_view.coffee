@@ -1,8 +1,11 @@
 @Wardrobe.module "Views", (Views, App, Backbone, Marionette, $, _) ->
 
-  class Views.PostView extends App.Views.ItemView
+  class Views.PostView extends App.Views.Layout
     template: "post/_base/templates/form"
     className: "span12"
+
+    regions:
+      fieldsRegion: ".extra-fields"
 
     # Set a flag so we know when the tags are shown.
     initialize: ->
