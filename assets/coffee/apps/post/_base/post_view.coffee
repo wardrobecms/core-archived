@@ -157,15 +157,10 @@
     # Save the post data
     save: (e) ->
       e.preventDefault()
-
-      @processFormSubmit
-        title: @$('#title').val()
-        slug: @$('#slug').val()
-        active: @$('input[type=radio]:checked').val()
-        content: @editor.codemirror.getValue()
-        tags: @$("#js-tags").val()
-        user_id: @$("#js-user").val()
-        publish_date: @$("#publish_date").val()
+      Backbone.Syphon.InputReaders.register "textarea", (el) =>
+        if el.val() is "" then @editor.codemirror.getValue() else el.val()
+      data = Backbone.Syphon.serialize(this)
+      @processFormSubmit data
 
     # Private: Process the form and sync to the server
     processFormSubmit: (data) ->

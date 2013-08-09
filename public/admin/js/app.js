@@ -1754,16 +1754,18 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
     };
 
     PostView.prototype.save = function(e) {
+      var data,
+        _this = this;
       e.preventDefault();
-      return this.processFormSubmit({
-        title: this.$('#title').val(),
-        slug: this.$('#slug').val(),
-        active: this.$('input[type=radio]:checked').val(),
-        content: this.editor.codemirror.getValue(),
-        tags: this.$("#js-tags").val(),
-        user_id: this.$("#js-user").val(),
-        publish_date: this.$("#publish_date").val()
+      Backbone.Syphon.InputReaders.register("textarea", function(el) {
+        if (el.val() === "") {
+          return _this.editor.codemirror.getValue();
+        } else {
+          return el.val();
+        }
       });
+      data = Backbone.Syphon.serialize(this);
+      return this.processFormSubmit(data);
     };
 
     PostView.prototype.processFormSubmit = function(data) {

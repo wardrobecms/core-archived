@@ -5,6 +5,7 @@
     template: "post/meta/templates/item"
 
     templateHelpers: ->
+      # generate a unique id for the meta array
       getCid: =>
         return @cid
 
