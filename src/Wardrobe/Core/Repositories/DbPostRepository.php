@@ -13,7 +13,7 @@ class DbPostRepository implements PostRepositoryInterface {
 	 */
 	public function all()
 	{
-		return Post::with(array('tags', 'user'))->orderBy('publish_date', 'desc')->get();
+		return Post::with(array('tags', 'user', 'meta'))->orderBy('publish_date', 'desc')->get();
 	}
 
 	/**
@@ -42,7 +42,7 @@ class DbPostRepository implements PostRepositoryInterface {
 	 */
 	public function find($id)
 	{
-		return Post::with(array('tags', 'user'))->findOrFail($id);
+		return Post::with(array('tags', 'user', 'meta'))->findOrFail($id);
 	}
 
 	/**

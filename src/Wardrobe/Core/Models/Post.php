@@ -30,6 +30,16 @@ class Post extends BaseModel {
 	}
 
 	/**
+	 * Meta Relationship
+	 *
+	 * @return Relationship
+	 */
+	public function meta()
+	{
+		return $this->hasMany('Wardrobe\Core\Models\Meta', 'post_id');
+	}
+
+	/**
 	 * User relationship
 	 *
 	 * @return Relationship

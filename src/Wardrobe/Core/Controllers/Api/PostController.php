@@ -62,6 +62,7 @@ class PostController extends BaseController {
 			Input::get('content'),
 			Input::get('slug'),
 			explode(',', Input::get('tags')),
+			explode(',', Input::get('meta')),
 			(bool) Input::get('active'),
 			Input::get('user_id', Auth::user()->id),
 			Carbon::createFromTimestamp(strtotime($date))
