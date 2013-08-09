@@ -10,9 +10,14 @@
         App.vent.trigger "post:updated", post
 
       App.execute "when:fetched", post, =>
-        view = @getEditView post
-        @show view
+        @layout = @getLayoutView post
+        @listenTo @layout, "show", =>
+          @showMeta()
+        @show @layout
 
-    getEditView: (post) ->
+    getLayoutView: (post) ->
       new Edit.Post
         model: post
+
+    showMeta: ->
+      App.execute "show:meta", @layout.fieldsRegion, @post

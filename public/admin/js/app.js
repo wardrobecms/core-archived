@@ -985,6 +985,11 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
       return Layout.__super__.constructor.apply(this, arguments);
     }
 
+    Layout.prototype.fillJSON = function() {
+      var _ref;
+      return this.$('form').fillJSON(((_ref = this.model) != null ? _ref.toJSON() : void 0) || {});
+    };
+
     return Layout;
 
   })(Marionette.Layout);
@@ -1876,16 +1881,22 @@ this.Wardrobe.module("PostApp.Edit", function(Edit, App, Backbone, Marionette, $
         return App.vent.trigger("post:updated", post);
       });
       return App.execute("when:fetched", post, function() {
-        var view;
-        view = _this.getEditView(post);
-        return _this.show(view);
+        _this.layout = _this.getLayoutView(post);
+        _this.listenTo(_this.layout, "show", function() {
+          return _this.showMeta();
+        });
+        return _this.show(_this.layout);
       });
     };
 
-    Controller.prototype.getEditView = function(post) {
+    Controller.prototype.getLayoutView = function(post) {
       return new Edit.Post({
         model: post
       });
+    };
+
+    Controller.prototype.showMeta = function() {
+      return App.execute("show:meta", this.layout.fieldsRegion, this.post);
     };
 
     return Controller;

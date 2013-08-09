@@ -1,3 +1,5 @@
 @Wardrobe.module "Views", (Views, App, Backbone, Marionette, $, _) ->
 
   class Views.Layout extends Marionette.Layout
+    fillJSON: ->
+      @$('form').fillJSON(@model?.toJSON() or {})
