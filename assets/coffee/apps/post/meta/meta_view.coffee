@@ -4,6 +4,10 @@
     className: "field"
     template: "post/meta/templates/item"
 
+    templateHelpers: ->
+      getCid: =>
+        return @cid
+
     onShow: ->
       @fillForm()
       @setUpTags()

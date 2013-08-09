@@ -13,3 +13,4 @@
     getView: (items) ->
       new Meta.Grid
         collection: items
+        parentId: @cid

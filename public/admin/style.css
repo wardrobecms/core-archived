@@ -9646,7 +9646,9 @@ button {
   margin-right: 10px;
 }
 .extra-fields textarea {
-  height: 20px;
+  height: 35px;
+  max-height: 200px;
+  width: 400px;
 }
 .extra-fields a {
   color: #555;

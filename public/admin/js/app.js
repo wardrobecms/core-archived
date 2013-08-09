@@ -220,7 +220,11 @@ this["JST"]["post/meta/templates/item.html"] = function(obj) {
 obj || (obj = {});
 var __t, __p = '', __e = _.escape;
 with (obj) {
-__p += '<div class="col">\n  <select name="meta[][key]" class="js-key meta-key">\n    <optgroup label="Existing">\n      <option value="test">Test</option>\n      <option value="test2">Test2</option>\n    </optgroup>\n  </select>\n  <!-- <input type="text" name="meta[][key]" class="js-key meta-key" placeholder="Key"> -->\n</div>\n<div class="col">\n  <textarea name="meta[][value]" placeholder="Value" class="js-value"></textarea>\n</div>';
+__p += '<div class="col">\n  <select name="meta[' +
+((__t = ( getCid() )) == null ? '' : __t) +
+'][key]" class="js-key meta-key">\n    <optgroup label="Existing">\n      <option value="test">Test</option>\n      <option value="test2">Test2</option>\n    </optgroup>\n  </select>\n</div>\n<div class="col">\n  <textarea name="meta[' +
+((__t = ( getCid() )) == null ? '' : __t) +
+'][value]" placeholder="Value" class="js-value"></textarea>\n</div>';
 
 }
 return __p
@@ -2120,7 +2124,8 @@ this.Wardrobe.module("PostApp.Meta", function(Meta, App, Backbone, Marionette, $
 
     Controller.prototype.getView = function(items) {
       return new Meta.Grid({
-        collection: items
+        collection: items,
+        parentId: this.cid
       });
     };
 
@@ -2144,6 +2149,15 @@ this.Wardrobe.module("PostApp.Meta", function(Meta, App, Backbone, Marionette, $
     ItemView.prototype.className = "field";
 
     ItemView.prototype.template = "post/meta/templates/item";
+
+    ItemView.prototype.templateHelpers = function() {
+      var _this = this;
+      return {
+        getCid: function() {
+          return _this.cid;
+        }
+      };
+    };
 
     ItemView.prototype.onShow = function() {
       this.fillForm();
