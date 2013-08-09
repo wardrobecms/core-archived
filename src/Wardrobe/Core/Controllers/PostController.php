@@ -1,6 +1,6 @@
 <?php namespace Wardrobe\Core\Controllers;
 
-use View, Config, Input, Auth;
+use View, Config, Input, Auth, App;
 use Wardrobe\Core\Repositories\PostRepositoryInterface;
 
 class PostController extends BaseController {
