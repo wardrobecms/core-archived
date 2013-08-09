@@ -12,12 +12,13 @@
       App.execute "when:fetched", post, =>
         @layout = @getLayoutView post
         @listenTo @layout, "show", =>
-          @showMeta()
+          @showMeta post
         @show @layout
 
     getLayoutView: (post) ->
       new Edit.Post
         model: post
 
-    showMeta: ->
-      App.execute "show:meta", @layout.fieldsRegion, @post
+    showMeta: (post) ->
+      console.log "post", post
+      App.execute "show:meta", @layout.fieldsRegion, post

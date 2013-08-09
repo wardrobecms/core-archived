@@ -729,6 +729,14 @@ this.Wardrobe.module("Entities", function(Entities, App, Backbone, Marionette, $
     }
   };
   return App.reqres.setHandler("set:all:meta", function(meta) {
+    if (!meta) {
+      meta = [
+        {
+          key: "",
+          value: ""
+        }
+      ];
+    }
     return API.setAll(meta);
   });
 });
@@ -1883,7 +1891,7 @@ this.Wardrobe.module("PostApp.Edit", function(Edit, App, Backbone, Marionette, $
       return App.execute("when:fetched", post, function() {
         _this.layout = _this.getLayoutView(post);
         _this.listenTo(_this.layout, "show", function() {
-          return _this.showMeta();
+          return _this.showMeta(post);
         });
         return _this.show(_this.layout);
       });
@@ -1895,8 +1903,9 @@ this.Wardrobe.module("PostApp.Edit", function(Edit, App, Backbone, Marionette, $
       });
     };
 
-    Controller.prototype.showMeta = function() {
-      return App.execute("show:meta", this.layout.fieldsRegion, this.post);
+    Controller.prototype.showMeta = function(post) {
+      console.log("post", post);
+      return App.execute("show:meta", this.layout.fieldsRegion, post);
     };
 
     return Controller;
@@ -2127,12 +2136,7 @@ this.Wardrobe.module("PostApp.Meta", function(Meta, App, Backbone, Marionette, $
     };
 
     Controller.prototype.buildCollection = function(model) {
-      return App.request("set:all:meta", [
-        {
-          key: "",
-          value: ""
-        }
-      ]);
+      return App.request("set:all:meta", model);
     };
 
     Controller.prototype.getView = function(items) {
@@ -2216,7 +2220,7 @@ this.Wardrobe.module("PostApp.Meta", function(Meta, App, Backbone, Marionette, $
     };
 
     Grid.prototype.initialize = function() {
-      return console.log(this.collection.length);
+      debugger;      return console.log(this.collection.length);
     };
 
     Grid.prototype.addField = function(e) {
@@ -2362,7 +2366,7 @@ this.Wardrobe.module("PostApp", function(PostApp, App, Backbone, Marionette, $, 
       }
       return new PostApp.Meta.Controller({
         region: region,
-        model: model
+        model: model.get("meta")
       });
     }
   };

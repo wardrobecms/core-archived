@@ -34,6 +34,7 @@
       "click .js-add-field" : "addField"
 
     initialize: ->
+      debugger
       console.log @collection.length
 
     addField: (e) ->

@@ -28,7 +28,7 @@
     loadMeta: (region, model = null) ->
       new PostApp.Meta.Controller
         region: region
-        model: model
+        model: model.get("meta")
 
   App.commands.setHandler "show:meta", (region, model) ->
     API.loadMeta region, model

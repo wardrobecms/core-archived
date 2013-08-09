@@ -8,7 +8,7 @@
       @show view
 
     buildCollection: (model) ->
-      App.request("set:all:meta", [key: "", value: ""])
+      App.request "set:all:meta", model
 
     getView: (items) ->
       new Meta.Grid

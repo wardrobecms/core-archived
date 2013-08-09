@@ -10,4 +10,5 @@
       new Entities.MetaCollection meta
 
   App.reqres.setHandler "set:all:meta", (meta) ->
+    meta = [key: "", value: ""] if not meta
     API.setAll meta
