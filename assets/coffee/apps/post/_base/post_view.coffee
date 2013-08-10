@@ -25,7 +25,7 @@
       submitBtnText: ->
         if @active? or @active is "1" then Lang.post_publish else Lang.post_save
       previewUrl: ->
-        "#{App.request("get:url:blog")}/post/preview/#{@id}"
+        "#{App.request("get:url:blog")}post/preview/#{@id}"
 
     # When the dom is shown setup all the plugins
     onShow: ->
