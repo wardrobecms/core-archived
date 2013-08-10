@@ -37,10 +37,6 @@
         $('#title').slugIt
           output: "#slug"
 
-      else
-        publish = moment(@model.get("publish_date"), "YYYY-MM-DD HH:mm")
-        @$("#publish_date").val publish.format("MMM Do, YYYY h:mm A")
-
       App.request "tag:entities", (tags) =>
         @setUpTags tags
 

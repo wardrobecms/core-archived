@@ -1536,8 +1536,7 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
     };
 
     PostView.prototype.onShow = function() {
-      var publish,
-        _this = this;
+      var _this = this;
       this.setUpEditor();
       this.setupUsers();
       this.setupCalendar();
@@ -1545,9 +1544,6 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
         $('#title').slugIt({
           output: "#slug"
         });
-      } else {
-        publish = moment(this.model.get("publish_date"), "YYYY-MM-DD HH:mm");
-        this.$("#publish_date").val(publish.format("MMM Do, YYYY h:mm A"));
       }
       return App.request("tag:entities", function(tags) {
         return _this.setUpTags(tags);
@@ -1844,9 +1840,14 @@ this.Wardrobe.module("PostApp.Edit", function(Edit, App, Backbone, Marionette, $
     };
 
     Post.prototype._setDate = function() {
-      var date;
-      date = moment.utc(this.model.get("publish_date"), "YYYY-MM-DDTHH:mm:ss");
-      return this.$(".js-date").val(date.format("MMM Do YYYY, hh:mma"));
+      var date, publishDate;
+      publishDate = this.model.get("publish_date");
+      if (_.isObject(publishDate)) {
+        publishDate = publishDate.date;
+      }
+      date = moment.utc(publishDate, "YYYY-MM-DDTHH:mm:ss");
+      this.$(".js-date").val(date.format("MMM Do YYYY, hh:mma"));
+      return this.$("#publish_date").val(date.format("MMM Do, YYYY h:mm A"));
     };
 
     Post.prototype._setActive = function() {
@@ -1855,8 +1856,7 @@ this.Wardrobe.module("PostApp.Edit", function(Edit, App, Backbone, Marionette, $
         return this.$('input:radio[name="active"]').filter('[value="1"]').attr('checked', true);
       } else {
         this.$(".publish").text(Lang.post_save);
-        this.$('input:radio[name="active"]').filter('[value="0"]').attr('checked', true);
-        return this.$('.js-toggle').trigger("click");
+        return this.$('input:radio[name="active"]').filter('[value="0"]').attr('checked', true);
       }
     };
 
@@ -2146,10 +2146,10 @@ this.Wardrobe.module("PostApp", function(PostApp, App, Backbone, Marionette, $, 
     App.navigate("post");
     return API.list();
   });
-  App.vent.on("post:created post:updated", function() {
+  App.vent.on("post:created post:updated", function(item) {
     $("#js-alert").showAlert(Lang.post_success, Lang.post_saved, "alert-success");
-    App.navigate("post");
-    return API.list();
+    App.navigate("post/edit/" + item.id);
+    return API.edit(item.id, item);
   });
   App.vent.on("post:new:clicked post:new", function() {
     App.navigate("/", {

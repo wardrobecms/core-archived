@@ -30,10 +30,10 @@
     API.list()
 
   # Listen for the post created or saved then show alert and redirect.
-  App.vent.on "post:created post:updated", ->
+  App.vent.on "post:created post:updated", (item) ->
     $("#js-alert").showAlert(Lang.post_success, Lang.post_saved, "alert-success")
-    App.navigate "post"
-    API.list()
+    App.navigate "post/edit/#{item.id}"
+    API.edit item.id, item
 
   App.vent.on "post:new:clicked post:new", ->
     App.navigate "/",
