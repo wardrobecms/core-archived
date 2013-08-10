@@ -630,6 +630,66 @@ var __hasProp = {}.hasOwnProperty,
 
 this.Wardrobe.module("Entities", function(Entities, App, Backbone, Marionette, $, _) {
   var API;
+  Entities.MetaItem = (function(_super) {
+
+    __extends(MetaItem, _super);
+
+    function MetaItem() {
+      return MetaItem.__super__.constructor.apply(this, arguments);
+    }
+
+    MetaItem.prototype.urlRoot = function() {
+      return App.request("get:url:api") + "/tag";
+    };
+
+    return MetaItem;
+
+  })(App.Entities.Model);
+  Entities.MetaCollection = (function(_super) {
+
+    __extends(MetaCollection, _super);
+
+    function MetaCollection() {
+      return MetaCollection.__super__.constructor.apply(this, arguments);
+    }
+
+    MetaCollection.prototype.model = Entities.MetaItem;
+
+    MetaCollection.prototype.url = function() {
+      return App.request("get:url:api") + "/meta";
+    };
+
+    return MetaCollection;
+
+  })(App.Entities.Collection);
+  API = {
+    getAll: function(cb) {
+      var meta;
+      meta = new Entities.MetaCollection;
+      meta.fetch({
+        reset: true,
+        success: function(collection, response, options) {
+          if (cb) {
+            return cb(meta);
+          }
+        },
+        error: function() {
+          throw new Error("Meta fields not fetched");
+        }
+      });
+      return meta;
+    }
+  };
+  return App.reqres.setHandler("meta:entities", function(cb) {
+    return API.getAll(cb);
+  });
+});
+
+var __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+this.Wardrobe.module("Entities", function(Entities, App, Backbone, Marionette, $, _) {
+  var API;
   Entities.Post = (function(_super) {
 
     __extends(Post, _super);
@@ -699,33 +759,33 @@ var __hasProp = {}.hasOwnProperty,
 
 this.Wardrobe.module("Entities", function(Entities, App, Backbone, Marionette, $, _) {
   var API;
-  Entities.Meta = (function(_super) {
+  Entities.PostMetaItem = (function(_super) {
 
-    __extends(Meta, _super);
+    __extends(PostMetaItem, _super);
 
-    function Meta() {
-      return Meta.__super__.constructor.apply(this, arguments);
+    function PostMetaItem() {
+      return PostMetaItem.__super__.constructor.apply(this, arguments);
     }
 
-    return Meta;
+    return PostMetaItem;
 
   })(App.Entities.Model);
-  Entities.MetaCollection = (function(_super) {
+  Entities.PostMetaCollection = (function(_super) {
 
-    __extends(MetaCollection, _super);
+    __extends(PostMetaCollection, _super);
 
-    function MetaCollection() {
-      return MetaCollection.__super__.constructor.apply(this, arguments);
+    function PostMetaCollection() {
+      return PostMetaCollection.__super__.constructor.apply(this, arguments);
     }
 
-    MetaCollection.prototype.model = Entities.Meta;
+    PostMetaCollection.prototype.model = Entities.PostMetaItem;
 
-    return MetaCollection;
+    return PostMetaCollection;
 
   })(App.Entities.Collection);
   API = {
     setAll: function(meta) {
-      return new Entities.MetaCollection(meta);
+      return new Entities.PostMetaCollection(meta);
     }
   };
   return App.reqres.setHandler("set:all:meta", function(meta) {
@@ -2126,12 +2186,13 @@ this.Wardrobe.module("PostApp.Meta", function(Meta, App, Backbone, Marionette, $
     }
 
     Controller.prototype.initialize = function(options) {
-      var metaItems, view;
+      var allMeta, metaItems, view;
       if (options == null) {
         options = {};
       }
+      allMeta = App.request("meta:entities");
       metaItems = this.buildCollection(options.model);
-      view = this.getView(metaItems);
+      view = this.getView(metaItems, allMeta);
       return this.show(view);
     };
 
@@ -2139,9 +2200,10 @@ this.Wardrobe.module("PostApp.Meta", function(Meta, App, Backbone, Marionette, $
       return App.request("set:all:meta", model);
     };
 
-    Controller.prototype.getView = function(items) {
+    Controller.prototype.getView = function(items, allMeta) {
       return new Meta.Grid({
         collection: items,
+        meta: allMeta,
         parentId: this.cid
       });
     };
@@ -2167,6 +2229,10 @@ this.Wardrobe.module("PostApp.Meta", function(Meta, App, Backbone, Marionette, $
 
     ItemView.prototype.template = "post/meta/templates/item";
 
+    ItemView.prototype.initialize = function(opts) {
+      return this.meta = opts.allMeta;
+    };
+
     ItemView.prototype.templateHelpers = function() {
       var _this = this;
       return {
@@ -2179,6 +2245,7 @@ this.Wardrobe.module("PostApp.Meta", function(Meta, App, Backbone, Marionette, $
     ItemView.prototype.onShow = function() {
       this.fillForm();
       this.setUpTags();
+      this.setupMeta();
       return this.$("textarea.js-value").autosize({
         classname: "expand"
       }).focus();
@@ -2193,6 +2260,19 @@ this.Wardrobe.module("PostApp.Meta", function(Meta, App, Backbone, Marionette, $
       return this.$(".js-key").selectize({
         create: true,
         sortField: 'text'
+      });
+    };
+
+    ItemView.prototype.setupMeta = function() {
+      var _this = this;
+      if (this.meta.length === 0) {
+        return this;
+      }
+      return this.meta.each(function(item) {
+        return _this.$("optgroup").append($("<option>", {
+          value: item.get("key"),
+          text: item.get("key")
+        }));
       });
     };
 
@@ -2215,12 +2295,18 @@ this.Wardrobe.module("PostApp.Meta", function(Meta, App, Backbone, Marionette, $
 
     Grid.prototype.itemViewContainer = ".fields";
 
-    Grid.prototype.events = {
-      "click .js-add-field": "addField"
+    Grid.prototype.initialize = function(opts) {
+      return this.meta = opts.meta;
     };
 
-    Grid.prototype.initialize = function() {
-      debugger;      return console.log(this.collection.length);
+    Grid.prototype.itemViewOptions = function() {
+      return {
+        allMeta: this.meta
+      };
+    };
+
+    Grid.prototype.events = {
+      "click .js-add-field": "addField"
     };
 
     Grid.prototype.addField = function(e) {

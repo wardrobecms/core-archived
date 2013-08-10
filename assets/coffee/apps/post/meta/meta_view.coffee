@@ -4,6 +4,9 @@
     className: "field"
     template: "post/meta/templates/item"
 
+    initialize: (opts) ->
+      @meta = opts.allMeta
+
     templateHelpers: ->
       # generate a unique id for the meta array
       getCid: =>
@@ -12,6 +15,7 @@
     onShow: ->
       @fillForm()
       @setUpTags()
+      @setupMeta()
       @$("textarea.js-value").autosize(classname: "expand").focus()
 
     fillForm: ->
@@ -24,18 +28,28 @@
         create: true
         sortField: 'text'
 
+    setupMeta: ->
+      return @ if @meta.length is 0
+      @meta.each (item) =>
+        @$("optgroup").append $("<option>",
+          value: item.get("key")
+          text: item.get("key")
+        )
+
   class Meta.Grid extends App.Views.CompositeView
     className: "extra-fields"
     template: "post/meta/templates/grid"
     itemView: Meta.ItemView
     itemViewContainer: ".fields"
 
+    initialize: (opts) ->
+      @meta = opts.meta
+
+    itemViewOptions: ->
+      allMeta: @meta
+
     events:
       "click .js-add-field" : "addField"
-
-    initialize: ->
-      debugger
-      console.log @collection.length
 
     addField: (e) ->
       e.preventDefault()
