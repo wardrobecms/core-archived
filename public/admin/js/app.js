@@ -2078,7 +2078,7 @@ this.Wardrobe.module("PostApp.New", function(New, App, Backbone, Marionette, $, 
     };
 
     Post.prototype.onRender = function() {
-      this.$(".publish").text("Publish Post");
+      this.$(".publish").text(Lang.post_publish);
       return this.$("#date").attr("placeholder", moment().format("MMM Do, YYYY [9am]"));
     };
 

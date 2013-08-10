@@ -7,6 +7,14 @@ module.exports = (grunt) ->
     # Clean out the source directory
     clean: ["assets/src/js/"]
 
+    # Generate documentation for the coffee.
+    groc:
+      coffeescript: [
+        "assets/coffee/**/*.coffee"
+      ],
+      options:
+        "out": "doc/"
+
     # Compress and minify
     uglify:
       options:
@@ -81,6 +89,7 @@ module.exports = (grunt) ->
         ]
         dest: 'public/admin/js/app.js'
 
+    # Compile the templates
     jst:
       compile:
         options:
@@ -122,8 +131,10 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks "grunt-contrib-less"
   grunt.loadNpmTasks "grunt-contrib-jst"
   grunt.loadNpmTasks "grunt-contrib-livereload"
+  grunt.loadNpmTasks "grunt-groc"
 
   # Default task(s).
   # grunt.registerTask('watch', ['livereload-start', 'regarde']);
   grunt.registerTask "default", ["clean", "less", "coffee", "jst", "concat", "uglify"]
-  grunt.registerTask "deploy", ["clean", "less", "coffee", "jst", "concat", "uglify"]
+  grunt.registerTask "deploy", ["clean", "less", "coffee", "jst", "concat", "uglify", "groc"]
+  grunt.registerTask "docs", ["groc"]

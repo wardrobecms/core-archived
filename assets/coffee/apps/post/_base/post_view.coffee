@@ -1,14 +1,16 @@
+# Post View
+# ---------------
+# A parent view which the add and edit views extend from.
 @Wardrobe.module "Views", (Views, App, Backbone, Marionette, $, _) ->
 
   class Views.PostView extends App.Views.ItemView
     template: "post/_base/templates/form"
     className: "span12"
 
-    # Set a flag so we know when the tags are shown.
     initialize: ->
+      # Set a flag so we know when the tags are shown.
       @tagsShown = false
 
-    # Standard backbone events
     events:
       "click .publish" : "save"
       "click .js-toggle" : "toggleDetails"
@@ -16,18 +18,19 @@
       "click .icon-user" : "showUsers"
       "change .js-active" : "changeBtn"
 
-    # Marionette model events.
+    # When the model changes it's private _errors method call the changeErrors method.
     modelEvents:
       "change:_errors"  : "changeErrors"
 
-    # Helpers used by the view
     templateHelpers:
+      # Set the primary button text based on the model active status.
       submitBtnText: ->
         if @active? or @active is "1" then Lang.post_publish else Lang.post_save
+      # Generate a preview url.
       previewUrl: ->
         "#{App.request("get:url:blog")}post/preview/#{@id}"
 
-    # When the dom is shown setup all the plugins
+    # When the view is shown in the DOM setup all the plugins
     onShow: ->
       @setUpEditor()
       @setupUsers()
@@ -38,12 +41,13 @@
         $('#title').slugIt
           output: "#slug"
 
-
+      # Fetch the tags and setup the selectize plugin.
       App.request "tag:entities", (tags) =>
         @setUpTags tags
 
-    # Setup the editor
+    # Setup the markdown editor
     setUpEditor: ->
+      # Custom toolbar items.
       toolbar = [
         'bold', 'italic', '|'
         'quote', 'unordered-list', 'ordered-list', '|'
@@ -54,10 +58,13 @@
       @editor = new Editor
         toolbar: toolbar
 
+      # Render to the #content holder.
       @editor.render(document.getElementById("content"))
 
+      # Allow images to be drag and dropped into the editor.
       @imageUpload @editor
 
+      # Manually over ride the editor status bar.
       @$('.editor-statusbar')
         .find('.lines').html(@editor.codemirror.lineCount())
         .find('.words').html(@editor.codemirror.getValue().length)
@@ -70,13 +77,14 @@
       users.each (item) ->
         $userSelect.append $("<option></option>").val(item.id).html(item.get("first_name") + " " + item.get("last_name"))
 
-      if @model.isNew() # Set the default to yourself.
+      # If the model isNew then set the current user as author.
+      if @model.isNew()
         user = App.request "get:current:user"
         $userSelect.val user.id
       else
         $userSelect.val @model.get("user_id")
 
-    # Setup the tags instance
+    # Setup the tags as a selectize object.
     setUpTags: (tags) ->
       @$("#js-tags").selectize
         persist: true
@@ -92,7 +100,7 @@
           value: input
           text: input
 
-    # Generate tags for selectize
+    # Generate tags in a standard format for the plugin.
     generateTagOptions: (tags) ->
       opts = for tag in tags.pluck("tag") when tag isnt ""
         value: tag
@@ -100,7 +108,6 @@
       @customTags(opts)
 
     # Add any tags from the hidden input. Primarily used when using drag/drop.
-    #
     # This allows us to keep from going through the selectize api for adding and option and then the item.
     customTags: (opts) ->
       val = $("#js-tags").val()
@@ -112,8 +119,6 @@
       opts
 
     # Toggle the tags based on toolbar click
-    #
-    # Returns bool
     toggleTags: (e) ->
       if @tagsShown
         @$('.editor-toolbar a, .editor-toolbar i').show()
@@ -126,7 +131,7 @@
 
       @tagsShown = !@tagsShown
 
-    # Setup the date selection which is inside a tip
+    # Setup the date selection which is inside a qtip
     setupCalendar: ->
       @$(".icon-calendar").qtip
         show:
@@ -162,36 +167,36 @@
         user_id: @$("#js-user").val()
         publish_date: @$("#publish_date").val()
 
-    # Private: Process the form and sync to the server
+    # Process the form and sync to the server
     processFormSubmit: (data) ->
       @model.save data,
         collection: @collection
 
-    # Show the errors based on validation failure.
+    # Show or hide the validation errors based on validation failure.
     changeErrors: (model, errors, options) ->
       if _.isEmpty(errors) then @removeErrors() else @addErrors errors
 
-    # Private: Loop through the errors and display
+    # Loop through the errors and display
     addErrors: (errors = {}) ->
       @$("#js-errors").show().find("span").html(Lang.post_errors)
       for name, error of errors
         @addError error
 
-    # Private: Add any errors from the form.
+    # Add any errors as a list item in the alert.
     addError: (error) ->
       sm = $("<li>").text(error)
       @$("#js-errors span").append sm
 
-    # Private: Remove any errors from the form.
+    # Remove all errors from the form.
     removeErrors: ->
       @$("#js-errors").hide()
 
-    # Private: Collapse the details fields
+    # Collapse the details fields
     collapse: (@$toggle) ->
       @$toggle.data("dir", "up").addClass("icon-chevron-sign-right").removeClass("icon-chevron-sign-down")
       @$(".details.hide").hide()
 
-    # Private: Expand the details fields
+    # Expand the details fields
     expand: (@$toggle) ->
       @$toggle.data("dir", "down").addClass("icon-chevron-sign-down").removeClass("icon-chevron-sign-right")
       @$(".details.hide").show()
@@ -211,7 +216,7 @@
       else
         @$(".publish").text Lang.post_save
 
-    # Setup the image uploading.
+    # Setup the image uploading into the content editor.
     imageUpload: (editor) ->
       options =
         uploadUrl: App.request("get:url:api") + "/dropzone/image"
@@ -221,5 +226,5 @@
         onUploadedFile: (json) ->
           debugger
         errorText: "Error uploading file"
-
+      # Attach it to the code mirror.
       inlineAttach.attachToCodeMirror(editor.codemirror, options)

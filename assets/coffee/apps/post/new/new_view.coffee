@@ -1,13 +1,19 @@
+# New Post View
+# ---------------
+# Handle adding a new post.
 @Wardrobe.module "PostApp.New", (New, App, Backbone, Marionette, $, _) ->
 
   class New.Post extends App.Views.PostView
 
     initialize: ->
+      # Listen for when a markdown file is drag and dropped.
       App.vent.on "post:new:seed", (contents) =>
         @fillForm contents
 
     onRender: ->
-      @$(".publish").text("Publish Post")
+      # Set the primary button to Publish
+      @$(".publish").text Lang.post_publish
+      # Set the default date placeholder to an example that works with php strtotime.
       @$("#date").attr("placeholder", moment().format("MMM Do, YYYY [9am]"))
 
     # Fill the form from a drag and dropped md file

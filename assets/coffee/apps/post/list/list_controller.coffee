@@ -5,6 +5,7 @@
     initialize: ->
       post = App.request "post:entities"
 
+      # After the post is fetched then load up everything.
       App.execute "when:fetched", post, =>
         view = @getListView post
         @show view

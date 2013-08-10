@@ -10,6 +10,7 @@
     "grunt-contrib-watch": "~0.4.4",
     "grunt-contrib-clean": "~0.4.0",
     "grunt-contrib-jst": "~0.5.0",
-    "grunt-contrib-livereload": "~0.1.2"
+    "grunt-contrib-livereload": "~0.1.2",
+    "grunt-groc": "~0.3.0",
   }
 }
