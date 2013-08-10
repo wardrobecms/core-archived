@@ -34,8 +34,10 @@
       @setupCalendar()
 
       if @model.isNew()
+        @$('.js-toggle').trigger "click"
         $('#title').slugIt
           output: "#slug"
+
 
       App.request "tag:entities", (tags) =>
         @setUpTags tags

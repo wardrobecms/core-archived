@@ -1541,6 +1541,7 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
       this.setupUsers();
       this.setupCalendar();
       if (this.model.isNew()) {
+        this.$('.js-toggle').trigger("click");
         $('#title').slugIt({
           output: "#slug"
         });
