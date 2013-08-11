@@ -52,8 +52,16 @@ class WardrobeServiceProvider extends ServiceProvider {
         {
             return new Console\ThemeCommand;
         });
+        $this->app['wardrobe.console.config'] = $this->app->share(function($app)
+        {
+            return new Console\ConfigCommand;
+        });
+        $this->app['wardrobe.console.migrate'] = $this->app->share(function($app)
+        {
+            return new Console\MigrateCommand;
+        });
 
-        $this->commands('wardrobe.console.theme');
+        $this->commands('wardrobe.console.theme', 'wardrobe.console.config', 'wardrobe.console.migrate');
 	}
 
 	public function register()
