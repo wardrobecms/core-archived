@@ -24,7 +24,7 @@ class BaseController extends Controller {
 
 		$this->theme = Config::get('core::wardrobe.theme');
 
-		View::addLocation(public_path().'/'.Config::get('core::wardrobe.theme_dir'));
+		$this->setupViews();
 
 		$presence = Validator::getPresenceVerifier();
 		$presence->setConnection('wardrobe');
@@ -50,6 +50,14 @@ class BaseController extends Controller {
 		if ( ! is_null($this->layout))
 		{
 			$this->layout = View::make($this->layout);
+		}
+	}
+
+	protected function setupViews()
+	{
+		View::addLocation(public_path().'/'.Config::get('core::wardrobe.theme_dir'));
+		foreach (Config::get('core::wardrobe.view_dirs') as $dir) {
+			View::addLocation($dir);
 		}
 	}
 
