@@ -247,6 +247,10 @@ class DbPostRepository implements PostRepositoryInterface {
 			$rules['slug'] .= ','.$id;
 		}
 
+		$verifier = Validator::getPresenceVerifier();
+
+		$verifier->setConnection('wardrobe');
+
 		with($validator = Validator::make(compact('title', 'slug'), $rules))->fails();
 
 		return $validator->errors();
