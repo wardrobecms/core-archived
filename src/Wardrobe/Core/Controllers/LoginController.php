@@ -1,6 +1,6 @@
 <?php namespace Wardrobe\Core\Controllers;
 
-use View, Input, Redirect, Auth;
+use View, Input, Redirect, Auth, Wardrobe;
 
 use Wardrobe\Core\Repositories\UserRepositoryInterface;
 
@@ -57,9 +57,9 @@ class LoginController extends BaseController {
 	/**
 	 * Log out the user
 	 */
-	public function logout()
+	public function destroy()
 	{
-		Auth::logout();
+		$this->auth->logout();
 		return Redirect::to('wardrobe/login');
 	}
 

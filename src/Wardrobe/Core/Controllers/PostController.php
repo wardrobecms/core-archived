@@ -1,6 +1,6 @@
 <?php namespace Wardrobe\Core\Controllers;
 
-use View, Config, Input, Auth;
+use View, Config, Input, App;
 use Wardrobe\Core\Repositories\PostRepositoryInterface;
 
 class PostController extends BaseController {
@@ -88,7 +88,7 @@ class PostController extends BaseController {
 	 */
 	public function preview($id)
 	{
-		if ( ! Auth::check())
+		if ( ! $this->auth->check()
 		{
 			return App::abort(404, 'Page not found');
 		}

@@ -1,6 +1,8 @@
 <?php namespace Wardrobe\Core\Facades;
 
-use Config;
+use Config, App;
+use Illuminate\Auth\Guard;
+use Illuminate\Auth\EloquentUserProvider;
 use Wardrobe\Core\Repositories\PostRepositoryInterface;
 
 class Wardrobe {
@@ -43,6 +45,20 @@ class Wardrobe {
 	public function tags()
 	{
 		return $this->postsRepo->allTags();
+	}
+
+	public function getWardrobeAuth()
+	{
+		$provider = $this->createEloquentProvider();
+
+		return new Guard($provider, App::make('session'));
+	}
+
+	protected function createEloquentProvider()
+	{
+		$model = 'Wardrobe\Core\Models\User';
+
+		return new EloquentUserProvider(App::make('hash'), $model);
 	}
 
 }

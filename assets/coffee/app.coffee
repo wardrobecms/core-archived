@@ -20,13 +20,13 @@
     App.allUsers
 
   App.reqres.setHandler "get:url:api", ->
-    App.apiUrl
+    _.stripTrailingSlash App.apiUrl
 
   App.reqres.setHandler "get:url:admin", ->
-    App.adminUrl
+    _.stripTrailingSlash App.adminUrl
 
   App.reqres.setHandler "get:url:blog", ->
-    App.blogUrl
+    _.stripTrailingSlash App.blogUrl
 
   # Main regions used throughout the admin.
   App.addRegions

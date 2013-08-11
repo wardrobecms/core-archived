@@ -84,4 +84,14 @@ return array(
 	|
 	*/
 	'in_framework' => false,
+
+	/*
+	|--------------------------------------------------------------------------
+	| Other View Directories
+	|--------------------------------------------------------------------------
+	|
+	| Any other view directories you may want loaded for Wardrobe to work
+	|
+	*/
+	'view_dirs' => array(),
 );
