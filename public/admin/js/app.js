@@ -417,13 +417,19 @@ this.Wardrobe = (function(Backbone, Marionette) {
     return App.allUsers;
   });
   App.reqres.setHandler("get:url:api", function() {
-    return App.apiUrl;
+    return App.formatUrl(App.apiUrl);
   });
   App.reqres.setHandler("get:url:admin", function() {
-    return App.adminUrl;
+    return App.formatUrl(App.adminUrl);
   });
   App.reqres.setHandler("get:url:blog", function() {
-    return App.blogUrl;
+    return App.formatUrl(App.blogUrl);
+  });
+  App.formatUrl(function(url) {
+    if (url.substr(-1) === '/') {
+      return url.substr(0, url.length - 1);
+    }
+    return url;
   });
   App.addRegions({
     headerRegion: "#header-region",
