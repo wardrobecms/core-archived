@@ -20,19 +20,13 @@
     App.allUsers
 
   App.reqres.setHandler "get:url:api", ->
-    App.formatUrl App.apiUrl
+    _.stripTrailingSlash App.apiUrl
 
   App.reqres.setHandler "get:url:admin", ->
-    App.formatUrl App.adminUrl
+    _.stripTrailingSlash App.adminUrl
 
   App.reqres.setHandler "get:url:blog", ->
-    App.formatUrl App.blogUrl
-
-  # Removes trailing slashes on Urls
-  App.formatUrl = (url) ->
-    if url.substr(-1) == '/'
-      return url.substr(0, url.length - 1)
-    url
+    _.stripTrailingSlash App.blogUrl
 
   # Main regions used throughout the admin.
   App.addRegions

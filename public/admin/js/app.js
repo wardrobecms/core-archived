@@ -398,6 +398,17 @@ Backbone.Marionette.Renderer.render = function(template, data) {
 };
 
 
+_.mixin({
+  stripTrailingSlash: function(url) {
+    if (url.slice(-1) === '/') {
+      return url.substr(0, url.length - 1);
+    } else {
+      return url;
+    }
+  }
+});
+
+
 this.Wardrobe = (function(Backbone, Marionette) {
   var App;
   App = new Backbone.Marionette.Application();
@@ -417,20 +428,14 @@ this.Wardrobe = (function(Backbone, Marionette) {
     return App.allUsers;
   });
   App.reqres.setHandler("get:url:api", function() {
-    return App.formatUrl(App.apiUrl);
+    return _.stripTrailingSlash(App.apiUrl);
   });
   App.reqres.setHandler("get:url:admin", function() {
-    return App.formatUrl(App.adminUrl);
+    return _.stripTrailingSlash(App.adminUrl);
   });
   App.reqres.setHandler("get:url:blog", function() {
-    return App.formatUrl(App.blogUrl);
+    return _.stripTrailingSlash(App.blogUrl);
   });
-  App.formatUrl = function(url) {
-    if (url.substr(-1) === '/') {
-      return url.substr(0, url.length - 1);
-    }
-    return url;
-  };
   App.addRegions({
     headerRegion: "#header-region",
     topnavRegion: "#top-region",
