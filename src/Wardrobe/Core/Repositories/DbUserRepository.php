@@ -130,10 +130,6 @@ class DbUserRepository implements UserRepositoryInterface {
 			$rules['password']  = 'required|min:6';
 		}
 
-		$verifier = Validator::getPresenceVerifier();
-
-		$verifier->setConnection('wardrobe');
-
 		$validator = Validator::make(
 			compact('first_name', 'last_name', 'email', 'password'), $rules
 		);
