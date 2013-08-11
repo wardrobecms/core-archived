@@ -417,9 +417,9 @@ this.Wardrobe = (function(Backbone, Marionette) {
     App.csrfToken = $("meta[name='token']").attr('content');
     this.currentUser = App.request("set:current:user", options.user);
     this.allUsers = App.request("set:all:users", options.users);
-    this.apiUrl = options.api_url;
-    this.adminUrl = options.admin_url;
-    return this.blogUrl = options.blog_url;
+    this.apiUrl = _.stripTrailingSlash(options.api_url);
+    this.adminUrl = _.stripTrailingSlash(options.admin_url);
+    return this.blogUrl = _.stripTrailingSlash(options.blog_url);
   });
   App.reqres.setHandler("get:current:user", function() {
     return App.currentUser;
@@ -428,13 +428,13 @@ this.Wardrobe = (function(Backbone, Marionette) {
     return App.allUsers;
   });
   App.reqres.setHandler("get:url:api", function() {
-    return _.stripTrailingSlash(App.apiUrl);
+    return App.apiUrl;
   });
   App.reqres.setHandler("get:url:admin", function() {
-    return _.stripTrailingSlash(App.adminUrl);
+    return App.adminUrl;
   });
   App.reqres.setHandler("get:url:blog", function() {
-    return _.stripTrailingSlash(App.blogUrl);
+    return App.blogUrl;
   });
   App.addRegions({
     headerRegion: "#header-region",
