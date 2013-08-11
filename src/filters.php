@@ -2,9 +2,8 @@
 
 Route::filter('wardrobe.auth', function()
 {
-	Config::set('auth.table', 'Wardrobe/Models/User');
+	$auth = Wardrobe::getWardrobeAuth();
 
-	$auth = Auth::createEloquentDriver();
 	if ($auth->guest())
 	{
 		if (Request::ajax()) return Response::make('Unauthorized', 401);

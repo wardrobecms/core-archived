@@ -54,7 +54,7 @@ class Wardrobe {
 
 	protected function createEloquentProvider()
 	{
-		$model = 'Wardrobe/Models/User';
+		$model = 'Wardrobe\Core\Models\User';
 
 		return new Illuminate\Auth\EloquentUserProvider(App::make('hash'), $model);
 	}

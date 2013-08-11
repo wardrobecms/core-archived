@@ -25,6 +25,8 @@ class LoginController extends BaseController {
 		parent::__construct();
 
 		$this->users = $users;
+
+		$this->auth = Wardrobe::getWardrobeAuth();
 	}
 
 	/**
@@ -59,7 +61,7 @@ class LoginController extends BaseController {
 	 */
 	public function destroy()
 	{
-		Auth::logout();
+		$this->auth->logout();
 		return Redirect::to('wardrobe/login');
 	}
 
