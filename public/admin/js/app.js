@@ -1543,7 +1543,7 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
         }
       },
       previewUrl: function() {
-        return "" + (App.request("get:url:blog")) + "post/preview/" + this.id;
+        return "" + (App.request("get:url:blog")) + "/post/preview/" + this.id;
       }
     };
 
@@ -1993,7 +1993,7 @@ this.Wardrobe.module("PostApp.List", function(List, App, Backbone, Marionette, $
 
     PostItem.prototype.templateHelpers = {
       previewUrl: function() {
-        return "" + (App.request("get:url:blog")) + "post/preview/" + this.id;
+        return "" + (App.request("get:url:blog")) + "/post/preview/" + this.id;
       },
       status: function() {
         if (parseInt(this.active) === 1 && this.publish_date > moment().format('YYYY-MM-DD HH:mm:ss')) {

@@ -29,7 +29,7 @@
         if @active? or @active is "1" then Lang.post_publish else Lang.post_save
       # Generate a preview url.
       previewUrl: ->
-        "#{App.request("get:url:blog")}post/preview/#{@id}"
+        "#{App.request("get:url:blog")}/post/preview/#{@id}"
 
     # When the view is shown in the DOM setup all the plugins
     onShow: ->
