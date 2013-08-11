@@ -1515,7 +1515,8 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
       "click .js-toggle": "toggleDetails",
       "click .icon-tags": "toggleTags",
       "click .icon-user": "showUsers",
-      "change .js-active": "changeBtn"
+      "change .js-active": "changeBtn",
+      "keyup #title": "localStorage"
     };
 
     PostView.prototype.modelEvents = {
@@ -1552,14 +1553,29 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
     };
 
     PostView.prototype.setUpEditor = function() {
-      var toolbar;
+      var toolbar,
+        _this = this;
       toolbar = ['bold', 'italic', '|', 'quote', 'unordered-list', 'ordered-list', '|', 'link', 'image', 'code', '|', 'undo', 'redo', '|', 'tags', 'calendar'];
       this.editor = new Editor({
         toolbar: toolbar
       });
       this.editor.render(document.getElementById("content"));
       this.imageUpload(this.editor);
+      this.editor.codemirror.on("change", function(cm, change) {
+        return _this.localStorage();
+      });
       return this.$('.editor-statusbar').find('.lines').html(this.editor.codemirror.lineCount()).find('.words').html(this.editor.codemirror.getValue().length).find('.cursorActivity').html(this.editor.codemirror.getCursor().line + ':' + this.editor.codemirror.getCursor().ch);
+    };
+
+    PostView.prototype.localStorage = function() {
+      var data;
+      data = {
+        title: this.$('#title').val(),
+        content: this.editor.codemirror.getValue(),
+        tags: this.$("#js-tags").val()
+      };
+      $.jStorage.set("post-" + this.model.id, data);
+      return $.jStorage.publish("post-" + this.model.id, data);
     };
 
     PostView.prototype.setupUsers = function() {

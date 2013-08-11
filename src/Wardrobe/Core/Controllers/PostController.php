@@ -88,14 +88,12 @@ class PostController extends BaseController {
 	 */
 	public function preview($id)
 	{
-		$post = $this->posts->find($id);
-
-		if ( ! Auth::check() or ! $post)
+		if ( ! Auth::check())
 		{
 			return App::abort(404, 'Page not found');
 		}
 
-		return View::make($this->theme.'.post', compact('post'));
+		return View::make($this->theme.'.preview', array('id' => $id));
 	}
 
 }

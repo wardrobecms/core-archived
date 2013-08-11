@@ -17,6 +17,7 @@
       "click .icon-tags" : "toggleTags"
       "click .icon-user" : "showUsers"
       "change .js-active" : "changeBtn"
+      "keyup #title" : "localStorage"
 
     # When the model changes it's private _errors method call the changeErrors method.
     modelEvents:
@@ -64,11 +65,28 @@
       # Allow images to be drag and dropped into the editor.
       @imageUpload @editor
 
+      # Set up the local storage saving when the editor changes.
+      @editor.codemirror.on "change", (cm, change) =>
+        @localStorage()
+
       # Manually over ride the editor status bar.
       @$('.editor-statusbar')
         .find('.lines').html(@editor.codemirror.lineCount())
         .find('.words').html(@editor.codemirror.getValue().length)
         .find('.cursorActivity').html(@editor.codemirror.getCursor().line + ':' + @editor.codemirror.getCursor().ch)
+
+    # Save the post data to local storage
+    localStorage: ->
+      data =
+        title: @$('#title').val()
+        content: @editor.codemirror.getValue()
+        tags: @$("#js-tags").val()
+
+      # Save it manually so the first load has data.
+      $.jStorage.set "post-#{@model.id}", data
+
+      # Publish the data so any listeners can update.
+      $.jStorage.publish "post-#{@model.id}", data
 
     # Populate the user select list.
     setupUsers: ->
