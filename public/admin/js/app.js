@@ -1465,7 +1465,7 @@ this.Wardrobe.module("HeaderApp.List", function(List, App, Backbone, Marionette,
 
     Header.prototype.templateHelpers = {
       logoutUrl: function() {
-        return "" + (App.request("get:url:admin")) + "/wardrobe/logout";
+        return "" + (App.request("get:url:admin")) + "/logout";
       }
     };
 

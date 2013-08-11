@@ -45,4 +45,18 @@ class Wardrobe {
 		return $this->postsRepo->allTags();
 	}
 
+	public function getWardrobeAuth()
+	{
+		$provider = $this->createEloquentProvider();
+
+		return new Illuminate\Auth\Guard($provider, App::make('session'));
+	}
+
+	protected function createEloquentProvider()
+	{
+		$model = 'Wardrobe/Models/User';
+
+		return new Illuminate\Auth\EloquentUserProvider(App::make('hash'), $model);
+	}
+
 }
