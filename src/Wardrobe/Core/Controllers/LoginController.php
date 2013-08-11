@@ -1,6 +1,6 @@
 <?php namespace Wardrobe\Core\Controllers;
 
-use View, Input, Redirect, Auth;
+use View, Input, Redirect, Auth, Wardrobe;
 
 use Wardrobe\Core\Repositories\UserRepositoryInterface;
 
@@ -25,8 +25,6 @@ class LoginController extends BaseController {
 		parent::__construct();
 
 		$this->users = $users;
-
-		$this->auth = Wardrobe::getWardrobeAuth();
 	}
 
 	/**

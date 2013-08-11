@@ -27,7 +27,7 @@ class UserController extends BaseController {
 
 		$this->users = $users;
 
-		$this->beforeFilter('auth');
+		$this->beforeFilter('wardrobe.auth');
 		$this->beforeFilter('csrf_header', array('only' => array('store', 'update', 'destroy')));
 	}
 

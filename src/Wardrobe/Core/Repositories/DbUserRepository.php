@@ -1,6 +1,6 @@
 <?php namespace Wardrobe\Core\Repositories;
 
-use Auth, Hash, Validator;
+use Auth, Hash, Validator, Wardrobe;
 use Wardrobe\Core\Models\User;
 
 class DbUserRepository implements UserRepositoryInterface {

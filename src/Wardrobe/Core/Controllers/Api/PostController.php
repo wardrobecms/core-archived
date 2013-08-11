@@ -2,7 +2,7 @@
 
 use Wardrobe\Core\Controllers\BaseController;
 
-use Input, Response, Auth;
+use Input, Response;
 use Carbon\Carbon;
 use Wardrobe\Core\Repositories\PostRepositoryInterface;
 
@@ -28,7 +28,7 @@ class PostController extends BaseController {
 
 		$this->posts = $posts;
 
-		$this->beforeFilter('auth');
+		$this->beforeFilter('wardrobe.auth');
 	}
 
 	/**
@@ -63,7 +63,7 @@ class PostController extends BaseController {
 			Input::get('slug'),
 			explode(',', Input::get('tags')),
 			(bool) Input::get('active'),
-			Input::get('user_id', Auth::user()->id),
+			Input::get('user_id', $this->auth->user()->id),
 			Carbon::createFromTimestamp(strtotime($date))
 		);
 	}

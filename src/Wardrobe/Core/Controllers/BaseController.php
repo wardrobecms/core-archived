@@ -1,6 +1,6 @@
 <?php namespace Wardrobe\Core\Controllers;
 
-use Controller, Config, View, Validator;
+use Controller, Config, View, Validator, Wardrobe;
 
 class BaseController extends Controller {
 
@@ -11,6 +11,8 @@ class BaseController extends Controller {
 	 */
 	protected $theme = 'default';
 
+	protected $auth = 'default';
+
 	/**
 	 * Create the base controller instance.
 	 *
@@ -18,6 +20,8 @@ class BaseController extends Controller {
 	 */
 	public function __construct()
 	{
+		$this->auth = Wardrobe::getWardrobeAuth();
+
 		$this->theme = Config::get('core::wardrobe.theme');
 
 		View::addLocation(public_path().'/'.Config::get('core::wardrobe.theme_dir'));

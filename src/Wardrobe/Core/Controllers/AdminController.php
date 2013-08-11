@@ -36,7 +36,7 @@ class AdminController extends BaseController {
 	{
 		return View::make('core::admin.index')
 			->with('users', $this->users->all())
-			->with('user', Auth::user())
+			->with('user', $this->auth->user())
 			->with('locale', $this->loadLanguage());
 	}
 

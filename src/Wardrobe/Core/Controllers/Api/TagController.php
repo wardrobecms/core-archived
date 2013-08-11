@@ -28,7 +28,7 @@ class TagController extends BaseController {
 
 		$this->posts = $posts;
 
-		$this->beforeFilter('auth');
+		$this->beforeFilter('wardrobe.auth');
 	}
 
 	/**
