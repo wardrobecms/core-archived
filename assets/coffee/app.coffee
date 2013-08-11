@@ -29,7 +29,7 @@
     App.formatUrl App.blogUrl
 
   # Removes trailing slashes on Urls
-  App.formatUrl (url) ->
+  App.formatUrl = (url) ->
     if url.substr(-1) == '/'
       return url.substr(0, url.length - 1)
     url

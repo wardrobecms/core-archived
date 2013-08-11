@@ -425,12 +425,12 @@ this.Wardrobe = (function(Backbone, Marionette) {
   App.reqres.setHandler("get:url:blog", function() {
     return App.formatUrl(App.blogUrl);
   });
-  App.formatUrl(function(url) {
+  App.formatUrl = function(url) {
     if (url.substr(-1) === '/') {
       return url.substr(0, url.length - 1);
     }
     return url;
-  });
+  };
   App.addRegions({
     headerRegion: "#header-region",
     topnavRegion: "#top-region",
