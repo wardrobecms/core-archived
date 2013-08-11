@@ -79,4 +79,9 @@ class Post extends BaseModel {
 		return $dt->toRSSString();
 	}
 
+	public function getDates()
+	{
+	    return array('created_at', 'updated_at', 'publish_date');
+	}
+
 }
