@@ -3,7 +3,7 @@
 use Wardrobe\Core\Controllers\BaseController;
 
 use Carbon\Carbon;
-use Wardrobe\Repositories\UserRepositoryInterface;
+use Wardrobe\Core\Repositories\UserRepositoryInterface;
 
 class UserController extends BaseController {
 
