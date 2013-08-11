@@ -1,6 +1,7 @@
 <?php namespace Wardrobe\Core\Controllers\Api;
 
 use Wardrobe\Core\Controllers\BaseController;
+use Input;
 
 use Carbon\Carbon;
 use Wardrobe\Core\Repositories\UserRepositoryInterface;
