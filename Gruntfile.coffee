@@ -59,17 +59,20 @@ module.exports = (grunt) ->
     concat:
       structure:
         src: [
-          'assets/vendor/plugins/html5shiv.js'
-          'assets/vendor/backbone/underscore.js'
-          'assets/vendor/backbone/backbone.js'
-          'assets/vendor/backbone-plugins/backbone.marionette.js'
-          'assets/vendor/plugins/dates/moment.js'
-          'assets/vendor/plugins/dates/*.js'
+          'components/html5shiv/src/html5shiv.js'
+          'components/underscore/underscore.js'
+          'components/backbone/backbone.js'
+          'components/backbone.marionette/lib/backbone.marionette.js'
+          'components/momentjs/moment.js'
           'assets/vendor/plugins/editor/*.js'
-          'assets/vendor/plugins/md5.js'
-          'assets/vendor/plugins/qtip.js'
+          'components/js-md5/js/md5.js'
           'assets/vendor/plugins/bootstrap/*.js'
-          'assets/vendor/plugins/*.js'
+          'components/dropzone/downloads/dropzone.js'
+          'components/selectize/selectize.js'
+          'components/jstorage/jstorage.js'
+          'assets/vendor/plugins/qtip.js'
+          'assets/vendor/plugins/editor/inline-attach.js'
+          'assets/vendor/plugins/slugify.js'
         ]
         dest: 'public/admin/js/structure.js'
 

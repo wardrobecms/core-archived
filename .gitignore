@@ -1,6 +1,7 @@
 /assets/src
 /node_modules
 /vendor
+/components/*/
 composer.phar
 composer.lock
 .DS_Store
