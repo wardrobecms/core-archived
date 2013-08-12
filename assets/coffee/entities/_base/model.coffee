@@ -10,7 +10,7 @@
     defaultErrorHandler: (model, error, test) ->
       switch error.status
         when 500 then $("#js-alert").showAlert(Lang.error, Lang.error_fivehundred, "alert-error")
-        when 401 then document.location.href = "/wardrobe/login"
+        when 401 then document.location.href = "#{App.request("get:url:admin")}/logout"
 
     destroy: (options = {}) ->
       @set _destroy: true

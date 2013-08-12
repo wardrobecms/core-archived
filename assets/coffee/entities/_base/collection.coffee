@@ -8,7 +8,7 @@
 
     defaultErrorHandler: (model, error) ->
       switch error.status
-        when 401 then document.location.href = "/wardrobe/login"
+        when 401 then document.location.href = "#{App.request("get:url:admin")}/logout"
 
     # Over ride sync so we include the CSRF Token
     sync: (method, model, options) ->
