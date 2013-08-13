@@ -3,7 +3,7 @@
   class Edit.Post extends App.Views.PostView
 
     onRender: ->
-      @fillJSON(@storage.get())
+      @fillJSON()
       @_setDate()
       @_setActive()
       @_setTags()

@@ -1566,7 +1566,9 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
         return _this.fillForm(contents);
       });
       this.tagsShown = false;
-      return this.storage = new Storage();
+      return this.storage = new Storage({
+        id: this.model.id
+      });
     };
 
     PostView.prototype.events = {
@@ -1603,6 +1605,7 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
       this.setUpEditor();
       this.setupUsers();
       this.setupCalendar();
+      this.localStorage();
       if (this.model.isNew()) {
         this.$('.js-toggle').trigger("click");
         $('#title').slugIt({
@@ -1920,7 +1923,7 @@ this.Wardrobe.module("PostApp.Edit", function(Edit, App, Backbone, Marionette, $
     }
 
     Post.prototype.onRender = function() {
-      this.fillJSON(this.storage.get());
+      this.fillJSON();
       this._setDate();
       this._setActive();
       return this._setTags();

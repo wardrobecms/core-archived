@@ -13,7 +13,8 @@
         @fillForm contents
       # Set a flag so we know when the tags are shown.
       @tagsShown = false
-      @storage = new Storage()
+      @storage = new Storage
+        id: @model.id
 
     events:
       "click .publish" : "save"
@@ -42,6 +43,7 @@
       @setUpEditor()
       @setupUsers()
       @setupCalendar()
+      @localStorage()
 
       if @model.isNew()
         @$('.js-toggle').trigger "click"
