@@ -532,7 +532,7 @@ this.Wardrobe.module("Entities", function(Entities, App, Backbone, Marionette, $
     Collection.prototype.defaultErrorHandler = function(model, error) {
       switch (error.status) {
         case 401:
-          return document.location.href = "/wardrobe/login";
+          return document.location.href = "" + (App.request("get:url:admin")) + "/logout";
       }
     };
 
@@ -575,7 +575,7 @@ this.Wardrobe.module("Entities", function(Entities, App, Backbone, Marionette, $
         case 500:
           return $("#js-alert").showAlert(Lang.error, Lang.error_fivehundred, "alert-error");
         case 401:
-          return document.location.href = "/wardrobe/login";
+          return document.location.href = "" + (App.request("get:url:admin")) + "/logout";
       }
     };
 
