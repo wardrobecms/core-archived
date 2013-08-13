@@ -115,18 +115,13 @@ return __p
 
 this["JST"]["post/_base/templates/form.html"] = function(obj) {
 obj || (obj = {});
-var __t, __p = '', __e = _.escape, __j = Array.prototype.join;
-function print() { __p += __j.call(arguments, '') }
+var __t, __p = '', __e = _.escape;
 with (obj) {
-__p += '<form>\n  <input type="hidden" name="publish_date" id="publish_date" value="">\n  <div id="js-errors" class="hide">\n    <div class="alert alert-error">\n      <button type="button" class="close" data-dismiss="alert">×</button>\n      <span></span>\n    </div>\n  </div>\n  <div id="write">\n    <div class="info">\n      <div class="field">\n\n        ';
- if (typeof id !== 'undefined') { ;
-__p += '\n          <a href="' +
+__p += '<form>\n  <input type="hidden" name="publish_date" id="publish_date" value="">\n  <div id="js-errors" class="hide">\n    <div class="alert alert-error">\n      <button type="button" class="close" data-dismiss="alert">×</button>\n      <span></span>\n    </div>\n  </div>\n  <div id="write">\n    <div class="info">\n      <div class="field">\n\n        <a href="' +
 ((__t = ( previewUrl() )) == null ? '' : __t) +
 '" target="_blank" class="btn btn-mini preview pull-right">' +
 ((__t = ( Lang.post_preview )) == null ? '' : __t) +
-'</a>\n        ';
- } ;
-__p += '\n\n        <button class="btn btn-mini btn-success publish pull-right">' +
+'</a>\n        <button class="btn btn-mini btn-success publish pull-right">' +
 ((__t = ( submitBtnText() )) == null ? '' : __t) +
 '</button>\n\n        <i data-dir="up" class="icon-chevron-sign-right js-toggle" title="' +
 ((__t = ( Lang.post_expand )) == null ? '' : __t) +
@@ -260,15 +255,18 @@ $.fn.formatDates = function() {
 
 
 $.fn.fillJSON = function(json) {
-  var $el, key, val;
+  var $el, key, val, _results;
   $el = $(this);
+  _results = [];
   for (key in json) {
     val = json[key];
-    if (key === "active") {
-      return this;
+    if (key !== "active") {
+      _results.push($el.find("[name='" + key + "']").val(val));
+    } else {
+      _results.push(void 0);
     }
-    $el.find("[name='" + key + "']").val(val);
   }
+  return _results;
 };
 
 $.fn.showAlert = function(title, msg, type) {
@@ -407,6 +405,44 @@ _.mixin({
     }
   }
 });
+
+var Storage;
+
+Storage = (function() {
+
+  function Storage(opts) {
+    if (opts == null) {
+      opts = {};
+    }
+    this.key = opts.id || "new";
+  }
+
+  Storage.prototype.getKey = function() {
+    return "post-" + this.key;
+  };
+
+  Storage.prototype.put = function(data, ttl) {
+    if (ttl == null) {
+      ttl = 30000;
+    }
+    $.jStorage.set(this.getKey(), data, ttl);
+    return $.jStorage.publish(this.getKey(), data);
+  };
+
+  Storage.prototype.get = function(default_val) {
+    if (default_val == null) {
+      default_val = {};
+    }
+    return $.jStorage.get(this.getKey(), default_val);
+  };
+
+  Storage.prototype.destroy = function() {
+    return $.jStorage.deleteKey(this.getKey());
+  };
+
+  return Storage;
+
+})();
 
 
 this.Wardrobe = (function(Backbone, Marionette) {
@@ -911,9 +947,16 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
       return ItemView.__super__.constructor.apply(this, arguments);
     }
 
-    ItemView.prototype.fillJSON = function() {
-      var _ref;
-      return this.$('form').fillJSON(((_ref = this.model) != null ? _ref.toJSON() : void 0) || {});
+    ItemView.prototype.fillJSON = function(data) {
+      var _ref, _ref1;
+      if (data == null) {
+        data = {};
+      }
+      if ((_ref = this.model) != null ? _ref.isNew() : void 0) {
+        return this.$('form').fillJSON(data);
+      } else {
+        return this.$('form').fillJSON(((_ref1 = this.model) != null ? _ref1.toJSON() : void 0) || data);
+      }
     };
 
     return ItemView;
@@ -1518,7 +1561,12 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
     PostView.prototype.className = "span12";
 
     PostView.prototype.initialize = function() {
-      return this.tagsShown = false;
+      var _this = this;
+      App.vent.on("post:new:seed", function(contents) {
+        return _this.fillForm(contents);
+      });
+      this.tagsShown = false;
+      return this.storage = new Storage();
     };
 
     PostView.prototype.events = {
@@ -1526,8 +1574,9 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
       "click .js-toggle": "toggleDetails",
       "click .icon-tags": "toggleTags",
       "click .icon-user": "showUsers",
-      "change .js-active": "changeBtn",
-      "keyup #title": "localStorage"
+      "click input[type=radio]": "changeBtn",
+      "keyup #title": "localStorage",
+      "change #js-user": "localStorage"
     };
 
     PostView.prototype.modelEvents = {
@@ -1543,7 +1592,9 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
         }
       },
       previewUrl: function() {
-        return "" + (App.request("get:url:blog")) + "/post/preview/" + this.id;
+        var id;
+        id = this.id ? this.id : "new";
+        return "" + (App.request("get:url:blog")) + "/post/preview/" + id;
       }
     };
 
@@ -1579,18 +1630,19 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
     };
 
     PostView.prototype.localStorage = function() {
-      var data;
-      data = {
+      return this.storage.put({
         title: this.$('#title').val(),
+        slug: this.$('#slug').val(),
+        active: this.$('input[type=radio]:checked').val(),
         content: this.editor.codemirror.getValue(),
-        tags: this.$("#js-tags").val()
-      };
-      $.jStorage.set("post-" + this.model.id, data);
-      return $.jStorage.publish("post-" + this.model.id, data);
+        tags: this.$("#js-tags").val(),
+        user_id: this.$("#js-user").val(),
+        publish_date: this.$("#publish_date").val()
+      });
     };
 
     PostView.prototype.setupUsers = function() {
-      var $userSelect, user, users;
+      var $userSelect, stored, user, users;
       $userSelect = this.$("#js-user");
       users = App.request("get:all:users");
       users.each(function(item) {
@@ -1598,7 +1650,12 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
       });
       if (this.model.isNew()) {
         user = App.request("get:current:user");
-        return $userSelect.val(user.id);
+        stored = this.storage.get();
+        if (stored != null ? stored.user_id : void 0) {
+          return $userSelect.val(stored.user_id);
+        } else {
+          return $userSelect.val(user.id);
+        }
       } else {
         return $userSelect.val(this.model.get("user_id"));
       }
@@ -1712,6 +1769,7 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
 
     PostView.prototype.save = function(e) {
       e.preventDefault();
+      this.storage.destroy();
       return this.processFormSubmit({
         title: this.$('#title').val(),
         slug: this.$('#slug').val(),
@@ -1783,6 +1841,7 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
     };
 
     PostView.prototype.changeBtn = function(e) {
+      this.localStorage();
       if (e.currentTarget.value === "1") {
         return this.$(".publish").text(Lang.post_publish);
       } else {
@@ -1861,7 +1920,7 @@ this.Wardrobe.module("PostApp.Edit", function(Edit, App, Backbone, Marionette, $
     }
 
     Post.prototype.onRender = function() {
-      this.fillJSON();
+      this.fillJSON(this.storage.get());
       this._setDate();
       this._setActive();
       return this._setTags();
@@ -2097,14 +2156,8 @@ this.Wardrobe.module("PostApp.New", function(New, App, Backbone, Marionette, $, 
       return Post.__super__.constructor.apply(this, arguments);
     }
 
-    Post.prototype.initialize = function() {
-      var _this = this;
-      return App.vent.on("post:new:seed", function(contents) {
-        return _this.fillForm(contents);
-      });
-    };
-
     Post.prototype.onRender = function() {
+      this.fillJSON($.jStorage.get("post-new"));
       this.$(".publish").text(Lang.post_publish);
       return this.$("#date").attr("placeholder", moment().format("MMM Do, YYYY [9am]"));
     };
