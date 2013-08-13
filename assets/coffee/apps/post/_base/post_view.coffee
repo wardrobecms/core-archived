@@ -8,16 +8,21 @@
     className: "span12"
 
     initialize: ->
+      # Listen for when a markdown file is drag and dropped.
+      App.vent.on "post:new:seed", (contents) =>
+        @fillForm contents
       # Set a flag so we know when the tags are shown.
       @tagsShown = false
+      @storage = new Storage()
 
     events:
       "click .publish" : "save"
       "click .js-toggle" : "toggleDetails"
       "click .icon-tags" : "toggleTags"
       "click .icon-user" : "showUsers"
-      "change .js-active" : "changeBtn"
+      "click input[type=radio]" : "changeBtn"
       "keyup #title" : "localStorage"
+      "change #js-user" : "localStorage"
 
     # When the model changes it's private _errors method call the changeErrors method.
     modelEvents:
@@ -29,7 +34,8 @@
         if @active? or @active is "1" then Lang.post_publish else Lang.post_save
       # Generate a preview url.
       previewUrl: ->
-        "#{App.request("get:url:blog")}/post/preview/#{@id}"
+        id = if @id then @id else "new"
+        "#{App.request("get:url:blog")}/post/preview/#{id}"
 
     # When the view is shown in the DOM setup all the plugins
     onShow: ->
@@ -77,16 +83,14 @@
 
     # Save the post data to local storage
     localStorage: ->
-      data =
+      @storage.put
         title: @$('#title').val()
+        slug: @$('#slug').val()
+        active: @$('input[type=radio]:checked').val()
         content: @editor.codemirror.getValue()
         tags: @$("#js-tags").val()
-
-      # Save it manually so the first load has data.
-      $.jStorage.set "post-#{@model.id}", data
-
-      # Publish the data so any listeners can update.
-      $.jStorage.publish "post-#{@model.id}", data
+        user_id: @$("#js-user").val()
+        publish_date: @$("#publish_date").val()
 
     # Populate the user select list.
     setupUsers: ->
@@ -98,7 +102,8 @@
       # If the model isNew then set the current user as author.
       if @model.isNew()
         user = App.request "get:current:user"
-        $userSelect.val user.id
+        stored = @storage.get()
+        if stored?.user_id then $userSelect.val stored.user_id else $userSelect.val user.id
       else
         $userSelect.val @model.get("user_id")
 
@@ -176,6 +181,8 @@
     save: (e) ->
       e.preventDefault()
 
+      @storage.destroy()
+
       @processFormSubmit
         title: @$('#title').val()
         slug: @$('#slug').val()
@@ -229,6 +236,7 @@
 
     # Toggle the save button text based on status
     changeBtn: (e) ->
+      @localStorage()
       if e.currentTarget.value is "1"
         @$(".publish").text Lang.post_publish
       else

@@ -5,12 +5,8 @@
 
   class New.Post extends App.Views.PostView
 
-    initialize: ->
-      # Listen for when a markdown file is drag and dropped.
-      App.vent.on "post:new:seed", (contents) =>
-        @fillForm contents
-
     onRender: ->
+      @fillJSON $.jStorage.get("post-new")
       # Set the primary button to Publish
       @$(".publish").text Lang.post_publish
       # Set the default date placeholder to an example that works with php strtotime.
