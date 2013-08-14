@@ -191,9 +191,7 @@ __p += '<td class="title">\n  <img src="" class="avatar img-polaroid" width="18"
 ((__t = ( publish_date )) == null ? '' : __t) +
 '">' +
 ((__t = ( publish_date )) == null ? '' : __t) +
-'</td>\n<td class="actions">\n  <a href="' +
-((__t = ( previewUrl() )) == null ? '' : __t) +
-'" target="_blank" title="Preview"><i class="icon-zoom-in"></i></a>\n  <a href="#" class="delete" title="' +
+'</td>\n<td class="actions">\n  <a href="#" target="_blank" title="Preview" class="preview"><i class="icon-zoom-in"></i></a>\n  <a href="#" class="delete" title="' +
 ((__t = ( Lang.post_delete )) == null ? '' : __t) +
 '"><i class="icon-trash"></i></a>\n</td>\n';
 
@@ -1973,7 +1971,8 @@ this.Wardrobe.module("PostApp.List", function(List, App, Backbone, Marionette, $
     };
 
     PostItem.prototype.events = {
-      "click .details": "edit"
+      "click .details": "edit",
+      "click .preview": "preview"
     };
 
     PostItem.prototype.onShow = function() {
@@ -1990,9 +1989,6 @@ this.Wardrobe.module("PostApp.List", function(List, App, Backbone, Marionette, $
     };
 
     PostItem.prototype.templateHelpers = {
-      previewUrl: function() {
-        return "" + (App.request("get:url:blog")) + "/post/preview/" + this.id;
-      },
       status: function() {
         if (parseInt(this.active) === 1 && this.publish_date > moment().format('YYYY-MM-DD HH:mm:ss')) {
           return Lang.post_scheduled;
@@ -2007,6 +2003,16 @@ this.Wardrobe.module("PostApp.List", function(List, App, Backbone, Marionette, $
     PostItem.prototype.edit = function(e) {
       e.preventDefault();
       return App.vent.trigger("post:item:clicked", this.model);
+    };
+
+    PostItem.prototype.preview = function(e) {
+      var storage;
+      e.preventDefault();
+      storage = new Storage({
+        id: this.model.id
+      });
+      storage.put(this.model.toJSON());
+      return window.open("" + (App.request("get:url:blog")) + "/post/preview/" + this.model.id, '_blank');
     };
 
     return PostItem;

@@ -15,6 +15,7 @@
 
     events:
       "click .details" : "edit"
+      "click .preview" : "preview"
 
     onShow: ->
       allUsers = App.request "get:all:users"
@@ -27,9 +28,6 @@
         @$('.js-format-date').formatDates()
 
     templateHelpers:
-      previewUrl: ->
-        "#{App.request("get:url:blog")}/post/preview/#{@id}"
-
       status: ->
         if parseInt(@active) is 1 and @publish_date > moment().format('YYYY-MM-DD HH:mm:ss')
           Lang.post_scheduled
@@ -41,6 +39,13 @@
     edit: (e) ->
       e.preventDefault()
       App.vent.trigger "post:item:clicked", @model
+
+    preview: (e) ->
+      e.preventDefault()
+      storage = new Storage
+        id: @model.id
+      storage.put @model.toJSON()
+      window.open("#{App.request("get:url:blog")}/post/preview/#{@model.id}",'_blank')
 
   class List.Empty extends App.Views.ItemView
     template: "post/list/templates/empty"
