@@ -9503,6 +9503,10 @@ body {
   min-width: 200px;
   margin-bottom: 0;
 }
+#js-errors {
+  max-width: 80%;
+  margin: 0 auto;
+}
 td.title {
   width: 50%;
 }

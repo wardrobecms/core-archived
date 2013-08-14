@@ -43,7 +43,7 @@
 
     saveError: (model, xhr, options) =>
       ## set errors directly on the model unless status returned was a 404
-      @set _errors: $.parseJSON(xhr.responseText) unless xhr.status is 404 or 500
+      @set _errors: $.parseJSON(xhr.responseText) if xhr.status is 400
 
     # Over ride sync so we include the CSRF Token
     sync: (method, model, options) ->

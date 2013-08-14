@@ -199,25 +199,6 @@
       @model.save data,
         collection: @collection
 
-    # Show or hide the validation errors based on validation failure.
-    changeErrors: (model, errors, options) ->
-      if _.isEmpty(errors) then @removeErrors() else @addErrors errors
-
-    # Loop through the errors and display
-    addErrors: (errors = {}) ->
-      @$("#js-errors").show().find("span").html(Lang.post_errors)
-      for name, error of errors
-        @addError error
-
-    # Add any errors as a list item in the alert.
-    addError: (error) ->
-      sm = $("<li>").text(error)
-      @$("#js-errors span").append sm
-
-    # Remove all errors from the form.
-    removeErrors: ->
-      @$("#js-errors").hide()
-
     # Collapse the details fields
     collapse: (@$toggle) ->
       @$toggle.data("dir", "up").addClass("icon-chevron-sign-right").removeClass("icon-chevron-sign-down")

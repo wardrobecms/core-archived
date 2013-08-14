@@ -24,19 +24,3 @@
 
       @model.save data,
         collection: @collection
-
-    # Show the errors based on validation failure.
-    changeErrors: (model, errors, options) ->
-      if _.isEmpty(errors) then @removeErrors() else @addErrors errors
-
-    addErrors: (errors = {}) ->
-      @$("#js-errors").show().find("span").html("<strong>Error</strong> Please fix the following errors")
-      for name, error of errors
-        @addError error
-
-    addError: (error) ->
-      sm = $("<li>").text(error)
-      @$("#js-errors span").append sm
-
-    removeErrors: ->
-      @$("#js-errors").hide()

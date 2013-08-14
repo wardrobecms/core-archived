@@ -629,7 +629,7 @@ this.Wardrobe.module("Entities", function(Entities, App, Backbone, Marionette, $
     };
 
     Model.prototype.saveError = function(model, xhr, options) {
-      if (!(xhr.status === 404 || 500)) {
+      if (xhr.status === 400) {
         return this.set({
           _errors: $.parseJSON(xhr.responseText)
         });
@@ -959,6 +959,38 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
       }
     };
 
+    ItemView.prototype.changeErrors = function(model, errors, options) {
+      if (_.isEmpty(errors)) {
+        return this.removeErrors();
+      } else {
+        return this.addErrors(errors);
+      }
+    };
+
+    ItemView.prototype.addErrors = function(errors) {
+      var error, name, _results;
+      if (errors == null) {
+        errors = {};
+      }
+      this.$("#js-errors").show().find("span").html(Lang.post_errors);
+      _results = [];
+      for (name in errors) {
+        error = errors[name];
+        _results.push(this.addError(error));
+      }
+      return _results;
+    };
+
+    ItemView.prototype.addError = function(error) {
+      var sm;
+      sm = $("<li>").text(error);
+      return this.$("#js-errors span").append(sm);
+    };
+
+    ItemView.prototype.removeErrors = function() {
+      return this.$("#js-errors").hide();
+    };
+
     return ItemView;
 
   })(Marionette.ItemView);
@@ -1145,38 +1177,6 @@ this.Wardrobe.module("AccountApp.Edit", function(Edit, App, Backbone, Marionette
         active: 1
       };
       return this.model.save(data);
-    };
-
-    User.prototype.changeErrors = function(model, errors, options) {
-      if (_.isEmpty(errors)) {
-        return this.removeErrors();
-      } else {
-        return this.addErrors(errors);
-      }
-    };
-
-    User.prototype.addErrors = function(errors) {
-      var error, name, _results;
-      if (errors == null) {
-        errors = {};
-      }
-      this.$("#js-errors").show().find("span").html("<strong>Error</strong> Please fix the following errors");
-      _results = [];
-      for (name in errors) {
-        error = errors[name];
-        _results.push(this.addError(error));
-      }
-      return _results;
-    };
-
-    User.prototype.addError = function(error) {
-      var sm;
-      sm = $("<li>").text(error);
-      return this.$("#js-errors span").append(sm);
-    };
-
-    User.prototype.removeErrors = function() {
-      return this.$("#js-errors").hide();
     };
 
     return User;
@@ -1381,38 +1381,6 @@ this.Wardrobe.module("AccountApp.New", function(New, App, Backbone, Marionette, 
       return this.model.save(data, {
         collection: this.collection
       });
-    };
-
-    User.prototype.changeErrors = function(model, errors, options) {
-      if (_.isEmpty(errors)) {
-        return this.removeErrors();
-      } else {
-        return this.addErrors(errors);
-      }
-    };
-
-    User.prototype.addErrors = function(errors) {
-      var error, name, _results;
-      if (errors == null) {
-        errors = {};
-      }
-      this.$("#js-errors").show().find("span").html("<strong>Error</strong> Please fix the following errors");
-      _results = [];
-      for (name in errors) {
-        error = errors[name];
-        _results.push(this.addError(error));
-      }
-      return _results;
-    };
-
-    User.prototype.addError = function(error) {
-      var sm;
-      sm = $("<li>").text(error);
-      return this.$("#js-errors span").append(sm);
-    };
-
-    User.prototype.removeErrors = function() {
-      return this.$("#js-errors").hide();
     };
 
     return User;
@@ -1788,38 +1756,6 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
       return this.model.save(data, {
         collection: this.collection
       });
-    };
-
-    PostView.prototype.changeErrors = function(model, errors, options) {
-      if (_.isEmpty(errors)) {
-        return this.removeErrors();
-      } else {
-        return this.addErrors(errors);
-      }
-    };
-
-    PostView.prototype.addErrors = function(errors) {
-      var error, name, _results;
-      if (errors == null) {
-        errors = {};
-      }
-      this.$("#js-errors").show().find("span").html(Lang.post_errors);
-      _results = [];
-      for (name in errors) {
-        error = errors[name];
-        _results.push(this.addError(error));
-      }
-      return _results;
-    };
-
-    PostView.prototype.addError = function(error) {
-      var sm;
-      sm = $("<li>").text(error);
-      return this.$("#js-errors span").append(sm);
-    };
-
-    PostView.prototype.removeErrors = function() {
-      return this.$("#js-errors").hide();
     };
 
     PostView.prototype.collapse = function($toggle) {
