@@ -2,7 +2,7 @@
 
 use Wardrobe\Core\Controllers\BaseController;
 
-use Input, Config, Response, Exception;
+use Input, Config, Response, Exception, File;
 use Carbon\Carbon;
 use Symfony\Component\Yaml\Parser;
 
