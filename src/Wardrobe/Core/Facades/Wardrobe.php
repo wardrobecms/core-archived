@@ -34,7 +34,7 @@ class Wardrobe {
 	 */
 	public function posts($params = array())
 	{
-		$per_page = isset($params['per_page']) ? $params['per_page'] : Config::get('wardrobe.per_page');
+		$per_page = isset($params['per_page']) ? $params['per_page'] : Config::get('core::wardrobe.per_page');
 
 		return $this->postsRepo->active($per_page);
 	}
