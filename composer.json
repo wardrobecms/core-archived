@@ -30,6 +30,11 @@
             "Wardrobe\\Database": "src/"
         }
     },
+    "archive": {
+        "exclude": [
+            "assets"
+        ]
+    },
     "minimum-stability": "dev",
     "license": "MIT"
 }
