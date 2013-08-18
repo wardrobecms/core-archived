@@ -1,6 +1,6 @@
 <?php namespace Wardrobe\Core\Facades;
 
-use Config, App;
+use Config, App, View;
 use Illuminate\Auth\Guard;
 use Illuminate\Auth\EloquentUserProvider;
 use Wardrobe\Core\Repositories\PostRepositoryInterface;
