@@ -1,7 +1,7 @@
 <?php namespace Wardrobe\Core;
 
 use Illuminate\Support\ServiceProvider;
-use Config;
+use Config, View;
 
 class WardrobeServiceProvider extends ServiceProvider {
 
@@ -23,6 +23,7 @@ class WardrobeServiceProvider extends ServiceProvider {
 		$this->setConnection();
 		$this->bindRepositories();
 		$this->bootCommands();
+		$this->setupViews();
 
 		require __DIR__.'/../../themeHelpers.php';
 		require __DIR__.'/../../routes.php';
@@ -66,6 +67,14 @@ class WardrobeServiceProvider extends ServiceProvider {
         });
 
         $this->commands('wardrobe.console.theme', 'wardrobe.console.config', 'wardrobe.console.migrate', 'wardrobe.console.user');
+	}
+
+	protected function setupViews()
+	{
+		View::addLocation(public_path().'/'.Config::get('core::wardrobe.theme_dir'));
+		foreach (Config::get('core::wardrobe.view_dirs') as $dir) {
+			View::addLocation($dir);
+		}
 	}
 
 	public function register()
