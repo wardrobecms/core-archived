@@ -38,3 +38,12 @@ if (Config::get('core::wardrobe.handles_404')) {
 		return Response::view(theme_view('404'), array(), 404);
 	});
 }
+
+/**
+ * Allows themes complete control to over ride routes or add new ones.
+ */
+
+if (file_exists($theme_routes = public_path().'/'.Config::get('core::wardrobe.theme_dir').'/'.Config::get('core::wardrobe.theme').'/routes.php'))
+{
+  include $theme_routes;
+}
