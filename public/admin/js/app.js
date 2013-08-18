@@ -1526,15 +1526,13 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
 
     PostView.prototype.className = "span12";
 
-    PostView.prototype.initialize = function() {
+    PostView.prototype.initialize = function(opts) {
       var _this = this;
       App.vent.on("post:new:seed", function(contents) {
         return _this.fillForm(contents);
       });
       this.tagsShown = false;
-      return this.storage = new Storage({
-        id: this.model.id
-      });
+      return this.storage = opts.storage;
     };
 
     PostView.prototype.events = {
@@ -1738,7 +1736,6 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
 
     PostView.prototype.save = function(e) {
       e.preventDefault();
-      this.storage.destroy();
       return this.processFormSubmit({
         title: this.$('#title').val(),
         slug: this.$('#slug').val(),
@@ -1823,7 +1820,11 @@ this.Wardrobe.module("PostApp.Edit", function(Edit, App, Backbone, Marionette, $
         _this = this;
       post = options.post, id = options.id;
       post || (post = App.request("post:entity", id));
+      this.storage = new Storage({
+        id: post.id
+      });
       this.listenTo(post, "updated", function() {
+        _this.storage.destroy();
         return App.vent.trigger("post:updated", post);
       });
       return App.execute("when:fetched", post, function() {
@@ -1835,7 +1836,8 @@ this.Wardrobe.module("PostApp.Edit", function(Edit, App, Backbone, Marionette, $
 
     Controller.prototype.getEditView = function(post) {
       return new Edit.Post({
-        model: post
+        model: post,
+        storage: this.storage
       });
     };
 
@@ -2069,9 +2071,12 @@ this.Wardrobe.module("PostApp.New", function(New, App, Backbone, Marionette, $, 
     }
 
     Controller.prototype.initialize = function(options) {
-      var post, view;
+      var post, view,
+        _this = this;
       post = App.request("new:post:entity");
+      this.storage = new Storage;
       this.listenTo(post, "created", function() {
+        _this.storage.destroy();
         return App.vent.trigger("post:created", post);
       });
       view = this.getNewView(post);
@@ -2080,7 +2085,8 @@ this.Wardrobe.module("PostApp.New", function(New, App, Backbone, Marionette, $, 
 
     Controller.prototype.getNewView = function(post) {
       return new New.Post({
-        model: post
+        model: post,
+        storage: this.storage
       });
     };
 

@@ -7,14 +7,13 @@
     template: "post/_base/templates/form"
     className: "span12"
 
-    initialize: ->
+    initialize: (opts) ->
       # Listen for when a markdown file is drag and dropped.
       App.vent.on "post:new:seed", (contents) =>
         @fillForm contents
       # Set a flag so we know when the tags are shown.
       @tagsShown = false
-      @storage = new Storage
-        id: @model.id
+      @storage = opts.storage
 
     events:
       "click .publish" : "save"
@@ -182,8 +181,6 @@
     # Save the post data
     save: (e) ->
       e.preventDefault()
-
-      @storage.destroy()
 
       @processFormSubmit
         title: @$('#title').val()

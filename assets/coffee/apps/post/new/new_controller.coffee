@@ -9,8 +9,11 @@
       # Request an empty post model
       post = App.request "new:post:entity"
 
+      @storage = new Storage
+
       # Listen to the post created event and then send out a post:created event.
-      @listenTo post, "created", ->
+      @listenTo post, "created", =>
+        @storage.destroy()
         App.vent.trigger "post:created", post
 
       # Get the post view.
@@ -23,3 +26,4 @@
     getNewView: (post) ->
       new New.Post
         model: post
+        storage: @storage

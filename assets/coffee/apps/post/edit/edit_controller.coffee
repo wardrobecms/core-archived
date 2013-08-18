@@ -6,7 +6,11 @@
       { post, id } = options
       post or= App.request "post:entity", id
 
-      @listenTo post, "updated", ->
+      @storage = new Storage
+        id: post.id
+
+      @listenTo post, "updated", =>
+        @storage.destroy()
         App.vent.trigger "post:updated", post
 
       App.execute "when:fetched", post, =>
@@ -16,3 +20,4 @@
     getEditView: (post) ->
       new Edit.Post
         model: post
+        storage: @storage
