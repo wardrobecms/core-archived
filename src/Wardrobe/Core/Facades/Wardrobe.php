@@ -47,6 +47,14 @@ class Wardrobe {
 		return $this->postsRepo->allTags();
 	}
 
+	public function setupViews()
+	{
+		View::addLocation(public_path().'/'.Config::get('core::wardrobe.theme_dir'));
+		foreach (Config::get('core::wardrobe.view_dirs') as $dir) {
+			View::addLocation($dir);
+		}
+	}
+
 	public function getWardrobeAuth()
 	{
 		$provider = $this->createEloquentProvider();
