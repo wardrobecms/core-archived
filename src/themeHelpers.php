@@ -54,16 +54,13 @@ function theme_view($file = null)
 	return Config::get('core::wardrobe.theme').'.'.$file;
 }
 
-use dflydev\markdown\MarkdownExtraParser;
+use \Michelf\MarkdownExtra;
 
 if ( ! function_exists('md'))
 {
 	function md($str)
 	{
-		$markdownParser = new MarkdownExtraParser();
-
-		// Parse the loaded source.
-		return $markdownParser->transformMarkdown($str);
+		return MarkdownExtra::defaultTransform($str);
 	}
 }
 
