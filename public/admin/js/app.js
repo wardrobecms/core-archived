@@ -167,7 +167,7 @@ this["JST"]["post/list/templates/grid.html"] = function(obj) {
 obj || (obj = {});
 var __t, __p = '', __e = _.escape;
 with (obj) {
-__p += '<table class="table center-col">\n\t<thead>\n\t\t<tr>\n\t\t\t<th>' +
+__p += '<div class="filter">\n  <input type="text" class="filter" id="js-filter" name="filter" placeholder="Filter">\n  <select name="active" id="js-sort">\n    <option value="">Any Status</option>\n    <option value="1">Active</option>\n    <option value="0">Draft</option>\n  </select>\n</div>\n<table class="table center-col">\n\t<thead>\n\t\t<tr>\n\t\t\t<th>' +
 ((__t = ( Lang.post_title )) == null ? '' : __t) +
 '</th>\n\t\t\t<th>' +
 ((__t = ( Lang.post_status )) == null ? '' : __t) +
@@ -1959,11 +1959,11 @@ this.Wardrobe.module("PostApp.List", function(List, App, Backbone, Marionette, $
     PostItem.prototype.attributes = function() {
       if (this.model.get("active") === "1") {
         return {
-          "class": "post-item"
+          "class": "post-item post-" + this.model.id
         };
       } else {
         return {
-          "class": "post-item draft"
+          "class": "post-item draft post-" + this.model.id
         };
       }
     };
@@ -2052,6 +2052,49 @@ this.Wardrobe.module("PostApp.List", function(List, App, Backbone, Marionette, $
     Posts.prototype.itemViewContainer = "tbody";
 
     Posts.prototype.className = "span12";
+
+    Posts.prototype.events = {
+      "keyup #js-filter": "filter",
+      "change #js-sort": "sort"
+    };
+
+    Posts.prototype.hideAll = function() {
+      return this.$el.find(".post-item").hide();
+    };
+
+    Posts.prototype.filter = function(e) {
+      return this.handleFilter();
+    };
+
+    Posts.prototype.sort = function(e) {
+      return this.handleFilter();
+    };
+
+    Posts.prototype.handleFilter = function() {
+      var filter, sorter,
+        _this = this;
+      this.hideAll();
+      sorter = this.$("#js-sort").val();
+      filter = this.$("#js-filter").val();
+      if (sorter === "" && filter === "") {
+        return this.$el.find(".post-item").show();
+      }
+      return this.collection.filter(function(post) {
+        return _this.isMatch(post, sorter, filter);
+      });
+    };
+
+    Posts.prototype.isMatch = function(post, sorter, filter) {
+      var foundId, pattern;
+      foundId = sorter === "" || post.get("active") === sorter ? post.id : null;
+      if (foundId && filter !== "") {
+        pattern = new RegExp(filter, "gi");
+        foundId = pattern.test(post.get("title"));
+      }
+      if (foundId) {
+        return this.$el.find(".post-" + post.id).show();
+      }
+    };
 
     return Posts;
 

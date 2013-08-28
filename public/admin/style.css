@@ -9535,6 +9535,15 @@ button {
   padding: 0 20px;
   max-width: 80%;
 }
+.filter {
+  text-align: center;
+}
+.filter input {
+  text-align: left;
+}
+.filter select {
+  width: 100px;
+}
 #write {
   padding: 20px;
   margin-bottom: 20px;

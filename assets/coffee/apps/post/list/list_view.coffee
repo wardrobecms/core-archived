@@ -6,9 +6,9 @@
 
     attributes: ->
       if @model.get("active") is "1"
-        class: "post-item"
+        class: "post-item post-#{@model.id}"
       else
-        class: "post-item draft"
+        class: "post-item draft post-#{@model.id}"
 
     triggers:
       "click .delete" : "post:delete:clicked"
@@ -57,3 +57,31 @@
     emptyView: List.Empty
     itemViewContainer: "tbody"
     className: "span12"
+
+    events:
+      "keyup #js-filter" : "filter"
+      "change #js-sort" : "sort"
+
+    hideAll: ->
+      @$el.find(".post-item").hide()
+
+    filter: (e) ->
+      @handleFilter()
+
+    sort: (e) ->
+      @handleFilter()
+
+    handleFilter: ->
+      @hideAll()
+      sorter = @$("#js-sort").val()
+      filter = @$("#js-filter").val()
+      return @$el.find(".post-item").show() if sorter is "" and filter is ""
+      @collection.filter (post) =>
+        @isMatch(post, sorter, filter)
+
+    isMatch: (post, sorter, filter) ->
+      foundId = if sorter is "" or post.get("active") is sorter then post.id else null
+      if foundId and filter isnt ""
+        pattern = new RegExp(filter,"gi")
+        foundId = pattern.test post.get("title")
+      @$el.find(".post-#{post.id}").show() if foundId
