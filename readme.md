@@ -10,15 +10,16 @@ Wardrobe is designed to be a very minimal blogging platform with the primary foc
 Installing Wardrobe As A Project
 ---------------------------------------
 
-Creating a stand-alone Wardrobe installation is now as simple as running `composer create-project wardrobe/wardrobe`. For more information [wardrobecms.com](visit http://wardrobecms.com).
+Creating a stand-alone Wardrobe installation is now as simple as running `composer create-project wardrobe/wardrobe`. For more information visit [wardrobecms.com](http://wardrobecms.com).
 
 Installing Wardrobe In An Existing Laravel Application
 ---------------------------------------
 
 Installing Wardrobe in an existing Laravel application couldn't be easier!
+
 If you have the [Laravel Package Installer](https://github.com/rtablada/package-installer), simply run `php artisan package:install wardrobe/core`.
 
-If you do not have  `'wardrobe/core': '1.0.*'` to your `composer.json` file and run `composer update`.
+If you do not have the package installer then add  `'wardrobe/core': '1.0.*'` to your `composer.json` file and run `composer update`.
 Then add `Wardrobe\Core\WardrobeServiceProvider` to your providers and `'Wardrobe' => 'Wardrobe\Core\Facades\WardrobeFacade'` to your aliases in `app/config/app.php`.
 
 Now the last thing you need to do is publish the necessary files configuration and theme files by running `php artisan wardrobe:config`, `php artisan config:publish wardrobe/core`, and `php artisan wardrobe:themes`.
