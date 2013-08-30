@@ -19,7 +19,7 @@ Installing Wardrobe in an existing Laravel application couldn't be easier!
 
 If you have the [Laravel Package Installer](https://github.com/rtablada/package-installer), simply run `php artisan package:install wardrobe/core`.
 
-If you do not have the package installer then add  `'wardrobe/core': '1.0.*'` to your `composer.json` file and run `composer update`.
+If you do not have the package installer then add  `"wardrobe/core": "1.0.*"` to your `composer.json` file and run `composer update`.
 Then add `Wardrobe\Core\WardrobeServiceProvider` to your providers and `'Wardrobe' => 'Wardrobe\Core\Facades\WardrobeFacade'` to your aliases in `app/config/app.php`.
 
 Now the last thing you need to do is publish the necessary files configuration and theme files by running `php artisan wardrobe:config`, `php artisan config:publish wardrobe/core`, and `php artisan wardrobe:themes`.
