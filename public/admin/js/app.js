@@ -1570,6 +1570,7 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
       this.setupUsers();
       this.setupCalendar();
       this.localStorage();
+      this._triggerActive();
       if (this.model.isNew()) {
         this.$('.js-toggle').trigger("click");
         $('#title').slugIt({
@@ -1579,6 +1580,17 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
       return App.request("tag:entities", function(tags) {
         return _this.setUpTags(tags);
       });
+    };
+
+    PostView.prototype._triggerActive = function() {
+      if (this.model.isNew()) {
+        return this;
+      }
+      if (this.model.get("active")) {
+        return this.$(".js-active[value=1]").trigger("click");
+      } else {
+        return $(".js-active[value=0]").trigger("click");
+      }
     };
 
     PostView.prototype.setUpEditor = function() {

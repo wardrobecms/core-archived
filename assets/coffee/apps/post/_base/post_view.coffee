@@ -43,6 +43,7 @@
       @setupUsers()
       @setupCalendar()
       @localStorage()
+      @_triggerActive()
 
       if @model.isNew()
         @$('.js-toggle').trigger "click"
@@ -52,6 +53,13 @@
       # Fetch the tags and setup the selectize plugin.
       App.request "tag:entities", (tags) =>
         @setUpTags tags
+
+    _triggerActive: ->
+      return @ if @model.isNew()
+      if @model.get("active")
+        @$(".js-active[value=1]").trigger("click")
+      else
+        $(".js-active[value=0]").trigger("click")
 
     # Setup the markdown editor
     setUpEditor: ->
