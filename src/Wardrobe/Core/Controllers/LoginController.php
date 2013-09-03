@@ -60,7 +60,7 @@ class LoginController extends BaseController {
 	public function destroy()
 	{
 		$this->auth->logout();
-		return Redirect::to('wardrobe/login');
+		return Redirect::route('wardrobe.admin.login');
 	}
 
 	/**
