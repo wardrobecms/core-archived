@@ -1794,7 +1794,7 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
     PostView.prototype.bulidYoutubeIframe = function(filmUrl) {
       var filmIframe;
       filmUrl = filmUrl.replace(/https?:\/\//, '//');
-      filmUrl = filmUrl.replace(/watch?v=/, 'embed/');
+      filmUrl = filmUrl.replace(/watch\?v=/, 'embed/');
       filmIframe = '<iframe width="560" height="315" src="' + filmUrl + '" frameborder="0" allowfullscreen></iframe>';
       return this.insert(filmIframe);
     };

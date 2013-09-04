@@ -223,7 +223,7 @@
 
     bulidYoutubeIframe: (filmUrl) ->
       filmUrl = filmUrl.replace /https?:\/\//, '//'
-      filmUrl = filmUrl.replace /watch?v=/, 'embed/'
+      filmUrl = filmUrl.replace /watch\?v=/, 'embed/'
       filmIframe = '<iframe width="560" height="315" src="' + filmUrl + '" frameborder="0" allowfullscreen></iframe>'
       @insert filmIframe
 
