@@ -145,6 +145,8 @@ __p += '<form>\n  <input type="hidden" name="publish_date" id="publish_date" val
 ((__t = ( Lang.post_publish_date )) == null ? '' : __t) +
 '</label><br>\n    <input type="text" name="date" class="js-date" id="date" value="" placeholder="Next Thursday 10am">\n    <button class="btn js-setdate">' +
 ((__t = ( Lang.post_publish_date_set )) == null ? '' : __t) +
+'</button>\n  </form>\n</div>\n\n<div id="film-form" style="display: none">\n  <form class="form-inline">\n    <label for="date">Video URL</label><br>\n    <input type="text" name="date" class="js-film" id="film" value="" placeholder="http://youtube.com/">\n    <button class="btn js-submitfilm">' +
+((__t = ( Lang.post_publish_date_set )) == null ? '' : __t) +
 '</button>\n  </form>\n</div>\n';
 
 }
@@ -1569,6 +1571,7 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
       this.setUpEditor();
       this.setupUsers();
       this.setupCalendar();
+      this.setupFilm();
       this.localStorage();
       this._triggerActive();
       if (this.model.isNew()) {
@@ -1596,7 +1599,7 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
     PostView.prototype.setUpEditor = function() {
       var toolbar,
         _this = this;
-      toolbar = ['bold', 'italic', '|', 'quote', 'unordered-list', 'ordered-list', '|', 'link', 'image', 'code', '|', 'undo', 'redo', '|', 'tags', 'calendar'];
+      toolbar = ['bold', 'italic', '|', 'quote', 'unordered-list', 'ordered-list', '|', 'link', 'image', 'code', '|', 'film', '|', 'undo', 'redo', '|', 'tags', 'calendar'];
       this.editor = new Editor({
         toolbar: toolbar
       });
@@ -1744,6 +1747,67 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
         },
         hide: "unfocus"
       });
+    };
+
+    PostView.prototype.setupFilm = function() {
+      var _this = this;
+      return this.$(".icon-film").qtip({
+        show: {
+          event: "click"
+        },
+        content: {
+          text: $("#film-form").html()
+        },
+        position: {
+          at: "right center",
+          my: "left center",
+          viewport: $(window),
+          effect: false
+        },
+        events: {
+          render: function(event, api) {
+            return $(".js-submitfilm").click(function(e) {
+              var filmInput, filmUrl;
+              e.preventDefault();
+              filmInput = $(e.currentTarget).parent().find('input');
+              filmUrl = filmInput.val();
+              _this.attachFilm(filmUrl);
+              filmInput.val('');
+              return $('.icon-film').qtip("hide");
+            });
+          }
+        },
+        hide: "unfocus"
+      });
+    };
+
+    PostView.prototype.attachFilm = function(filmUrl) {
+      if (filmUrl.match(/youtube.com/g)) {
+        return this.bulidYoutubeIframe(filmUrl);
+      } else if (filmUrl.match(/vimeo.com/g)) {
+        return this.buildVimeoIframe(filmUrl);
+      } else {
+
+      }
+    };
+
+    PostView.prototype.bulidYoutubeIframe = function(filmUrl) {
+      var filmIframe;
+      filmUrl = filmUrl.replace(/https?:\/\//, '//');
+      filmUrl = filmUrl.replace(/watch?v=/, 'embed/');
+      filmIframe = '<iframe width="560" height="315" src="' + filmUrl + '" frameborder="0" allowfullscreen></iframe>';
+      return this.insert(filmIframe);
+    };
+
+    PostView.prototype.buildVimeoIframe = function(originalFilmUrl) {
+      var filmIframe, filmUrl;
+      filmUrl = originalFilmUrl.replace(/https?:\/\/vimeo.com\//, '//player.vimeo.com/video/');
+      filmIframe = '<iframe src="' + filmUrl + '?title=0&amp;byline=0&amp;portrait=0" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>';
+      return this.insert(filmIframe);
+    };
+
+    PostView.prototype.insert = function(string) {
+      return this.editor.codemirror.replaceSelection(string);
     };
 
     PostView.prototype.save = function(e) {

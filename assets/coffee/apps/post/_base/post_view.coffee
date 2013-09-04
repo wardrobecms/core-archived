@@ -42,6 +42,7 @@
       @setUpEditor()
       @setupUsers()
       @setupCalendar()
+      @setupFilm()
       @localStorage()
       @_triggerActive()
 
@@ -68,7 +69,9 @@
         'bold', 'italic', '|'
         'quote', 'unordered-list', 'ordered-list', '|'
         'link', 'image', 'code', '|'
-        'undo', 'redo', '|', 'tags', 'calendar'
+        'film', '|'
+        'undo', 'redo', '|'
+        'tags', 'calendar'
       ]
 
       @editor = new Editor
@@ -185,6 +188,52 @@
               $("#publish_date").val pubDate
               $('.icon-calendar').qtip "hide"
         hide: "unfocus"
+
+    setupFilm: ->
+      @$(".icon-film").qtip
+        show:
+          event: "click"
+        content:
+          text: $("#film-form").html()
+        position:
+          at: "right center"
+          my: "left center"
+          viewport: $(window) # Keep the tooltip on-screen at all times
+          effect: false
+        events:
+          render: (event, api) =>
+            $(".js-submitfilm").click (e) =>
+              e.preventDefault()
+              filmInput = $(e.currentTarget).parent().find('input')
+              filmUrl = filmInput.val()
+              @attachFilm filmUrl
+              filmInput.val('')
+              $('.icon-film').qtip "hide"
+
+        hide: "unfocus"
+
+    attachFilm: (filmUrl) ->
+      if filmUrl.match /youtube.com/g
+        @bulidYoutubeIframe filmUrl
+      else if filmUrl.match /vimeo.com/g
+        @buildVimeoIframe filmUrl
+      else
+        # I'd like to alert here
+        return
+
+    bulidYoutubeIframe: (filmUrl) ->
+      filmUrl = filmUrl.replace /https?:\/\//, '//'
+      filmUrl = filmUrl.replace /watch?v=/, 'embed/'
+      filmIframe = '<iframe width="560" height="315" src="' + filmUrl + '" frameborder="0" allowfullscreen></iframe>'
+      @insert filmIframe
+
+    buildVimeoIframe: (originalFilmUrl) ->
+      filmUrl = originalFilmUrl.replace /https?:\/\/vimeo.com\//, '//player.vimeo.com/video/'
+      filmIframe = '<iframe src="' + filmUrl + '?title=0&amp;byline=0&amp;portrait=0" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>'
+      @insert filmIframe
+
+    insert: (string) ->
+      @editor.codemirror.replaceSelection string
 
     # Save the post data
     save: (e) ->
