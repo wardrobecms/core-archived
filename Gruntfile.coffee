@@ -104,6 +104,8 @@ module.exports = (grunt) ->
           "assets/src/js/templates.js": ["assets/coffee/apps/**/*.html"]
 
     watch:
+      options:
+         livereload: true
       coffee:
         files: 'assets/coffee/**/*.coffee'
         tasks: ["clean", "jst", "coffee", "concat"]
