@@ -20,9 +20,13 @@
       "click .js-toggle" : "toggleDetails"
       "click .icon-tags" : "toggleTags"
       "click .icon-user" : "showUsers"
+      "click .icon-ellipsis-horizontal" : "insertReadMore"
       "click input[type=radio]" : "changeBtn"
       "keyup #title" : "localStorage"
       "change #js-user" : "localStorage"
+
+    insertReadMore: ->
+      @.insert '<!-- more -->'
 
     # When the model changes it's private _errors method call the changeErrors method.
     modelEvents:
@@ -67,7 +71,7 @@
       # Custom toolbar items.
       toolbar = [
         'bold', 'italic', '|'
-        'quote', 'unordered-list', 'ordered-list', '|'
+        'quote', 'unordered-list', 'ordered-list', 'ellipsis-horizontal', '|'
         'link', 'image', 'code', '|'
         'film', '|'
         'undo', 'redo', '|'

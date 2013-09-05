@@ -1542,9 +1542,14 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
       "click .js-toggle": "toggleDetails",
       "click .icon-tags": "toggleTags",
       "click .icon-user": "showUsers",
+      "click .icon-ellipsis-horizontal": "insertReadMore",
       "click input[type=radio]": "changeBtn",
       "keyup #title": "localStorage",
       "change #js-user": "localStorage"
+    };
+
+    PostView.prototype.insertReadMore = function() {
+      return this.insert('<!-- more -->');
     };
 
     PostView.prototype.modelEvents = {
@@ -1599,7 +1604,7 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
     PostView.prototype.setUpEditor = function() {
       var toolbar,
         _this = this;
-      toolbar = ['bold', 'italic', '|', 'quote', 'unordered-list', 'ordered-list', '|', 'link', 'image', 'code', '|', 'film', '|', 'undo', 'redo', '|', 'tags', 'calendar'];
+      toolbar = ['bold', 'italic', '|', 'quote', 'unordered-list', 'ordered-list', 'ellipsis-horizontal', '|', 'link', 'image', 'code', '|', 'film', '|', 'undo', 'redo', '|', 'tags', 'calendar'];
       this.editor = new Editor({
         toolbar: toolbar
       });
