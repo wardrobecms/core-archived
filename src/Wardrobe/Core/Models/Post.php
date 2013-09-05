@@ -46,7 +46,7 @@ class Post extends BaseModel {
 	 */
 	public function getParsedContentAttribute()
 	{
-		if (Config::get('wardrobe.cache'))
+		if (Config::get('core::wardrobe.cache'))
 		{
 			$content = $this->attributes['content'];
 			return Cache::rememberForever('post-'.$this->attributes['id'], function() use ($content)
@@ -93,6 +93,15 @@ class Post extends BaseModel {
 		$content = $this->attributes['content'];
 
 		return explode('<!-- more -->', $content)[0];
+	}
+
+	/**
+	 * Get the parsed short version of a post
+	 * @return
+	 */
+	public function getParsedShortAttribute()
+	{
+		return md($this->getShortAttribute());
 	}
 
 }
