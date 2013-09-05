@@ -84,4 +84,15 @@ class Post extends BaseModel {
 	    return array('created_at', 'updated_at', 'publish_date');
 	}
 
+	/**
+	 * Get the short version of a post
+	 * @return
+	 */
+	public function getShortAttribute()
+	{
+		$content = $this->attributes['content'];
+
+		return explode('<!-- more -->', $content)[0];
+	}
+
 }
