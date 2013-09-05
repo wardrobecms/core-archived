@@ -1604,7 +1604,7 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
     PostView.prototype.setUpEditor = function() {
       var toolbar,
         _this = this;
-      toolbar = ['bold', 'italic', '|', 'quote', 'unordered-list', 'ordered-list', 'ellipsis-horizontal', '|', 'link', 'image', 'code', '|', 'film', '|', 'undo', 'redo', '|', 'tags', 'calendar'];
+      toolbar = ['bold', 'italic', '|', 'quote', 'unordered-list', 'ordered-list', 'ellipsis-horizontal', '|', 'link', 'image', 'code', 'film', '|', 'undo', 'redo', '|', 'tags', 'calendar'];
       this.editor = new Editor({
         toolbar: toolbar
       });

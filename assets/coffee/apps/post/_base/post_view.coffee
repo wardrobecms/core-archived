@@ -72,8 +72,7 @@
       toolbar = [
         'bold', 'italic', '|'
         'quote', 'unordered-list', 'ordered-list', 'ellipsis-horizontal', '|'
-        'link', 'image', 'code', '|'
-        'film', '|'
+        'link', 'image', 'code', 'film', '|'
         'undo', 'redo', '|'
         'tags', 'calendar'
       ]
