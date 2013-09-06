@@ -33,8 +33,8 @@ return array(
     | specified width/height (pixels) when uploaded.
     |
     */
-    'img_resize' => array(
-        'enabled'       => true,
+    'image_resize' => array(
+        'enabled'       => false,
         'width'         => '600',
         'height'        => '600',
     ),

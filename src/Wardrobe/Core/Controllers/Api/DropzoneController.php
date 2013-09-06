@@ -70,12 +70,12 @@ class DropzoneController extends BaseController {
 		$imageDir = Config::get('core::wardrobe.image_dir');
 		$destinationPath = public_path(). "/{$imageDir}/";
 		$filename = $file->getClientOriginalName();
-		$resizeEnabled = Config::get('core::wardrobe.img_resize.enabled');
+		$resizeEnabled = Config::get('core::wardrobe.image_resize.enabled');
 		
 		if ($resizeEnabled)
 		{
-			$resizeWidth = Config::get('core::wardrobe.img_resize.width');
-			$resizeHeight = Config::get('core::wardrobe.img_resize.height');
+			$resizeWidth = Config::get('core::wardrobe.image_resize.width');
+			$resizeHeight = Config::get('core::wardrobe.image_resize.height');
 			$image = Image::make($file->getRealPath())->resize($resizeWidth, $resizeHeight, true);
 			$image->save($destinationPath.$filename);
 		}
