@@ -38,6 +38,7 @@ class ThemeCommand extends Command {
 	 */
 	public function fire()
 	{
+		$this->call('asset:publish', array('package' => 'wardrobe/core'));
 		$assetPath = public_path().'/packages/wardrobe/core/themes';
 		$themePath = public_path().'/'.Config::get('core::wardrobe.theme_dir');
 		$this->copyDir($assetPath, $themePath);
