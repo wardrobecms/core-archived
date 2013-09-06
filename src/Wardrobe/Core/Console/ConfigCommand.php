@@ -12,7 +12,7 @@ class ConfigCommand extends Command {
 	 *
 	 * @var string
 	 */
-	protected $name = 'wardrobe:cofig';
+	protected $name = 'wardrobe:config';
 
 	/**
 	 * The console command description.

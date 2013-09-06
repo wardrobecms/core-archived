@@ -1,0 +1,17 @@
+{
+  "name": "Wardrobe",
+  "version": "0.1.0",
+  "dependencies": {
+    "jquery": "~1.10",
+    "backbone": "latest",
+    "underscore": "latest",
+    "backbone.marionette": "latest",
+    "momentjs": "latest",
+    "dropzone": "latest",
+    "jstorage" : "latest",
+    "js-md5" : "latest",
+    "selectize" : "latest",
+    "html5shiv" : "latest"
+  },
+  "devDependencies": {}
+}

@@ -88,7 +88,7 @@ class PostController extends BaseController {
 	 */
 	public function preview($id)
 	{
-		if ( ! $this->auth->check()
+		if ( ! $this->auth->check())
 		{
 			return App::abort(404, 'Page not found');
 		}

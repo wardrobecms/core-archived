@@ -2,8 +2,8 @@
 $.fn.fillJSON = (json) ->
   $el = $(this)
   for key, val of json
-    return @ if key is "active" # Special case for post radios
-    $el.find("[name='#{key}']").val(val)
+    if key isnt "active"
+      $el.find("[name='#{key}']").val(val)
 
 $.fn.showAlert = (title, msg, type) ->
   $el = $(this)

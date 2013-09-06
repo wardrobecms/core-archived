@@ -10,7 +10,7 @@
     defaultErrorHandler: (model, error, test) ->
       switch error.status
         when 500 then $("#js-alert").showAlert(Lang.error, Lang.error_fivehundred, "alert-error")
-        when 401 then document.location.href = "/wardrobe/login"
+        when 401 then document.location.href = "#{App.request("get:url:admin")}/logout"
 
     destroy: (options = {}) ->
       @set _destroy: true
@@ -43,7 +43,7 @@
 
     saveError: (model, xhr, options) =>
       ## set errors directly on the model unless status returned was a 404
-      @set _errors: $.parseJSON(xhr.responseText) unless xhr.status is 404 or 500
+      @set _errors: $.parseJSON(xhr.responseText) if xhr.status is 400
 
     # Over ride sync so we include the CSRF Token
     sync: (method, model, options) ->

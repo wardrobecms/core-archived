@@ -10,10 +10,7 @@
     <div class="info">
       <div class="field">
 
-        <% if (typeof id !== 'undefined') { %>
-          <a href="<%= previewUrl() %>" target="_blank" class="btn btn-mini preview pull-right"><%= Lang.post_preview %></a>
-        <% } %>
-
+        <a href="<%= previewUrl() %>" target="_blank" class="btn btn-mini preview pull-right"><%= Lang.post_preview %></a>
         <button class="btn btn-mini btn-success publish pull-right"><%= submitBtnText() %></button>
 
         <i data-dir="up" class="icon-chevron-sign-right js-toggle" title="<%= Lang.post_expand %>"></i>
@@ -49,5 +46,13 @@
     <label for="date"><%= Lang.post_publish_date %></label><br>
     <input type="text" name="date" class="js-date" id="date" value="" placeholder="Next Thursday 10am">
     <button class="btn js-setdate"><%= Lang.post_publish_date_set %></button>
+  </form>
+</div>
+
+<div id="film-form" style="display: none">
+  <form class="form-inline">
+    <label for="date">Video URL</label><br>
+    <input type="text" name="date" class="js-film" id="film" value="" placeholder="http://youtube.com/">
+    <button class="btn js-submitfilm"><%= Lang.post_publish_date_set %></button>
   </form>
 </div>

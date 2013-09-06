@@ -1,35 +1,40 @@
 {
-    "name": "wardrobe/core",
-    "description": "A Minimal Blog App",
-    "keywords": [
-        "blog",
-        "laravel",
-        "cms"
-    ],
-    "authors": [
-        {
-            "name": "Eric L Barnes",
-            "email": "eric@ericlbarnes.com",
-            "role": "Developer"
-        },
-        {
-            "name": "Ryan Tablada",
-            "email": "ryan.tablada@gmail.com",
-            "role": "Developer"
-        }
-    ],
-    "require": {
-        "php": ">=5.3.0",
-        "laravel/framework": "4.0.x",
-        "dflydev/markdown": "1.0.*@dev",
-        "symfony/yaml": "2.4.*@dev"
+  "name": "wardrobe/core",
+  "description": "The WardrobeCMS core files",
+  "keywords": [
+    "blog",
+      "laravel",
+      "cms"
+  ],
+  "authors": [
+    {
+      "name": "Eric L Barnes",
+      "email": "eric@ericlbarnes.com",
+      "role": "Developer"
     },
-    "autoload": {
-        "psr-0": {
-            "Wardrobe\\Core": "src/",
-            "Wardrobe\\Database": "src/"
-        }
-    },
-    "minimum-stability": "dev",
-    "license": "MIT"
+    {
+      "name": "Ryan Tablada",
+      "email": "ryan.tablada@gmail.com",
+      "role": "Developer"
+    }
+  ],
+  "require": {
+    "php": ">=5.3.0",
+    "laravel/framework": "4.0.x",
+    "michelf/php-markdown": "1.3.*@dev",
+    "symfony/yaml": "2.4.*@dev"
+  },
+  "autoload": {
+    "psr-0": {
+      "Wardrobe\\Core": "src/",
+      "Wardrobe\\Database": "src/"
+    }
+  },
+  "archive": {
+    "exclude": [
+      "assets"
+    ]
+  },
+  "minimum-stability": "dev",
+  "license": "MIT"
 }

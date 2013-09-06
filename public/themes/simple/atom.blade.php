@@ -1,1 +1,1 @@
-@include('core::atom')
+@include('default.atom')

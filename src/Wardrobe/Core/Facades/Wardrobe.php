@@ -1,6 +1,6 @@
 <?php namespace Wardrobe\Core\Facades;
 
-use Config, App;
+use Config, App, View;
 use Illuminate\Auth\Guard;
 use Illuminate\Auth\EloquentUserProvider;
 use Wardrobe\Core\Repositories\PostRepositoryInterface;
@@ -34,7 +34,7 @@ class Wardrobe {
 	 */
 	public function posts($params = array())
 	{
-		$per_page = isset($params['per_page']) ? $params['per_page'] : Config::get('wardrobe.per_page');
+		$per_page = isset($params['per_page']) ? $params['per_page'] : Config::get('core::wardrobe.per_page');
 
 		return $this->postsRepo->active($per_page);
 	}
@@ -47,11 +47,23 @@ class Wardrobe {
 		return $this->postsRepo->allTags();
 	}
 
+	public function setupViews()
+	{
+		View::addLocation(public_path().'/'.Config::get('core::wardrobe.theme_dir'));
+		foreach (Config::get('core::wardrobe.view_dirs') as $dir) {
+			View::addLocation($dir);
+		}
+	}
+
 	public function getWardrobeAuth()
 	{
 		$provider = $this->createEloquentProvider();
 
-		return new Guard($provider, App::make('session'));
+		$guard = new Guard($provider, App::make('session'));
+
+		$guard->setCookieJar(App::make('cookie'));
+
+		return $guard;
 	}
 
 	protected function createEloquentProvider()

@@ -61,7 +61,7 @@ class ThemeCommand extends Command {
 	protected function checkDirectory($dir)
 	{
 		if (!File::isDirectory($dir)) {
-			File::makeDirectory($dir);
+			File::makeDirectory($dir, 0777, true);
 		}
 	}
 }

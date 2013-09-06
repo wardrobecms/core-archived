@@ -59,17 +59,20 @@ module.exports = (grunt) ->
     concat:
       structure:
         src: [
-          'assets/vendor/plugins/html5shiv.js'
-          'assets/vendor/backbone/underscore.js'
-          'assets/vendor/backbone/backbone.js'
-          'assets/vendor/backbone-plugins/backbone.marionette.js'
-          'assets/vendor/plugins/dates/moment.js'
-          'assets/vendor/plugins/dates/*.js'
+          'assets/vendor/components/html5shiv/src/html5shiv.js'
+          'assets/vendor/components/underscore/underscore.js'
+          'assets/vendor/components/backbone/backbone.js'
+          'assets/vendor/components/backbone.marionette/lib/backbone.marionette.js'
+          'assets/vendor/components/momentjs/moment.js'
           'assets/vendor/plugins/editor/*.js'
-          'assets/vendor/plugins/md5.js'
-          'assets/vendor/plugins/qtip.js'
+          'assets/vendor/components/js-md5/js/md5.js'
           'assets/vendor/plugins/bootstrap/*.js'
-          'assets/vendor/plugins/*.js'
+          'assets/vendor/components/dropzone/downloads/dropzone.js'
+          'assets/vendor/components/selectize/selectize.js'
+          'assets/vendor/components/jstorage/jstorage.js'
+          'assets/vendor/plugins/qtip.js'
+          'assets/vendor/plugins/editor/inline-attach.js'
+          'assets/vendor/plugins/slugify.js'
         ]
         dest: 'public/admin/js/structure.js'
 
@@ -101,6 +104,8 @@ module.exports = (grunt) ->
           "assets/src/js/templates.js": ["assets/coffee/apps/**/*.html"]
 
     watch:
+      options:
+         livereload: true
       coffee:
         files: 'assets/coffee/**/*.coffee'
         tasks: ["clean", "jst", "coffee", "concat"]

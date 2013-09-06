@@ -101,7 +101,7 @@ __p += '<nav>\n  <ul>\n    <li><a class="write" href="#"><i class="icon-plus"></
 ((__t = ( Lang.write )) == null ? '' : __t) +
 '</a></li>\n    <li><a class="posts" href="#post"><i class="icon-list"></i> ' +
 ((__t = ( Lang.posts )) == null ? '' : __t) +
-'</a></li>\n    <li><a class="accounts" href="#"><i class="icon-user"></i> ' +
+'</a></li>\n    <li><a class="accounts" href="#accounts"><i class="icon-user"></i> ' +
 ((__t = ( Lang.accounts )) == null ? '' : __t) +
 '</a></li>\n    <li><a href="' +
 ((__t = ( logoutUrl() )) == null ? '' : __t) +
@@ -115,18 +115,13 @@ return __p
 
 this["JST"]["post/_base/templates/form.html"] = function(obj) {
 obj || (obj = {});
-var __t, __p = '', __e = _.escape, __j = Array.prototype.join;
-function print() { __p += __j.call(arguments, '') }
+var __t, __p = '', __e = _.escape;
 with (obj) {
-__p += '<form>\n  <input type="hidden" name="publish_date" id="publish_date" value="">\n  <div id="js-errors" class="hide">\n    <div class="alert alert-error">\n      <button type="button" class="close" data-dismiss="alert">×</button>\n      <span></span>\n    </div>\n  </div>\n  <div id="write">\n    <div class="info">\n      <div class="field">\n\n        ';
- if (typeof id !== 'undefined') { ;
-__p += '\n          <a href="' +
+__p += '<form>\n  <input type="hidden" name="publish_date" id="publish_date" value="">\n  <div id="js-errors" class="hide">\n    <div class="alert alert-error">\n      <button type="button" class="close" data-dismiss="alert">×</button>\n      <span></span>\n    </div>\n  </div>\n  <div id="write">\n    <div class="info">\n      <div class="field">\n\n        <a href="' +
 ((__t = ( previewUrl() )) == null ? '' : __t) +
 '" target="_blank" class="btn btn-mini preview pull-right">' +
 ((__t = ( Lang.post_preview )) == null ? '' : __t) +
-'</a>\n        ';
- } ;
-__p += '\n\n        <button class="btn btn-mini btn-success publish pull-right">' +
+'</a>\n        <button class="btn btn-mini btn-success publish pull-right">' +
 ((__t = ( submitBtnText() )) == null ? '' : __t) +
 '</button>\n\n        <i data-dir="up" class="icon-chevron-sign-right js-toggle" title="' +
 ((__t = ( Lang.post_expand )) == null ? '' : __t) +
@@ -150,6 +145,8 @@ __p += '\n\n        <button class="btn btn-mini btn-success publish pull-right">
 ((__t = ( Lang.post_publish_date )) == null ? '' : __t) +
 '</label><br>\n    <input type="text" name="date" class="js-date" id="date" value="" placeholder="Next Thursday 10am">\n    <button class="btn js-setdate">' +
 ((__t = ( Lang.post_publish_date_set )) == null ? '' : __t) +
+'</button>\n  </form>\n</div>\n\n<div id="film-form" style="display: none">\n  <form class="form-inline">\n    <label for="date">Video URL</label><br>\n    <input type="text" name="date" class="js-film" id="film" value="" placeholder="http://youtube.com/">\n    <button class="btn js-submitfilm">' +
+((__t = ( Lang.post_publish_date_set )) == null ? '' : __t) +
 '</button>\n  </form>\n</div>\n';
 
 }
@@ -172,7 +169,7 @@ this["JST"]["post/list/templates/grid.html"] = function(obj) {
 obj || (obj = {});
 var __t, __p = '', __e = _.escape;
 with (obj) {
-__p += '<table class="table center-col">\n\t<thead>\n\t\t<tr>\n\t\t\t<th>' +
+__p += '<div class="filter">\n  <input type="text" class="filter" id="js-filter" name="filter" placeholder="Filter">\n  <select name="active" id="js-sort">\n    <option value="">Any Status</option>\n    <option value="1">Active</option>\n    <option value="0">Draft</option>\n  </select>\n</div>\n<table class="table center-col">\n\t<thead>\n\t\t<tr>\n\t\t\t<th>' +
 ((__t = ( Lang.post_title )) == null ? '' : __t) +
 '</th>\n\t\t\t<th>' +
 ((__t = ( Lang.post_status )) == null ? '' : __t) +
@@ -196,9 +193,7 @@ __p += '<td class="title">\n  <img src="" class="avatar img-polaroid" width="18"
 ((__t = ( publish_date )) == null ? '' : __t) +
 '">' +
 ((__t = ( publish_date )) == null ? '' : __t) +
-'</td>\n<td class="actions">\n  <a href="' +
-((__t = ( previewUrl() )) == null ? '' : __t) +
-'" target="_blank" title="Preview"><i class="icon-zoom-in"></i></a>\n  <a href="#" class="delete" title="' +
+'</td>\n<td class="actions">\n  <a href="#" target="_blank" title="Preview" class="preview"><i class="icon-zoom-in"></i></a>\n  <a href="#" class="delete" title="' +
 ((__t = ( Lang.post_delete )) == null ? '' : __t) +
 '"><i class="icon-trash"></i></a>\n</td>\n';
 
@@ -238,7 +233,7 @@ $.fn.avatar = function(email, size) {
   if (size == null) {
     size = 28;
   }
-  return $(this).attr("src", '//www.gravatar.com/avatar/' + md5(email) + '?s=' + (size * 2));
+  return $(this).attr("src", '//www.gravatar.com/avatar/' + md5(email.toLowerCase()) + '?s=' + (size * 2));
 };
 
 
@@ -260,15 +255,18 @@ $.fn.formatDates = function() {
 
 
 $.fn.fillJSON = function(json) {
-  var $el, key, val;
+  var $el, key, val, _results;
   $el = $(this);
+  _results = [];
   for (key in json) {
     val = json[key];
-    if (key === "active") {
-      return this;
+    if (key !== "active") {
+      _results.push($el.find("[name='" + key + "']").val(val));
+    } else {
+      _results.push(void 0);
     }
-    $el.find("[name='" + key + "']").val(val);
   }
+  return _results;
 };
 
 $.fn.showAlert = function(title, msg, type) {
@@ -408,6 +406,44 @@ _.mixin({
   }
 });
 
+var Storage;
+
+Storage = (function() {
+
+  function Storage(opts) {
+    if (opts == null) {
+      opts = {};
+    }
+    this.key = opts.id || "new";
+  }
+
+  Storage.prototype.getKey = function() {
+    return "post-" + this.key;
+  };
+
+  Storage.prototype.put = function(data, ttl) {
+    if (ttl == null) {
+      ttl = 30000;
+    }
+    $.jStorage.set(this.getKey(), data, ttl);
+    return $.jStorage.publish(this.getKey(), data);
+  };
+
+  Storage.prototype.get = function(default_val) {
+    if (default_val == null) {
+      default_val = {};
+    }
+    return $.jStorage.get(this.getKey(), default_val);
+  };
+
+  Storage.prototype.destroy = function() {
+    return $.jStorage.deleteKey(this.getKey());
+  };
+
+  return Storage;
+
+})();
+
 
 this.Wardrobe = (function(Backbone, Marionette) {
   var App;
@@ -417,9 +453,9 @@ this.Wardrobe = (function(Backbone, Marionette) {
     App.csrfToken = $("meta[name='token']").attr('content');
     this.currentUser = App.request("set:current:user", options.user);
     this.allUsers = App.request("set:all:users", options.users);
-    this.apiUrl = options.api_url;
-    this.adminUrl = options.admin_url;
-    return this.blogUrl = options.blog_url;
+    this.apiUrl = _.stripTrailingSlash(options.api_url);
+    this.adminUrl = _.stripTrailingSlash(options.admin_url);
+    return this.blogUrl = _.stripTrailingSlash(options.blog_url);
   });
   App.reqres.setHandler("get:current:user", function() {
     return App.currentUser;
@@ -428,13 +464,13 @@ this.Wardrobe = (function(Backbone, Marionette) {
     return App.allUsers;
   });
   App.reqres.setHandler("get:url:api", function() {
-    return _.stripTrailingSlash(App.apiUrl);
+    return App.apiUrl;
   });
   App.reqres.setHandler("get:url:admin", function() {
-    return _.stripTrailingSlash(App.adminUrl);
+    return App.adminUrl;
   });
   App.reqres.setHandler("get:url:blog", function() {
-    return _.stripTrailingSlash(App.blogUrl);
+    return App.blogUrl;
   });
   App.addRegions({
     headerRegion: "#header-region",
@@ -496,7 +532,7 @@ this.Wardrobe.module("Entities", function(Entities, App, Backbone, Marionette, $
     Collection.prototype.defaultErrorHandler = function(model, error) {
       switch (error.status) {
         case 401:
-          return document.location.href = "/wardrobe/login";
+          return document.location.href = "" + (App.request("get:url:admin")) + "/logout";
       }
     };
 
@@ -539,7 +575,7 @@ this.Wardrobe.module("Entities", function(Entities, App, Backbone, Marionette, $
         case 500:
           return $("#js-alert").showAlert(Lang.error, Lang.error_fivehundred, "alert-error");
         case 401:
-          return document.location.href = "/wardrobe/login";
+          return document.location.href = "" + (App.request("get:url:admin")) + "/logout";
       }
     };
 
@@ -593,7 +629,7 @@ this.Wardrobe.module("Entities", function(Entities, App, Backbone, Marionette, $
     };
 
     Model.prototype.saveError = function(model, xhr, options) {
-      if (!(xhr.status === 404 || 500)) {
+      if (xhr.status === 400) {
         return this.set({
           _errors: $.parseJSON(xhr.responseText)
         });
@@ -911,9 +947,48 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
       return ItemView.__super__.constructor.apply(this, arguments);
     }
 
-    ItemView.prototype.fillJSON = function() {
-      var _ref;
-      return this.$('form').fillJSON(((_ref = this.model) != null ? _ref.toJSON() : void 0) || {});
+    ItemView.prototype.fillJSON = function(data) {
+      var _ref, _ref1;
+      if (data == null) {
+        data = {};
+      }
+      if ((_ref = this.model) != null ? _ref.isNew() : void 0) {
+        return this.$('form').fillJSON(data);
+      } else {
+        return this.$('form').fillJSON(((_ref1 = this.model) != null ? _ref1.toJSON() : void 0) || data);
+      }
+    };
+
+    ItemView.prototype.changeErrors = function(model, errors, options) {
+      if (_.isEmpty(errors)) {
+        return this.removeErrors();
+      } else {
+        return this.addErrors(errors);
+      }
+    };
+
+    ItemView.prototype.addErrors = function(errors) {
+      var error, name, _results;
+      if (errors == null) {
+        errors = {};
+      }
+      this.$("#js-errors").show().find("span").html(Lang.post_errors);
+      _results = [];
+      for (name in errors) {
+        error = errors[name];
+        _results.push(this.addError(error));
+      }
+      return _results;
+    };
+
+    ItemView.prototype.addError = function(error) {
+      var sm;
+      sm = $("<li>").text(error);
+      return this.$("#js-errors span").append(sm);
+    };
+
+    ItemView.prototype.removeErrors = function() {
+      return this.$("#js-errors").hide();
     };
 
     return ItemView;
@@ -1102,38 +1177,6 @@ this.Wardrobe.module("AccountApp.Edit", function(Edit, App, Backbone, Marionette
         active: 1
       };
       return this.model.save(data);
-    };
-
-    User.prototype.changeErrors = function(model, errors, options) {
-      if (_.isEmpty(errors)) {
-        return this.removeErrors();
-      } else {
-        return this.addErrors(errors);
-      }
-    };
-
-    User.prototype.addErrors = function(errors) {
-      var error, name, _results;
-      if (errors == null) {
-        errors = {};
-      }
-      this.$("#js-errors").show().find("span").html("<strong>Error</strong> Please fix the following errors");
-      _results = [];
-      for (name in errors) {
-        error = errors[name];
-        _results.push(this.addError(error));
-      }
-      return _results;
-    };
-
-    User.prototype.addError = function(error) {
-      var sm;
-      sm = $("<li>").text(error);
-      return this.$("#js-errors span").append(sm);
-    };
-
-    User.prototype.removeErrors = function() {
-      return this.$("#js-errors").hide();
     };
 
     return User;
@@ -1340,38 +1383,6 @@ this.Wardrobe.module("AccountApp.New", function(New, App, Backbone, Marionette, 
       });
     };
 
-    User.prototype.changeErrors = function(model, errors, options) {
-      if (_.isEmpty(errors)) {
-        return this.removeErrors();
-      } else {
-        return this.addErrors(errors);
-      }
-    };
-
-    User.prototype.addErrors = function(errors) {
-      var error, name, _results;
-      if (errors == null) {
-        errors = {};
-      }
-      this.$("#js-errors").show().find("span").html("<strong>Error</strong> Please fix the following errors");
-      _results = [];
-      for (name in errors) {
-        error = errors[name];
-        _results.push(this.addError(error));
-      }
-      return _results;
-    };
-
-    User.prototype.addError = function(error) {
-      var sm;
-      sm = $("<li>").text(error);
-      return this.$("#js-errors span").append(sm);
-    };
-
-    User.prototype.removeErrors = function() {
-      return this.$("#js-errors").hide();
-    };
-
     return User;
 
   })(App.Views.ItemView);
@@ -1517,8 +1528,13 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
 
     PostView.prototype.className = "span12";
 
-    PostView.prototype.initialize = function() {
-      return this.tagsShown = false;
+    PostView.prototype.initialize = function(opts) {
+      var _this = this;
+      App.vent.on("post:new:seed", function(contents) {
+        return _this.fillForm(contents);
+      });
+      this.tagsShown = false;
+      return this.storage = opts.storage;
     };
 
     PostView.prototype.events = {
@@ -1526,8 +1542,14 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
       "click .js-toggle": "toggleDetails",
       "click .icon-tags": "toggleTags",
       "click .icon-user": "showUsers",
-      "change .js-active": "changeBtn",
-      "keyup #title": "localStorage"
+      "click .icon-ellipsis-horizontal": "insertReadMore",
+      "click input[type=radio]": "changeBtn",
+      "keyup #title": "localStorage",
+      "change #js-user": "localStorage"
+    };
+
+    PostView.prototype.insertReadMore = function() {
+      return this.insert('<!-- more -->');
     };
 
     PostView.prototype.modelEvents = {
@@ -1543,7 +1565,9 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
         }
       },
       previewUrl: function() {
-        return "" + (App.request("get:url:blog")) + "/post/preview/" + this.id;
+        var id;
+        id = this.id ? this.id : "new";
+        return "" + (App.request("get:url:blog")) + "/post/preview/" + id;
       }
     };
 
@@ -1552,6 +1576,9 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
       this.setUpEditor();
       this.setupUsers();
       this.setupCalendar();
+      this.setupFilm();
+      this.localStorage();
+      this._triggerActive();
       if (this.model.isNew()) {
         this.$('.js-toggle').trigger("click");
         $('#title').slugIt({
@@ -1563,10 +1590,21 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
       });
     };
 
+    PostView.prototype._triggerActive = function() {
+      if (this.model.isNew()) {
+        return this;
+      }
+      if (this.model.get("active")) {
+        return this.$(".js-active[value=1]").trigger("click");
+      } else {
+        return $(".js-active[value=0]").trigger("click");
+      }
+    };
+
     PostView.prototype.setUpEditor = function() {
       var toolbar,
         _this = this;
-      toolbar = ['bold', 'italic', '|', 'quote', 'unordered-list', 'ordered-list', '|', 'link', 'image', 'code', '|', 'undo', 'redo', '|', 'tags', 'calendar'];
+      toolbar = ['bold', 'italic', '|', 'quote', 'unordered-list', 'ordered-list', 'ellipsis-horizontal', '|', 'link', 'image', 'code', 'film', '|', 'undo', 'redo', '|', 'tags', 'calendar'];
       this.editor = new Editor({
         toolbar: toolbar
       });
@@ -1579,18 +1617,19 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
     };
 
     PostView.prototype.localStorage = function() {
-      var data;
-      data = {
+      return this.storage.put({
         title: this.$('#title').val(),
+        slug: this.$('#slug').val(),
+        active: this.$('input[type=radio]:checked').val(),
         content: this.editor.codemirror.getValue(),
-        tags: this.$("#js-tags").val()
-      };
-      $.jStorage.set("post-" + this.model.id, data);
-      return $.jStorage.publish("post-" + this.model.id, data);
+        tags: this.$("#js-tags").val(),
+        user_id: this.$("#js-user").val(),
+        publish_date: this.$("#publish_date").val()
+      });
     };
 
     PostView.prototype.setupUsers = function() {
-      var $userSelect, user, users;
+      var $userSelect, stored, user, users;
       $userSelect = this.$("#js-user");
       users = App.request("get:all:users");
       users.each(function(item) {
@@ -1598,7 +1637,12 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
       });
       if (this.model.isNew()) {
         user = App.request("get:current:user");
-        return $userSelect.val(user.id);
+        stored = this.storage.get();
+        if (stored != null ? stored.user_id : void 0) {
+          return $userSelect.val(stored.user_id);
+        } else {
+          return $userSelect.val(user.id);
+        }
       } else {
         return $userSelect.val(this.model.get("user_id"));
       }
@@ -1710,6 +1754,67 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
       });
     };
 
+    PostView.prototype.setupFilm = function() {
+      var _this = this;
+      return this.$(".icon-film").qtip({
+        show: {
+          event: "click"
+        },
+        content: {
+          text: $("#film-form").html()
+        },
+        position: {
+          at: "right center",
+          my: "left center",
+          viewport: $(window),
+          effect: false
+        },
+        events: {
+          render: function(event, api) {
+            return $(".js-submitfilm").click(function(e) {
+              var filmInput, filmUrl;
+              e.preventDefault();
+              filmInput = $(e.currentTarget).parent().find('input');
+              filmUrl = filmInput.val();
+              _this.attachFilm(filmUrl);
+              filmInput.val('');
+              return $('.icon-film').qtip("hide");
+            });
+          }
+        },
+        hide: "unfocus"
+      });
+    };
+
+    PostView.prototype.attachFilm = function(filmUrl) {
+      if (filmUrl.match(/youtube.com/g)) {
+        return this.bulidYoutubeIframe(filmUrl);
+      } else if (filmUrl.match(/vimeo.com/g)) {
+        return this.buildVimeoIframe(filmUrl);
+      } else {
+
+      }
+    };
+
+    PostView.prototype.bulidYoutubeIframe = function(filmUrl) {
+      var filmIframe;
+      filmUrl = filmUrl.replace(/https?:\/\//, '//');
+      filmUrl = filmUrl.replace(/watch\?v=/, 'embed/');
+      filmIframe = '<iframe width="560" height="315" src="' + filmUrl + '" frameborder="0" allowfullscreen></iframe>';
+      return this.insert(filmIframe);
+    };
+
+    PostView.prototype.buildVimeoIframe = function(originalFilmUrl) {
+      var filmIframe, filmUrl;
+      filmUrl = originalFilmUrl.replace(/https?:\/\/vimeo.com\//, '//player.vimeo.com/video/');
+      filmIframe = '<iframe src="' + filmUrl + '?title=0&amp;byline=0&amp;portrait=0" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>';
+      return this.insert(filmIframe);
+    };
+
+    PostView.prototype.insert = function(string) {
+      return this.editor.codemirror.replaceSelection(string);
+    };
+
     PostView.prototype.save = function(e) {
       e.preventDefault();
       return this.processFormSubmit({
@@ -1727,38 +1832,6 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
       return this.model.save(data, {
         collection: this.collection
       });
-    };
-
-    PostView.prototype.changeErrors = function(model, errors, options) {
-      if (_.isEmpty(errors)) {
-        return this.removeErrors();
-      } else {
-        return this.addErrors(errors);
-      }
-    };
-
-    PostView.prototype.addErrors = function(errors) {
-      var error, name, _results;
-      if (errors == null) {
-        errors = {};
-      }
-      this.$("#js-errors").show().find("span").html(Lang.post_errors);
-      _results = [];
-      for (name in errors) {
-        error = errors[name];
-        _results.push(this.addError(error));
-      }
-      return _results;
-    };
-
-    PostView.prototype.addError = function(error) {
-      var sm;
-      sm = $("<li>").text(error);
-      return this.$("#js-errors span").append(sm);
-    };
-
-    PostView.prototype.removeErrors = function() {
-      return this.$("#js-errors").hide();
     };
 
     PostView.prototype.collapse = function($toggle) {
@@ -1783,6 +1856,7 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
     };
 
     PostView.prototype.changeBtn = function(e) {
+      this.localStorage();
       if (e.currentTarget.value === "1") {
         return this.$(".publish").text(Lang.post_publish);
       } else {
@@ -1827,7 +1901,11 @@ this.Wardrobe.module("PostApp.Edit", function(Edit, App, Backbone, Marionette, $
         _this = this;
       post = options.post, id = options.id;
       post || (post = App.request("post:entity", id));
+      this.storage = new Storage({
+        id: post.id
+      });
       this.listenTo(post, "updated", function() {
+        _this.storage.destroy();
         return App.vent.trigger("post:updated", post);
       });
       return App.execute("when:fetched", post, function() {
@@ -1839,7 +1917,8 @@ this.Wardrobe.module("PostApp.Edit", function(Edit, App, Backbone, Marionette, $
 
     Controller.prototype.getEditView = function(post) {
       return new Edit.Post({
-        model: post
+        model: post,
+        storage: this.storage
       });
     };
 
@@ -1961,11 +2040,11 @@ this.Wardrobe.module("PostApp.List", function(List, App, Backbone, Marionette, $
     PostItem.prototype.attributes = function() {
       if (this.model.get("active") === "1") {
         return {
-          "class": "post-item"
+          "class": "post-item post-" + this.model.id
         };
       } else {
         return {
-          "class": "post-item draft"
+          "class": "post-item draft post-" + this.model.id
         };
       }
     };
@@ -1975,7 +2054,8 @@ this.Wardrobe.module("PostApp.List", function(List, App, Backbone, Marionette, $
     };
 
     PostItem.prototype.events = {
-      "click .details": "edit"
+      "click .details": "edit",
+      "click .preview": "preview"
     };
 
     PostItem.prototype.onShow = function() {
@@ -1992,9 +2072,6 @@ this.Wardrobe.module("PostApp.List", function(List, App, Backbone, Marionette, $
     };
 
     PostItem.prototype.templateHelpers = {
-      previewUrl: function() {
-        return "" + (App.request("get:url:blog")) + "/post/preview/" + this.id;
-      },
       status: function() {
         if (parseInt(this.active) === 1 && this.publish_date > moment().format('YYYY-MM-DD HH:mm:ss')) {
           return Lang.post_scheduled;
@@ -2009,6 +2086,16 @@ this.Wardrobe.module("PostApp.List", function(List, App, Backbone, Marionette, $
     PostItem.prototype.edit = function(e) {
       e.preventDefault();
       return App.vent.trigger("post:item:clicked", this.model);
+    };
+
+    PostItem.prototype.preview = function(e) {
+      var storage;
+      e.preventDefault();
+      storage = new Storage({
+        id: this.model.id
+      });
+      storage.put(this.model.toJSON());
+      return window.open("" + (App.request("get:url:blog")) + "/post/preview/" + this.model.id, '_blank');
     };
 
     return PostItem;
@@ -2047,6 +2134,49 @@ this.Wardrobe.module("PostApp.List", function(List, App, Backbone, Marionette, $
 
     Posts.prototype.className = "span12";
 
+    Posts.prototype.events = {
+      "keyup #js-filter": "filter",
+      "change #js-sort": "sort"
+    };
+
+    Posts.prototype.hideAll = function() {
+      return this.$el.find(".post-item").hide();
+    };
+
+    Posts.prototype.filter = function(e) {
+      return this.handleFilter();
+    };
+
+    Posts.prototype.sort = function(e) {
+      return this.handleFilter();
+    };
+
+    Posts.prototype.handleFilter = function() {
+      var filter, sorter,
+        _this = this;
+      this.hideAll();
+      sorter = this.$("#js-sort").val();
+      filter = this.$("#js-filter").val();
+      if (sorter === "" && filter === "") {
+        return this.$el.find(".post-item").show();
+      }
+      return this.collection.filter(function(post) {
+        return _this.isMatch(post, sorter, filter);
+      });
+    };
+
+    Posts.prototype.isMatch = function(post, sorter, filter) {
+      var foundId, pattern;
+      foundId = sorter === "" || post.get("active") === sorter ? post.id : null;
+      if (foundId && filter !== "") {
+        pattern = new RegExp(filter, "gi");
+        foundId = pattern.test(post.get("title"));
+      }
+      if (foundId) {
+        return this.$el.find(".post-" + post.id).show();
+      }
+    };
+
     return Posts;
 
   })(App.Views.CompositeView);
@@ -2065,9 +2195,12 @@ this.Wardrobe.module("PostApp.New", function(New, App, Backbone, Marionette, $, 
     }
 
     Controller.prototype.initialize = function(options) {
-      var post, view;
+      var post, view,
+        _this = this;
       post = App.request("new:post:entity");
+      this.storage = new Storage;
       this.listenTo(post, "created", function() {
+        _this.storage.destroy();
         return App.vent.trigger("post:created", post);
       });
       view = this.getNewView(post);
@@ -2076,7 +2209,8 @@ this.Wardrobe.module("PostApp.New", function(New, App, Backbone, Marionette, $, 
 
     Controller.prototype.getNewView = function(post) {
       return new New.Post({
-        model: post
+        model: post,
+        storage: this.storage
       });
     };
 
@@ -2097,14 +2231,8 @@ this.Wardrobe.module("PostApp.New", function(New, App, Backbone, Marionette, $, 
       return Post.__super__.constructor.apply(this, arguments);
     }
 
-    Post.prototype.initialize = function() {
-      var _this = this;
-      return App.vent.on("post:new:seed", function(contents) {
-        return _this.fillForm(contents);
-      });
-    };
-
     Post.prototype.onRender = function() {
+      this.fillJSON($.jStorage.get("post-new"));
       this.$(".publish").text(Lang.post_publish);
       return this.$("#date").attr("placeholder", moment().format("MMM Do, YYYY [9am]"));
     };

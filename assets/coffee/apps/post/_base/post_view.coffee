@@ -7,17 +7,26 @@
     template: "post/_base/templates/form"
     className: "span12"
 
-    initialize: ->
+    initialize: (opts) ->
+      # Listen for when a markdown file is drag and dropped.
+      App.vent.on "post:new:seed", (contents) =>
+        @fillForm contents
       # Set a flag so we know when the tags are shown.
       @tagsShown = false
+      @storage = opts.storage
 
     events:
       "click .publish" : "save"
       "click .js-toggle" : "toggleDetails"
       "click .icon-tags" : "toggleTags"
       "click .icon-user" : "showUsers"
-      "change .js-active" : "changeBtn"
+      "click .icon-ellipsis-horizontal" : "insertReadMore"
+      "click input[type=radio]" : "changeBtn"
       "keyup #title" : "localStorage"
+      "change #js-user" : "localStorage"
+
+    insertReadMore: ->
+      @.insert '<!-- more -->'
 
     # When the model changes it's private _errors method call the changeErrors method.
     modelEvents:
@@ -29,13 +38,17 @@
         if @active? or @active is "1" then Lang.post_publish else Lang.post_save
       # Generate a preview url.
       previewUrl: ->
-        "#{App.request("get:url:blog")}/post/preview/#{@id}"
+        id = if @id then @id else "new"
+        "#{App.request("get:url:blog")}/post/preview/#{id}"
 
     # When the view is shown in the DOM setup all the plugins
     onShow: ->
       @setUpEditor()
       @setupUsers()
       @setupCalendar()
+      @setupFilm()
+      @localStorage()
+      @_triggerActive()
 
       if @model.isNew()
         @$('.js-toggle').trigger "click"
@@ -46,14 +59,22 @@
       App.request "tag:entities", (tags) =>
         @setUpTags tags
 
+    _triggerActive: ->
+      return @ if @model.isNew()
+      if @model.get("active")
+        @$(".js-active[value=1]").trigger("click")
+      else
+        $(".js-active[value=0]").trigger("click")
+
     # Setup the markdown editor
     setUpEditor: ->
       # Custom toolbar items.
       toolbar = [
         'bold', 'italic', '|'
-        'quote', 'unordered-list', 'ordered-list', '|'
-        'link', 'image', 'code', '|'
-        'undo', 'redo', '|', 'tags', 'calendar'
+        'quote', 'unordered-list', 'ordered-list', 'ellipsis-horizontal', '|'
+        'link', 'image', 'code', 'film', '|'
+        'undo', 'redo', '|'
+        'tags', 'calendar'
       ]
 
       @editor = new Editor
@@ -77,16 +98,14 @@
 
     # Save the post data to local storage
     localStorage: ->
-      data =
+      @storage.put
         title: @$('#title').val()
+        slug: @$('#slug').val()
+        active: @$('input[type=radio]:checked').val()
         content: @editor.codemirror.getValue()
         tags: @$("#js-tags").val()
-
-      # Save it manually so the first load has data.
-      $.jStorage.set "post-#{@model.id}", data
-
-      # Publish the data so any listeners can update.
-      $.jStorage.publish "post-#{@model.id}", data
+        user_id: @$("#js-user").val()
+        publish_date: @$("#publish_date").val()
 
     # Populate the user select list.
     setupUsers: ->
@@ -98,7 +117,8 @@
       # If the model isNew then set the current user as author.
       if @model.isNew()
         user = App.request "get:current:user"
-        $userSelect.val user.id
+        stored = @storage.get()
+        if stored?.user_id then $userSelect.val stored.user_id else $userSelect.val user.id
       else
         $userSelect.val @model.get("user_id")
 
@@ -172,6 +192,52 @@
               $('.icon-calendar').qtip "hide"
         hide: "unfocus"
 
+    setupFilm: ->
+      @$(".icon-film").qtip
+        show:
+          event: "click"
+        content:
+          text: $("#film-form").html()
+        position:
+          at: "right center"
+          my: "left center"
+          viewport: $(window) # Keep the tooltip on-screen at all times
+          effect: false
+        events:
+          render: (event, api) =>
+            $(".js-submitfilm").click (e) =>
+              e.preventDefault()
+              filmInput = $(e.currentTarget).parent().find('input')
+              filmUrl = filmInput.val()
+              @attachFilm filmUrl
+              filmInput.val('')
+              $('.icon-film').qtip "hide"
+
+        hide: "unfocus"
+
+    attachFilm: (filmUrl) ->
+      if filmUrl.match /youtube.com/g
+        @bulidYoutubeIframe filmUrl
+      else if filmUrl.match /vimeo.com/g
+        @buildVimeoIframe filmUrl
+      else
+        # I'd like to alert here
+        return
+
+    bulidYoutubeIframe: (filmUrl) ->
+      filmUrl = filmUrl.replace /https?:\/\//, '//'
+      filmUrl = filmUrl.replace /watch\?v=/, 'embed/'
+      filmIframe = '<iframe width="560" height="315" src="' + filmUrl + '" frameborder="0" allowfullscreen></iframe>'
+      @insert filmIframe
+
+    buildVimeoIframe: (originalFilmUrl) ->
+      filmUrl = originalFilmUrl.replace /https?:\/\/vimeo.com\//, '//player.vimeo.com/video/'
+      filmIframe = '<iframe src="' + filmUrl + '?title=0&amp;byline=0&amp;portrait=0" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>'
+      @insert filmIframe
+
+    insert: (string) ->
+      @editor.codemirror.replaceSelection string
+
     # Save the post data
     save: (e) ->
       e.preventDefault()
@@ -189,25 +255,6 @@
     processFormSubmit: (data) ->
       @model.save data,
         collection: @collection
-
-    # Show or hide the validation errors based on validation failure.
-    changeErrors: (model, errors, options) ->
-      if _.isEmpty(errors) then @removeErrors() else @addErrors errors
-
-    # Loop through the errors and display
-    addErrors: (errors = {}) ->
-      @$("#js-errors").show().find("span").html(Lang.post_errors)
-      for name, error of errors
-        @addError error
-
-    # Add any errors as a list item in the alert.
-    addError: (error) ->
-      sm = $("<li>").text(error)
-      @$("#js-errors span").append sm
-
-    # Remove all errors from the form.
-    removeErrors: ->
-      @$("#js-errors").hide()
 
     # Collapse the details fields
     collapse: (@$toggle) ->
@@ -229,6 +276,7 @@
 
     # Toggle the save button text based on status
     changeBtn: (e) ->
+      @localStorage()
       if e.currentTarget.value is "1"
         @$(".publish").text Lang.post_publish
       else

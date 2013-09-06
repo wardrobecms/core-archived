@@ -6,15 +6,16 @@
 
     attributes: ->
       if @model.get("active") is "1"
-        class: "post-item"
+        class: "post-item post-#{@model.id}"
       else
-        class: "post-item draft"
+        class: "post-item draft post-#{@model.id}"
 
     triggers:
       "click .delete" : "post:delete:clicked"
 
     events:
       "click .details" : "edit"
+      "click .preview" : "preview"
 
     onShow: ->
       allUsers = App.request "get:all:users"
@@ -27,9 +28,6 @@
         @$('.js-format-date').formatDates()
 
     templateHelpers:
-      previewUrl: ->
-        "#{App.request("get:url:blog")}/post/preview/#{@id}"
-
       status: ->
         if parseInt(@active) is 1 and @publish_date > moment().format('YYYY-MM-DD HH:mm:ss')
           Lang.post_scheduled
@@ -42,6 +40,13 @@
       e.preventDefault()
       App.vent.trigger "post:item:clicked", @model
 
+    preview: (e) ->
+      e.preventDefault()
+      storage = new Storage
+        id: @model.id
+      storage.put @model.toJSON()
+      window.open("#{App.request("get:url:blog")}/post/preview/#{@model.id}",'_blank')
+
   class List.Empty extends App.Views.ItemView
     template: "post/list/templates/empty"
     tagName: "tr"
@@ -52,3 +57,31 @@
     emptyView: List.Empty
     itemViewContainer: "tbody"
     className: "span12"
+
+    events:
+      "keyup #js-filter" : "filter"
+      "change #js-sort" : "sort"
+
+    hideAll: ->
+      @$el.find(".post-item").hide()
+
+    filter: (e) ->
+      @handleFilter()
+
+    sort: (e) ->
+      @handleFilter()
+
+    handleFilter: ->
+      @hideAll()
+      sorter = @$("#js-sort").val()
+      filter = @$("#js-filter").val()
+      return @$el.find(".post-item").show() if sorter is "" and filter is ""
+      @collection.filter (post) =>
+        @isMatch(post, sorter, filter)
+
+    isMatch: (post, sorter, filter) ->
+      foundId = if sorter is "" or post.get("active") is sorter then post.id else null
+      if foundId and filter isnt ""
+        pattern = new RegExp(filter,"gi")
+        foundId = pattern.test post.get("title")
+      @$el.find(".post-#{post.id}").show() if foundId
