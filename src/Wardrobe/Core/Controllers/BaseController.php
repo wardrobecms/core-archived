@@ -24,8 +24,6 @@ class BaseController extends Controller {
 
 		$this->theme = Config::get('core::wardrobe.theme');
 
-		Wardrobe::setupViews();
-
 		$presence = Validator::getPresenceVerifier();
 		$presence->setConnection('wardrobe');
 

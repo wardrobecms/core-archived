@@ -1,5 +1,7 @@
 <?php
 
+Wardrobe::setupViews();
+
 $wardrobeControllers = 'Wardrobe\Core\Controllers\\';
 
 Route::group(Config::get('core::routes.blog_group_rules'), function() use ($wardrobeControllers)
