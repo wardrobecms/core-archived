@@ -49,11 +49,13 @@ class Post extends BaseModel {
 		if (Config::get('core::wardrobe.cache'))
 		{
 			$content = $this->attributes['content'];
+
 			return Cache::rememberForever('post-'.$this->attributes['id'], function() use ($content)
 			{
 				return md($content);
 			});
 		}
+
 		return md($this->attributes['content']);
 	}
 
