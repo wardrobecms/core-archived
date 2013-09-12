@@ -59,6 +59,7 @@ class Post extends BaseModel {
 
 	/**
 	 * Get the atom date for atom feeds
+	 *
 	 * @return DateTime
 	 */
 	public function getAtomDateAttribute()
@@ -70,6 +71,7 @@ class Post extends BaseModel {
 
 	/**
 	 * Get the atom date for rss feeds
+	 *
 	 * @return DateTime
 	 */
 	public function getRssDateAttribute()
@@ -79,6 +81,11 @@ class Post extends BaseModel {
 		return $dt->toRSSString();
 	}
 
+	/**
+	 * Return an array of all the post dates.
+	 *
+	 * @return array
+	 */
 	public function getDates()
 	{
 	    return array('created_at', 'updated_at', 'publish_date');
@@ -86,7 +93,8 @@ class Post extends BaseModel {
 
 	/**
 	 * Get the short version of a post
-	 * @return
+	 *
+	 * @return string
 	 */
 	public function getShortAttribute()
 	{
@@ -97,11 +105,22 @@ class Post extends BaseModel {
 
 	/**
 	 * Get the parsed short version of a post
-	 * @return
+	 *
+	 * @return string
 	 */
 	public function getParsedShortAttribute()
 	{
-		return md($this->getShortAttribute());
+		$intro = $this->getShortAttribute();
+
+		if (Config::get('core::wardrobe.cache'))
+		{
+			return Cache::rememberForever('post-intro-'.$this->attributes['id'], function() use ($intro)
+			{
+				return md($intro);
+			});
+		}
+
+		return md($intro);
 	}
 
 }
