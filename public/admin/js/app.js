@@ -1871,9 +1871,6 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
         allowedTypes: ["image/jpeg", "image/png", "image/jpg", "image/gif"],
         progressText: "![Uploading file...]()",
         urlText: "![file]({filename})",
-        onUploadedFile: function(json) {
-          debugger;
-        },
         errorText: "Error uploading file"
       };
       return inlineAttach.attachToCodeMirror(editor.codemirror, options);

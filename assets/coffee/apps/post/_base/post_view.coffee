@@ -26,7 +26,7 @@
       "change #js-user" : "localStorage"
 
     insertReadMore: ->
-      @.insert '<!-- more -->'
+      @insert '<!-- more -->'
 
     # When the model changes it's private _errors method call the changeErrors method.
     modelEvents:
@@ -289,8 +289,8 @@
         allowedTypes: ["image/jpeg", "image/png", "image/jpg", "image/gif"]
         progressText: "![Uploading file...]()"
         urlText: "![file]({filename})"
-        onUploadedFile: (json) ->
-          debugger
+        # onUploadedFile: (json) ->
         errorText: "Error uploading file"
+
       # Attach it to the code mirror.
       inlineAttach.attachToCodeMirror(editor.codemirror, options)
