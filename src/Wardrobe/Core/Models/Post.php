@@ -96,7 +96,7 @@ class Post extends BaseModel {
 	 *
 	 * @return string
 	 */
-	public function getShortAttribute()
+	public function getIntroAttribute()
 	{
 		$content = $this->attributes['content'];
 
@@ -108,9 +108,9 @@ class Post extends BaseModel {
 	 *
 	 * @return string
 	 */
-	public function getParsedShortAttribute()
+	public function getParsedIntroAttribute()
 	{
-		$intro = $this->getShortAttribute();
+		$intro = $this->getIntroAttribute();
 
 		if (Config::get('core::wardrobe.cache'))
 		{
