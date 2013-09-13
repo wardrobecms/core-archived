@@ -95,7 +95,7 @@ class DbPostRepository implements PostRepositoryInterface {
 		return Post::with(array('tags', 'user'))
 			->select('posts.*')
 			->join('tags', 'posts.id', '=', 'tags.post_id')
-			->orWhere(function($query) use ($search)
+			->where(function($query) use ($search)
 			{
 				$query->orWhere('title', 'like', '%'.$search.'%')
 							->orWhere('content', 'like', '%'.$search.'%');
