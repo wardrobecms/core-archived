@@ -24,6 +24,7 @@ return array(
   'post_success' => 'Success!',
   'post_saved' => 'Post was successfully saved',
   'post_errors' => '<strong>Error</strong> Please fix the following errors',
+  'post_more_added' => '<strong>Error</strong> You have already inserted a \"more\" anchor',
 
   // Post List
   'posts_none' => 'No Posts',

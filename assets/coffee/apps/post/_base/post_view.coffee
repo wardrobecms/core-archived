@@ -26,7 +26,11 @@
       "change #js-user" : "localStorage"
 
     insertReadMore: ->
-      @insert '<!-- more -->'
+      if @editor.codemirror.getValue().match /!-- more/g
+        @$("#js-errors").show().find("span").html Lang.post_more_added
+      else
+        @$(".icon-ellipsis-horizontal").addClass("disabled")
+        @insert '<!-- more -->'
 
     # When the model changes it's private _errors method call the changeErrors method.
     modelEvents:

@@ -1549,7 +1549,12 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
     };
 
     PostView.prototype.insertReadMore = function() {
-      return this.insert('<!-- more -->');
+      if (this.editor.codemirror.getValue().match(/!-- more/g)) {
+        return this.$("#js-errors").show().find("span").html(Lang.post_more_added);
+      } else {
+        this.$(".icon-ellipsis-horizontal").addClass("disabled");
+        return this.insert('<!-- more -->');
+      }
     };
 
     PostView.prototype.modelEvents = {
