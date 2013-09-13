@@ -101,8 +101,8 @@ class Post extends BaseModel {
 	public function getIntroAttribute()
 	{
 		$content = $this->attributes['content'];
-
-		return explode('<!-- more -->', $content)[0];
+		$start = explode('<!-- more -->', $content);
+		return $start[0];
 	}
 
 	/**
