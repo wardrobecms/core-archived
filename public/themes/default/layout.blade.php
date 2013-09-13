@@ -11,11 +11,11 @@
   <body>
     <div class="container">
       <header>
-        <h1><a href="{{ wardrobe_url('/') }}">{{ site_title() }}</a></h1>
+        <h1><a href="{{ Wardrobe::route('/') }}">{{ site_title() }}</a></h1>
         <nav>
           <ul>
-            <li><a href="{{ wardrobe_url('archive') }}">Posts</a></li>
-            <li><a href="{{ wardrobe_url('rss') }}">RSS</a></li>
+            <li><a href="{{ Wardrobe::route('archive') }}">Posts</a></li>
+            <li><a href="{{ Wardrobe::route('rss') }}">RSS</a></li>
           </ul>
         </nav>
       </header>
