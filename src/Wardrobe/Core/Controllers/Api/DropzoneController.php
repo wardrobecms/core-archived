@@ -5,6 +5,7 @@ use Wardrobe\Core\Controllers\BaseController;
 use Input, Config, Response, Exception, File;
 use Carbon\Carbon;
 use Symfony\Component\Yaml\Parser;
+use Intervention\Image\Image;
 
 class DropzoneController extends BaseController {
 
@@ -69,7 +70,21 @@ class DropzoneController extends BaseController {
 		$imageDir = Config::get('core::wardrobe.image_dir');
 		$destinationPath = public_path(). "/{$imageDir}/";
 		$filename = $file->getClientOriginalName();
-		if (Input::file('file')->move($destinationPath, $filename))
+		$resizeEnabled = Config::get('core::wardrobe.image_resize.enabled');
+		
+		if ($resizeEnabled)
+		{
+			$resizeWidth = Config::get('core::wardrobe.image_resize.width');
+			$resizeHeight = Config::get('core::wardrobe.image_resize.height');
+			$image = Image::make($file->getRealPath())->resize($resizeWidth, $resizeHeight, true);
+			$image->save($destinationPath.$filename);
+		}
+		else
+		{
+			$file->move($destinationPath, $filename);
+		}
+
+		if (File::exists($destinationPath.$filename))
 		{
 			// @note - Using the absolute url so it loads images when ran in sub folder
 			// this will make exporting less portable and may need to re-address at a later point.
@@ -77,5 +92,4 @@ class DropzoneController extends BaseController {
 		}
 		return Response::json(array('error' => 'Upload failed. Please ensure your public/img directory is writable.'));
 	}
-
 }
