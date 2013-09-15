@@ -20,6 +20,8 @@ Route::group(Config::get('core::routes.admin_group_rules'), function() use ($war
 	Route::get('logout', array('uses' => $wardrobeControllers.'LoginController@destroy', 'as' => 'wardrobe.admin.logout'));
 	Route::get('login', array('uses' => $wardrobeControllers.'LoginController@create', 'as' => 'wardrobe.admin.login'));
 	Route::post('login', array('uses' => $wardrobeControllers.'LoginController@store'));
+	Route::get('login/remind', array('uses' => $wardrobeControllers.'LoginController@remindForm', 'as' => 'wardrobe.admin.remindForm'));
+	Route::post('login/remind', array('uses' => $wardrobeControllers.'LoginController@remindSend'));
 });
 
 Route::group(Config::get('core::routes.api_group_rules'), function() use ($wardrobeControllers)
