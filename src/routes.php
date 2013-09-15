@@ -7,6 +7,7 @@ $wardrobeControllers = 'Wardrobe\Core\Controllers\\';
 Route::group(Config::get('core::routes.blog_group_rules'), function() use ($wardrobeControllers)
 {
 	Route::get('/', array('uses' => $wardrobeControllers.'HomeController@index', 'as' => 'wardrobe.index'));
+	Route::get('page/{slug}', array('uses' => $wardrobeControllers.'PageController@show', 'as' => 'wardrobe.pages.show'));
 	Route::get('post/{slug}', array('uses' => $wardrobeControllers.'PostController@show', 'as' => 'wardrobe.posts.show'));
 	Route::get('post/preview/{id}', array('uses' => $wardrobeControllers.'PostController@preview', 'as' => 'wardrobe.posts.preview'));
 	Route::get('tag/{tag}', array('uses' => $wardrobeControllers.'PostController@tag', 'as' => 'wardrobe.posts.tags'));

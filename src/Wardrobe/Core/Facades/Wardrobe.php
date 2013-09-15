@@ -45,6 +45,25 @@ class Wardrobe {
 		return $this->postsRepo->allTags();
 	}
 
+	/**
+	 * Generate a route to a named group
+	 *
+	 * @param  string $route
+	 * @param  mixed $param
+	 * @return string
+	 */
+	public function route($route, $param = null)
+	{
+		if($route == '/')
+		{
+    	return route('wardrobe.index');
+		}
+		else
+		{
+			return URL::route('wardrobe.'.$route, $param);
+		}
+	}
+
 	public function setupViews()
 	{
 		View::addLocation(public_path().'/'.Config::get('core::wardrobe.theme_dir'));

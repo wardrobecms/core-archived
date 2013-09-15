@@ -13,9 +13,9 @@
 */
 $wardrobeControllers = 'Wardrobe\Core\Controllers\\';
 
-Route::get('/about', function()
+Route::get('/tags', function()
 {
-	return View::make(theme_view('about'));
+	return View::make(theme_view('tags'));
 });
 
 // Example of over riding a default route:
