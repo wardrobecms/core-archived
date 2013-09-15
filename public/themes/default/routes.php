@@ -11,8 +11,17 @@
 | http://laravel.com/docs/controllers
 |
 */
+$wardrobeControllers = 'Wardrobe\Core\Controllers\\';
 
 Route::get('/about', function()
 {
 	return View::make(theme_view('about'));
 });
+
+// Example of over riding a default route:
+
+// Route::get('enviar/{slug}', array('uses' => $wardrobeControllers.'PostController@show', 'as' => 'wardrobe.posts.show'));
+// Route::get('post/{slug}', function()
+// {
+//     return App::abort(404, 'Page not found');
+// });
