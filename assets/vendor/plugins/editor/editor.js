@@ -6641,10 +6641,10 @@ Editor.prototype.createStatusbar = function(status) {
           el.innerHTML = cm.lineCount();
         });
       } else if (name === 'cursor') {
-        el.innerHTML = '0:0';
+        el.innerHTML = '1:1';
         cm.on('cursorActivity', function() {
           pos = cm.getCursor();
-          el.innerHTML = pos.line + ':' + pos.ch;
+          el.innerHTML = (pos.line + 1) + ':' + (pos.ch + 1);
         });
       }
       bar.appendChild(el);
