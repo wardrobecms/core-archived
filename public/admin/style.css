@@ -9805,6 +9805,7 @@ button {
   position: relative;
 }
 #write .author select {
+  height: 25px;
   margin-top: 11px;
   margin-left: 5px;
 }
