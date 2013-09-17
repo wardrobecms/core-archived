@@ -82,10 +82,11 @@
       ]
 
       @editor = new Editor
+        element: document.getElementById("content")
         toolbar: toolbar
 
       # Render to the #content holder.
-      @editor.render(document.getElementById("content"))
+      # @editor.render(document.getElementById("content"))
 
       # Allow images to be drag and dropped into the editor.
       @imageUpload @editor
@@ -95,10 +96,10 @@
         @localStorage()
 
       # Manually over ride the editor status bar.
-      @$('.editor-statusbar')
-        .find('.lines').html(@editor.codemirror.lineCount())
-        .find('.words').html(@editor.codemirror.getValue().length)
-        .find('.cursorActivity').html(@editor.codemirror.getCursor().line + ':' + @editor.codemirror.getCursor().ch)
+      # @$('.editor-statusbar')
+      #   .find('.lines').html(@editor.codemirror.lineCount())
+      #   .find('.words').html(@editor.codemirror.getValue().length)
+      #   .find('.cursorActivity').html(@editor.codemirror.getCursor().line + ':' + @editor.codemirror.getCursor().ch)
 
     # Save the post data to local storage
     localStorage: ->

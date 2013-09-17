@@ -6473,8 +6473,11 @@ var shortcuts = {
   image: 'Cmd-Alt-I',
   quote: "Cmd-'",
   'ordered-list': 'Cmd-Alt-L',
-  'unordered-list': 'Cmd-L'
+  'unordered-list': 'Cmd-L',
+  'undo': 'Cmd-Z',
+  'redo': 'Cmd-Y'
 };
+
 var toolbar = [
   'bold', 'italic', '|',
   'quote', 'unordered-list', 'ordered-list', '|',
@@ -6505,6 +6508,10 @@ Editor.prototype.init = function(options) {
   }
 
   this.options = options;
+
+  // if there's a node element, do the render
+  if (this.element)
+    this.render(this.element);
 };
 
 Editor.prototype.render = function(el) {
@@ -6540,6 +6547,8 @@ Editor.prototype.render = function(el) {
   if (options.status !== false) {
     this.createStatusbar();
   }
+
+  this.codemirror.refresh();
 };
 
 Editor.prototype.createToolbar = function(tools) {
@@ -6779,6 +6788,7 @@ function getState(cm, pos) {
   }
   return ret;
 }
+
 function fixShortcut(text) {
   if (isMac) {
     text = text.replace('Ctrl', 'Cmd');
@@ -6786,6 +6796,11 @@ function fixShortcut(text) {
     text = text.replace('Cmd', 'Ctrl');
   }
   return text;
+}
+
+function titleize(str) {
+  str = str.replace('-', ' ');
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
 
 var createIcon = function(name, options) {
@@ -6797,19 +6812,20 @@ var createIcon = function(name, options) {
     el.innerHTML = '|';
     return el;
   }
+
   el = document.createElement('a');
+  el.className = options.className || 'icon-' + name;
+  el.title = options.title || titleize(name);
 
   var shortcut = options.shortcut || shortcuts[name];
   if (shortcut) {
     shortcut = fixShortcut(shortcut);
-    el.title = shortcut;
-    el.title = el.title.replace('Cmd', '⌘');
+    el.title += " \u25CF " + shortcut; // dot separator
     if (isMac) {
-      el.title = el.title.replace('Alt', '⌥');
+      el.title = el.title.replace("Cmd", "\u2318").replace("Shift", "\u21E7").replace('Alt', "\u2325");
     }
   }
 
-  el.className = options.className || 'icon-' + name;
   return el;
 };
 
