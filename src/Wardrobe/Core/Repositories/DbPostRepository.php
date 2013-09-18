@@ -289,4 +289,22 @@ class DbPostRepository implements PostRepositoryInterface {
 		return $validator->errors();
 	}
 
+	/**
+	 * Get the latest active posts.
+	 *
+	 * @param int $limit
+	 *
+	 * @return array
+	 */
+	public function latestPosts($limit)
+	{
+		$limit = is_numeric($limit) ? $limit : 5;
+
+		return Post::where('active', 1)
+			->where('publish_date', '<=', new DateTime)
+			->orderBy('publish_date', 'desc')
+			->take(5)
+			->get();
+	}
+
 }
