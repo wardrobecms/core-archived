@@ -34,7 +34,22 @@ class Wardrobe {
 	 */
 	public function posts($params = array())
 	{
-		return $this->postsRepo->facadeSearch($params);
+		$per_page = isset($params['per_page']) ? $params['per_page'] : Config::get('core::wardrobe.per_page');
+
+		return $this->postsRepo->active($per_page);
+	}
+
+	/**
+	 * Fetch Latest Posts
+	 *
+	 * @param array $params
+	 * @return Posts
+	 */
+	public function latestPosts($params = array())
+	{
+		return isset($params['limit']) ? $params['limit'] : Config::get('core::wardrobe.per_page');
+
+		return $this->postsRepo->latestPosts($limit);
 	}
 
 	/**
@@ -43,25 +58,6 @@ class Wardrobe {
 	public function tags()
 	{
 		return $this->postsRepo->allTags();
-	}
-
-	/**
-	 * Generate a route to a named group
-	 *
-	 * @param  string $route
-	 * @param  mixed $param
-	 * @return string
-	 */
-	public function route($route, $param = null)
-	{
-		if($route == '/')
-		{
-    	return route('wardrobe.index');
-		}
-		else
-		{
-			return URL::route('wardrobe.'.$route, $param);
-		}
 	}
 
 	public function setupViews()
