@@ -116,4 +116,11 @@ interface PostRepositoryInterface {
 	 */
 	public function validForUpdate($id, $title, $slug);
 
+	/**
+	 * Get the latest active posts.
+	 *
+	 * @param int $limit
+	 */
+	public function latestPosts($limit);
+
 }
