@@ -303,7 +303,7 @@ class DbPostRepository implements PostRepositoryInterface {
 		return Post::where('active', 1)
 			->where('publish_date', '<=', new DateTime)
 			->orderBy('publish_date', 'desc')
-			->take(5)
+			->take($limit)
 			->get();
 	}
 
