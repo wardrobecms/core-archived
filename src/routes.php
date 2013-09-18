@@ -13,6 +13,29 @@ Route::group(Config::get('core::routes.blog_group_rules'), function() use ($ward
 	Route::get('tag/{tag}', array('uses' => $wardrobeControllers.'PostController@tag', 'as' => 'wardrobe.posts.tags'));
 	Route::get('archive', array('uses' => $wardrobeControllers.'PostController@index', 'as' => 'wardrobe.posts.archive'));
 	Route::get('rss', array('uses' => $wardrobeControllers.'RssController@index', 'as' => 'wardrobe.posts.rss'));
+
+	/**
+	 * Password reset
+	 */
+	Route::get('password/reset/{token}', function($token)
+	{
+		return View::make('core::admin.auth.reset')->with('token', $token);
+	});
+
+	/**
+	 * Password reset Success
+	 */
+	Route::post('password/reset/{token}', function()
+	{
+		$credentials = array('email' => Input::get('email'));
+
+		return Password::reset($credentials, function($user, $password)
+		{
+			$user->password = Hash::make($password);
+			$user->save();
+			return Redirect::to('wardrobe');
+		});
+	});
 });
 
 Route::group(Config::get('core::routes.admin_group_rules'), function() use ($wardrobeControllers)
