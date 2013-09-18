@@ -40,6 +40,19 @@ class Wardrobe {
 	}
 
 	/**
+	 * Fetch Latest Posts
+	 *
+	 * @param array $params
+	 * @return Posts
+	 */
+	public function latestPosts($params = array())
+	{
+		return isset($params['limit']) ? $params['limit'] : Config::get('core::wardrobe.per_page');
+
+		return $this->postsRepo->latestPosts($limit);
+	}
+
+	/**
 	 * Fetch all tags
 	 */
 	public function tags()
