@@ -95,53 +95,16 @@ class DbPostRepository implements PostRepositoryInterface {
 		return Post::with(array('tags', 'user'))
 			->select('posts.*')
 			->join('tags', 'posts.id', '=', 'tags.post_id')
-			->where(function($query) use ($search)
+			->orWhere(function($query) use ($search)
 			{
-				$query->orWhere('title', 'like', '%'.$search.'%')
-							->orWhere('content', 'like', '%'.$search.'%');
+			 $query->orWhere('title', 'like', '%'.$search.'%')
+			 ->orWhere('content', 'like', '%'.$search.'%');
 			})
 			->orderBy('posts.publish_date', 'desc')
 			->where('posts.active', 1)
 			->where('posts.publish_date', '<=', new DateTime)
 			->distinct()
 			->paginate($per_page);
-	}
-
-	/**
-	 * Search from the wardrobe facet
-	 *
-	 * @param  array   $params
-	 * @return array
-	 */
-	public function facadeSearch(array $params)
-	{
-		$search = isset($params['q']) ? $params['q'] : null;
-		$tag = isset($params['tag']) ? $params['tag'] : null;
-		$limit = isset($params['limit']) ? (int) $params['limit'] : 1;
-
-		$post = Post::with(array('tags', 'user'))
-			->select('posts.*')
-			->join('tags', 'posts.id', '=', 'tags.post_id')
-			->orderBy('posts.publish_date', 'desc')
-			->where('posts.active', 1)
-			->where('posts.publish_date', '<=', new DateTime)
-			->distinct();
-
-		if ($search)
-		{
-			$post->where(function($query) use ($search)
-			{
-				$query->orWhere('title', 'like', '%'.$search.'%')
-							->orWhere('content', 'like', '%'.$search.'%');
-			});
-		}
-
-		if ($tag)
-		{
-			$post->where('tags.tag', '=', $tag);
-		}
-
-		return $post->skip(0)->take($limit)->get();
 	}
 
 	/**
@@ -287,6 +250,24 @@ class DbPostRepository implements PostRepositoryInterface {
 		with($validator = Validator::make(compact('title', 'slug'), $rules))->fails();
 
 		return $validator->errors();
+	}
+
+	/**
+	 * Get the latest active posts.
+	 *
+	 * @param int $limit
+	 *
+	 * @return array
+	 */
+	public function latestPosts($limit)
+	{
+		$limit = is_numeric($limit) ? $limit : 5;
+
+		return Post::where('active', 1)
+			->where('publish_date', '<=', new DateTime)
+			->orderBy('publish_date', 'desc')
+			->take($limit)
+			->get();
 	}
 
 }
