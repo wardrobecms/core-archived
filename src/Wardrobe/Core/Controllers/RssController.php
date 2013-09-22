@@ -31,7 +31,7 @@ class RssController extends BaseController {
 	 *
 	 * @return Response
 	 */
-	public function getIndex()
+	public function index()
 	{
 		$posts = $this->posts->active(100);
 
