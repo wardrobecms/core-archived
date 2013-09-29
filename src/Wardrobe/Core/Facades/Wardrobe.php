@@ -60,7 +60,7 @@ class Wardrobe {
 		}
 		else
 		{
-			return URL::route('wardrobe.'.$route, $param);
+			return \URL::route('wardrobe.'.$route, $param);
 		}
 	}
 
