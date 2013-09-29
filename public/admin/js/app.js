@@ -119,9 +119,9 @@ var __t, __p = '', __e = _.escape;
 with (obj) {
 __p += '<form>\n  <input type="hidden" name="publish_date" id="publish_date" value="">\n  <div id="js-errors" class="hide">\n    <div class="alert alert-error">\n      <button type="button" class="close" data-dismiss="alert">×</button>\n      <span></span>\n    </div>\n  </div>\n  <div id="write">\n    <div class="info">\n      <div class="field">\n\n        <a href="' +
 ((__t = ( previewUrl() )) == null ? '' : __t) +
-'" target="_blank" class="btn btn-mini preview pull-right">' +
+'" target="_blank" class="btn preview pull-right">' +
 ((__t = ( Lang.post_preview )) == null ? '' : __t) +
-'</a>\n        <button class="btn btn-mini btn-success publish pull-right">' +
+'</a>\n        <button class="btn btn-success publish pull-right">' +
 ((__t = ( submitBtnText() )) == null ? '' : __t) +
 '</button>\n\n        <i data-dir="up" class="icon-chevron-sign-right js-toggle" title="' +
 ((__t = ( Lang.post_expand )) == null ? '' : __t) +

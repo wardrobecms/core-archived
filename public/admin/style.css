@@ -9757,16 +9757,21 @@ button {
 }
 #write {
   padding: 20px;
-  margin-bottom: 20px;
+  margin: 20px auto;
+  max-width: 700px;
 }
 #write .publish,
 #write .preview {
   margin-top: 16px;
+  position: absolute;
+  top: 0;
+  right: 115px;
 }
 #write .preview {
   margin-left: 5px;
   font-family: 'Open Sans', sans-serif;
   font-size: 10.5px;
+  right: 40px;
 }
 #write .popover {
   max-width: 376px;
@@ -9777,6 +9782,14 @@ button {
 }
 #write .field {
   margin: 5px 0;
+}
+#write input#title {
+  height: 25px;
+  font-size: 25px;
+}
+#write input#title::-webkit-input-placeholder {
+  height: 25px;
+  font-size: 25px;
 }
 #write .details .field:before {
   opacity: 0.6;
@@ -9801,6 +9814,9 @@ button {
   margin-top: 16px;
   margin-right: 6px;
 }
+#write .info i.js-toggle {
+  margin-top: 23px;
+}
 #write .content-area {
   position: relative;
 }
@@ -9820,6 +9836,7 @@ button {
 }
 .editor-toolbar {
   margin-bottom: 10px;
+  text-align: center;
 }
 #write .info input,
 #write .info textarea {

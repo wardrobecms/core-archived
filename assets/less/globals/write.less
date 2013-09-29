@@ -10,14 +10,19 @@
 }
 #write {
   padding: 20px;
-  margin-bottom: 20px;
+  margin: 20px auto;
+  max-width: 700px;
   .publish, .preview {
     margin-top: 16px;
+    position: absolute;
+    top: 0;
+    right: 115px;
   }
   .preview {
     margin-left: 5px;
     font-family: 'Open Sans', sans-serif;
     font-size: 10.5px;
+    right: 40px;
   }
   .popover {
     max-width: 376px;
@@ -28,6 +33,14 @@
   }
   .field {
     margin: 5px 0;
+  }
+  input#title {
+    height: 25px;
+    font-size: 25px;
+    &::-webkit-input-placeholder {
+      height: 25px;
+      font-size: 25px;
+    }
   }
   .details .field {
     &:before {
@@ -52,6 +65,9 @@
       float: left;
       margin-top: 16px;
       margin-right: 6px;
+      &.js-toggle {
+        margin-top: 23px;
+      }
     }
   }
   .content-area {
@@ -77,6 +93,7 @@
 
 .editor-toolbar {
   margin-bottom: 10px;
+  text-align: center;
 }
 
 #write .info input,
