@@ -10,10 +10,10 @@
 <body>
   <div id="header-region"></div>
   <div id="js-alert"></div>
-  <div class="container-fluid">
-    <div class="row-fluid">
+  <div class="container">
+    <div class="row">
       @yield('content')
-      <div id="main-region" class="span12"></div>
+      <div id="main-region" class="col-md-12"></div>
     </div>
   </div>
   <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>

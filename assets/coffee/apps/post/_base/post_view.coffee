@@ -5,7 +5,7 @@
 
   class Views.PostView extends App.Views.ItemView
     template: "post/_base/templates/form"
-    className: "span12"
+    className: "col-md-12"
 
     initialize: (opts) ->
       # Listen for when a markdown file is drag and dropped.
@@ -163,12 +163,14 @@
     # Toggle the tags based on toolbar click
     toggleTags: (e) ->
       if @tagsShown
+        @$('.editor-toolbar').removeClass "open"
         @$('.editor-toolbar a, .editor-toolbar i').show()
-        @$(".tags-bar").hide();
+        @$(".tags-bar").addClass("hide")
       else
+        @$('.editor-toolbar').addClass "open"
         @$('.editor-toolbar a, .editor-toolbar i').hide()
         @$('.icon-tags').show()
-        @$(".tags-bar").show()
+        @$(".tags-bar").removeClass("hide")
         @$("js-tags").focus()
 
       @tagsShown = !@tagsShown
@@ -263,12 +265,12 @@
     # Collapse the details fields
     collapse: (@$toggle) ->
       @$toggle.data("dir", "up").addClass("icon-chevron-sign-right").removeClass("icon-chevron-sign-down")
-      @$(".details.hide").hide()
+      @$(".details").addClass "hide"
 
     # Expand the details fields
     expand: (@$toggle) ->
       @$toggle.data("dir", "down").addClass("icon-chevron-sign-down").removeClass("icon-chevron-sign-right")
-      @$(".details.hide").show()
+      @$(".details").removeClass "hide"
 
     # Toggle the post details
     toggleDetails: (e) ->

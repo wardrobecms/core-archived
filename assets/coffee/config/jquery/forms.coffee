@@ -7,10 +7,9 @@ $.fn.fillJSON = (json) ->
 
 $.fn.showAlert = (title, msg, type) ->
   $el = $(this)
-  html = "<div class='alert alert-block #{type}'>
-    <button type='button' class='close' data-dismiss='alert'>×</button>
-    <h4 class='alert-heading'>#{title}</h4>
-    <p>#{msg}</p>
+  html = "<div class='alert alert-block alert-dismissable #{type}'>
+    <button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button>
+    <strong>#{title}</strong> #{msg}
   </div>"
   $el.html(html).fadeIn()
-  $(".alert").delay(3000).fadeOut 400
+  # $(".alert").delay(3000).fadeOut 400

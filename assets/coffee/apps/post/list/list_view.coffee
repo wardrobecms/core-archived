@@ -5,10 +5,12 @@
     tagName: "tr"
 
     attributes: ->
-      if @model.get("active") is "1"
+      if @model.get("active") is "1" and @model.get("publish_date") > moment().format('YYYY-MM-DD HH:mm:ss')
+        class: "post-item post-#{@model.id} success"
+      else if @model.get("active") is "1"
         class: "post-item post-#{@model.id}"
       else
-        class: "post-item draft post-#{@model.id}"
+        class: "post-item draft post-#{@model.id} warning"
 
     triggers:
       "click .delete" : "post:delete:clicked"
@@ -25,7 +27,7 @@
       else
         user = @model.get("user")
         $avEl.avatar user.email, $avEl.attr("width")
-        @$('.js-format-date').formatDates()
+      @$('.js-format-date').formatDates()
 
     templateHelpers:
       status: ->

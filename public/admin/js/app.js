@@ -143,9 +143,9 @@ __p += '<form>\n  <input type="hidden" name="publish_date" id="publish_date" val
 ((__t = ( Lang.post_tags )) == null ? '' : __t) +
 '">\n      </div>\n    </div>\n  </div>\n</form>\n\n<div id="date-form" style="display: none">\n  <form class="form-inline">\n    <label for="date">' +
 ((__t = ( Lang.post_publish_date )) == null ? '' : __t) +
-'</label><br>\n    <input type="text" name="date" class="js-date" id="date" value="" placeholder="Next Thursday 10am">\n    <button class="btn js-setdate">' +
+'</label><br>\n    <input type="text" name="date" class="js-date" id="date" value="" placeholder="Next Thursday 10am">\n    <button class="btn btn-default js-setdate btn-xs">' +
 ((__t = ( Lang.post_publish_date_set )) == null ? '' : __t) +
-'</button>\n  </form>\n</div>\n\n<div id="film-form" style="display: none">\n  <form class="form-inline">\n    <label for="date">Video URL</label><br>\n    <input type="text" name="date" class="js-film" id="film" value="" placeholder="http://youtube.com/">\n    <button class="btn js-submitfilm">' +
+'</button>\n  </form>\n</div>\n\n<div id="film-form" style="display: none">\n  <form class="form-inline">\n    <label for="date">Video URL</label><br>\n    <input type="text" name="date" class="js-film" id="film" value="" placeholder="http://youtube.com/">\n    <button class="btn btn-default js-submitfilm btn-xs">' +
 ((__t = ( Lang.post_publish_date_set )) == null ? '' : __t) +
 '</button>\n  </form>\n</div>\n';
 
@@ -169,7 +169,7 @@ this["JST"]["post/list/templates/grid.html"] = function(obj) {
 obj || (obj = {});
 var __t, __p = '', __e = _.escape;
 with (obj) {
-__p += '<div class="filter">\n  <input type="text" class="filter" id="js-filter" name="filter" placeholder="Filter">\n  <select name="active" id="js-sort">\n    <option value="">Any Status</option>\n    <option value="1">Active</option>\n    <option value="0">Draft</option>\n  </select>\n</div>\n<table class="table center-col">\n\t<thead>\n\t\t<tr>\n\t\t\t<th>' +
+__p += '<form class="filter form-inline hidden-xs" role="form">\n  <div class="form-group">\n    <input type="text" class="form-control filter" id="js-filter" name="filter" placeholder="Filter">\n  </div>\n  <div class="form-group">\n    <select name="active" class="form-control" id="js-sort">\n      <option value="">Any Status</option>\n      <option value="1">Active</option>\n      <option value="0">Draft</option>\n    </select>\n  </div>\n</form>\n<table class="table center-col">\n\t<thead>\n\t\t<tr>\n\t\t\t<th>' +
 ((__t = ( Lang.post_title )) == null ? '' : __t) +
 '</th>\n\t\t\t<th>' +
 ((__t = ( Lang.post_status )) == null ? '' : __t) +
@@ -272,9 +272,8 @@ $.fn.fillJSON = function(json) {
 $.fn.showAlert = function(title, msg, type) {
   var $el, html;
   $el = $(this);
-  html = "<div class='alert alert-block " + type + "'>    <button type='button' class='close' data-dismiss='alert'>×</button>    <h4 class='alert-heading'>" + title + "</h4>    <p>" + msg + "</p>  </div>";
-  $el.html(html).fadeIn();
-  return $(".alert").delay(3000).fadeOut(400);
+  html = "<div class='alert alert-block alert-dismissable " + type + "'>    <button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button>    <strong>" + title + "</strong> " + msg + "  </div>";
+  return $el.html(html).fadeIn();
 };
 
 
@@ -1526,7 +1525,7 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
 
     PostView.prototype.template = "post/_base/templates/form";
 
-    PostView.prototype.className = "span12";
+    PostView.prototype.className = "col-md-12";
 
     PostView.prototype.initialize = function(opts) {
       var _this = this;
@@ -1716,12 +1715,14 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
 
     PostView.prototype.toggleTags = function(e) {
       if (this.tagsShown) {
+        this.$('.editor-toolbar').removeClass("open");
         this.$('.editor-toolbar a, .editor-toolbar i').show();
-        this.$(".tags-bar").hide();
+        this.$(".tags-bar").addClass("hide");
       } else {
+        this.$('.editor-toolbar').addClass("open");
         this.$('.editor-toolbar a, .editor-toolbar i').hide();
         this.$('.icon-tags').show();
-        this.$(".tags-bar").show();
+        this.$(".tags-bar").removeClass("hide");
         this.$("js-tags").focus();
       }
       return this.tagsShown = !this.tagsShown;
@@ -1842,13 +1843,13 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
     PostView.prototype.collapse = function($toggle) {
       this.$toggle = $toggle;
       this.$toggle.data("dir", "up").addClass("icon-chevron-sign-right").removeClass("icon-chevron-sign-down");
-      return this.$(".details.hide").hide();
+      return this.$(".details").addClass("hide");
     };
 
     PostView.prototype.expand = function($toggle) {
       this.$toggle = $toggle;
       this.$toggle.data("dir", "down").addClass("icon-chevron-sign-down").removeClass("icon-chevron-sign-right");
-      return this.$(".details.hide").show();
+      return this.$(".details").removeClass("hide");
     };
 
     PostView.prototype.toggleDetails = function(e) {
@@ -2040,13 +2041,17 @@ this.Wardrobe.module("PostApp.List", function(List, App, Backbone, Marionette, $
     PostItem.prototype.tagName = "tr";
 
     PostItem.prototype.attributes = function() {
-      if (this.model.get("active") === "1") {
+      if (this.model.get("active") === "1" && this.model.get("publish_date") > moment().format('YYYY-MM-DD HH:mm:ss')) {
+        return {
+          "class": "post-item post-" + this.model.id + " success"
+        };
+      } else if (this.model.get("active") === "1") {
         return {
           "class": "post-item post-" + this.model.id
         };
       } else {
         return {
-          "class": "post-item draft post-" + this.model.id
+          "class": "post-item draft post-" + this.model.id + " warning"
         };
       }
     };
@@ -2065,12 +2070,12 @@ this.Wardrobe.module("PostApp.List", function(List, App, Backbone, Marionette, $
       allUsers = App.request("get:all:users");
       $avEl = this.$(".avatar");
       if (allUsers.length === 1) {
-        return $avEl.hide();
+        $avEl.hide();
       } else {
         user = this.model.get("user");
         $avEl.avatar(user.email, $avEl.attr("width"));
-        return this.$('.js-format-date').formatDates();
       }
+      return this.$('.js-format-date').formatDates();
     };
 
     PostItem.prototype.templateHelpers = {
