@@ -4,13 +4,19 @@
   }
 }
 .tags-bar {
-	width: 90%;
-	position: absolute;
-	left: 30px;
-	top: 5px;
-  .selectize-input, .selectize-control.single .selectize-input.focus {
+  &:before {
+      opacity: 0.6;
+      display: block;
+      content: ' ';
+      height: 1px;
+      background-color: #bdc3c7;
+    }
+  .selectize-dropdown {
+    z-index: 9;
+  }
+	.selectize-input, .selectize-control.single .selectize-input.focus {
     padding: 7px;
-    margin-left: 10px;
+    // margin-left: 10px;
   }
   .selectize-input, .selectize-control.single .selectize-input.focus {
     border: none;

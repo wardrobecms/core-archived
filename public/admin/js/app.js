@@ -117,37 +117,31 @@ this["JST"]["post/_base/templates/form.html"] = function(obj) {
 obj || (obj = {});
 var __t, __p = '', __e = _.escape;
 with (obj) {
-__p += '<form>\n  <input type="hidden" name="publish_date" id="publish_date" value="">\n  <div id="js-errors" class="hide">\n    <div class="alert alert-error">\n      <button type="button" class="close" data-dismiss="alert">×</button>\n      <span></span>\n    </div>\n  </div>\n  <div id="write">\n    <div class="info">\n      <div class="field">\n\n        <a href="' +
-((__t = ( previewUrl() )) == null ? '' : __t) +
-'" target="_blank" class="btn preview pull-right">' +
-((__t = ( Lang.post_preview )) == null ? '' : __t) +
-'</a>\n        <button class="btn btn-success publish pull-right">' +
+__p += '<form class="form-horizontal">\n  <input type="hidden" name="publish_date" id="publish_date" value="">\n  <div id="js-errors" class="hide">\n    <div class="alert alert-error">\n      <button type="button" class="close" data-dismiss="alert">×</button>\n      <span></span>\n    </div>\n  </div>\n  <div id="write">\n    <div class="actions">\n      <a data-toggle="modal" href="#myModal" class="options pull-right"><i class="icon-cog"></i></a>\n      <div class="btn-group pull-right">\n        <button type="button" class="btn btn-success publish">' +
 ((__t = ( submitBtnText() )) == null ? '' : __t) +
-'</button>\n\n        <i data-dir="up" class="icon-chevron-sign-right js-toggle" title="' +
-((__t = ( Lang.post_expand )) == null ? '' : __t) +
-'"></i>\n        <input type="text" style="width: 50%" name="title" id="title" value="" placeholder="' +
+'</button>\n        <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown">\n          <span class="caret"></span>\n        </button>\n        <ul class="dropdown-menu" role="menu">\n          <li><a href="#">Action</a></li>\n          <li><a href="#">Another action</a></li>\n          <li><a href="#">Something else here</a></li>\n          <li class="divider"></li>\n          <li><a href="' +
+((__t = ( previewUrl() )) == null ? '' : __t) +
+'" target="_blank" class="preview">' +
+((__t = ( Lang.post_preview )) == null ? '' : __t) +
+'</a></li>\n        </ul>\n      </div>\n    </div>\n\n    <div class="info">\n      <div class="field">\n        <input type="text" style="width: 50%" name="title" id="title" value="" placeholder="' +
 ((__t = ( Lang.post_title )) == null ? '' : __t) +
-'">\n      </div>\n      <div class="details hide">\n        <div class="field">\n          <i class="icon-terminal" title="' +
-((__t = ( Lang.post_slug )) == null ? '' : __t) +
-'"></i>\n          <input type="text" style="width: 50%" name="slug" id="slug" value="" placeholder="' +
-((__t = ( Lang.post_slug )) == null ? '' : __t) +
-'">\n        </div>\n        <div class="field author">\n          <i class="icon-user" title="' +
-((__t = ( Lang.post_author )) == null ? '' : __t) +
-'"></i>\n          <select id="js-user" name="user_id"></select>\n        </div>\n        <div class="field status">\n          <i class="icon-off" title="Status"></i>\n          <label class="radio"><input type="radio" name="active" class="js-active" value="1" checked> ' +
-((__t = ( Lang.post_published )) == null ? '' : __t) +
-'</label>\n          <label class="radio"><input type="radio" name="active" class="js-active" value="0"> ' +
-((__t = ( Lang.post_draft )) == null ? '' : __t) +
-'</label>\n        </div>\n      </div>\n    </div>\n    <div class="content-area">\n      <textarea name="content" id="content" placeholder="' +
-((__t = ( Lang.post_content )) == null ? '' : __t) +
-'"></textarea>\n      <div class="tags-bar hide">\n        <input type="text" id="js-tags" name="tags" class="tags" style="width: 90%" value="" placeholder="' +
+'">\n      </div>\n      <div class="field tags-bar">\n        <i class="icon-tags" title="Tags"></i>\n        <input type="text" id="js-tags" name="tags" class="tags" style="width: 90%" value="" placeholder="' +
 ((__t = ( Lang.post_tags )) == null ? '' : __t) +
-'">\n      </div>\n    </div>\n  </div>\n</form>\n\n<div id="date-form" style="display: none">\n  <form class="form-inline">\n    <label for="date">' +
+'">\n      </div>\n    </div>\n    <div class="content-area">\n      <textarea name="content" id="content" placeholder="' +
+((__t = ( Lang.post_content )) == null ? '' : __t) +
+'"></textarea>\n    </div>\n  </div>\n\n  <!-- Modal -->\n  <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">\n    <div class="modal-dialog">\n      <div class="modal-content">\n        <div class="modal-header">\n          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>\n          <h4 class="modal-title">Modal title</h4>\n        </div>\n        <div class="modal-body form-horizontal">\n          <div class="form-group">\n            <label for="slug">URI Slug</label>\n            <input type="text" style="width: 50%" name="slug" id="slug" value="" placeholder="' +
+((__t = ( Lang.post_slug )) == null ? '' : __t) +
+'">\n          </div>\n          <div class="form-group">\n            <label for="js-user">Author</label>\n            <select id="js-user" name="user_id"></select>\n          </div>\n          <div class="form-group">\n            <label for="publish">Publish Date</label>\n            <input type="text" style="width: 50%" name="publish" id="publish" value="" placeholder="Publish Date">\n          </div>\n          <div class="form-group">\n            <label for="status">Post Status</label>\n            <label class="radio-inline">\n              <input type="radio" name="active" class="js-active" value="1" checked> ' +
+((__t = ( Lang.post_published )) == null ? '' : __t) +
+'\n            </label>\n            <label class="radio-inline">\n              <input type="radio" name="active" class="js-active" value="0"> ' +
+((__t = ( Lang.post_draft )) == null ? '' : __t) +
+'\n            </label>\n          </div>\n        </div>\n        <div class="modal-footer">\n          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>\n          <button type="button" class="btn btn-primary">Save changes</button>\n        </div>\n      </div><!-- /.modal-content -->\n    </div><!-- /.modal-dialog -->\n  </div><!-- /.modal -->\n</form>\n\n<div id="date-form" style="display: none">\n  <form class="form-inline">\n    <label for="date">' +
 ((__t = ( Lang.post_publish_date )) == null ? '' : __t) +
 '</label><br>\n    <input type="text" name="date" class="js-date" id="date" value="" placeholder="Next Thursday 10am">\n    <button class="btn btn-default js-setdate btn-xs">' +
 ((__t = ( Lang.post_publish_date_set )) == null ? '' : __t) +
 '</button>\n  </form>\n</div>\n\n<div id="film-form" style="display: none">\n  <form class="form-inline">\n    <label for="date">Video URL</label><br>\n    <input type="text" name="date" class="js-film" id="film" value="" placeholder="http://youtube.com/">\n    <button class="btn btn-default js-submitfilm btn-xs">' +
 ((__t = ( Lang.post_publish_date_set )) == null ? '' : __t) +
-'</button>\n  </form>\n</div>\n';
+'</button>\n  </form>\n</div>\n\n';
 
 }
 return __p
@@ -1608,7 +1602,7 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
     PostView.prototype.setUpEditor = function() {
       var toolbar,
         _this = this;
-      toolbar = ['bold', 'italic', '|', 'quote', 'unordered-list', 'ordered-list', 'ellipsis-horizontal', '|', 'link', 'image', 'code', 'film', '|', 'undo', 'redo', '|', 'tags', 'calendar'];
+      toolbar = ['bold', 'italic', '|', 'quote', 'unordered-list', 'ordered-list', 'ellipsis-horizontal', '|', 'link', 'image', 'code', 'film', '|', 'undo', 'redo'];
       this.editor = new Editor({
         toolbar: toolbar
       });

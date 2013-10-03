@@ -1,4 +1,4 @@
-<form>
+<form class="form-horizontal">
   <input type="hidden" name="publish_date" id="publish_date" value="">
   <div id="js-errors" class="hide">
     <div class="alert alert-error">
@@ -7,38 +7,75 @@
     </div>
   </div>
   <div id="write">
+    <div class="actions">
+      <a data-toggle="modal" href="#myModal" class="options pull-right"><i class="icon-cog"></i></a>
+      <div class="btn-group pull-right">
+        <button type="button" class="btn btn-success publish"><%= submitBtnText() %></button>
+        <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown">
+          <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" role="menu">
+          <li><a href="#">Action</a></li>
+          <li><a href="#">Another action</a></li>
+          <li><a href="#">Something else here</a></li>
+          <li class="divider"></li>
+          <li><a href="<%= previewUrl() %>" target="_blank" class="preview"><%= Lang.post_preview %></a></li>
+        </ul>
+      </div>
+    </div>
+
     <div class="info">
       <div class="field">
-
-        <a href="<%= previewUrl() %>" target="_blank" class="btn preview pull-right"><%= Lang.post_preview %></a>
-        <button class="btn btn-success publish pull-right"><%= submitBtnText() %></button>
-
-        <i data-dir="up" class="icon-chevron-sign-right js-toggle" title="<%= Lang.post_expand %>"></i>
         <input type="text" style="width: 50%" name="title" id="title" value="" placeholder="<%= Lang.post_title %>">
       </div>
-      <div class="details hide">
-        <div class="field">
-          <i class="icon-terminal" title="<%= Lang.post_slug %>"></i>
-          <input type="text" style="width: 50%" name="slug" id="slug" value="" placeholder="<%= Lang.post_slug %>">
-        </div>
-        <div class="field author">
-          <i class="icon-user" title="<%= Lang.post_author %>"></i>
-          <select id="js-user" name="user_id"></select>
-        </div>
-        <div class="field status">
-          <i class="icon-off" title="Status"></i>
-          <label class="radio"><input type="radio" name="active" class="js-active" value="1" checked> <%= Lang.post_published %></label>
-          <label class="radio"><input type="radio" name="active" class="js-active" value="0"> <%= Lang.post_draft %></label>
-        </div>
+      <div class="field tags-bar">
+        <i class="icon-tags" title="Tags"></i>
+        <input type="text" id="js-tags" name="tags" class="tags" style="width: 90%" value="" placeholder="<%= Lang.post_tags %>">
       </div>
     </div>
     <div class="content-area">
       <textarea name="content" id="content" placeholder="<%= Lang.post_content %>"></textarea>
-      <div class="tags-bar hide">
-        <input type="text" id="js-tags" name="tags" class="tags" style="width: 90%" value="" placeholder="<%= Lang.post_tags %>">
-      </div>
     </div>
   </div>
+
+  <!-- Modal -->
+  <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          <h4 class="modal-title">Modal title</h4>
+        </div>
+        <div class="modal-body form-horizontal">
+          <div class="form-group">
+            <label for="slug">URI Slug</label>
+            <input type="text" style="width: 50%" name="slug" id="slug" value="" placeholder="<%= Lang.post_slug %>">
+          </div>
+          <div class="form-group">
+            <label for="js-user">Author</label>
+            <select id="js-user" name="user_id"></select>
+          </div>
+          <div class="form-group">
+            <label for="publish">Publish Date</label>
+            <input type="text" style="width: 50%" name="publish" id="publish" value="" placeholder="Publish Date">
+          </div>
+          <div class="form-group">
+            <label for="status">Post Status</label>
+            <label class="radio-inline">
+              <input type="radio" name="active" class="js-active" value="1" checked> <%= Lang.post_published %>
+            </label>
+            <label class="radio-inline">
+              <input type="radio" name="active" class="js-active" value="0"> <%= Lang.post_draft %>
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary">Save changes</button>
+        </div>
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal -->
 </form>
 
 <div id="date-form" style="display: none">
@@ -56,3 +93,4 @@
     <button class="btn btn-default js-submitfilm btn-xs"><%= Lang.post_publish_date_set %></button>
   </form>
 </div>
+

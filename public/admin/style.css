@@ -7610,10 +7610,6 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {
   content: ' ';
   height: 1px;
   background-color: #bdc3c7;
-  background: -moz-linear-gradient(45deg, #f9f9f9, #bdc3c7, #f9f9f9);
-  background: -webkit-linear-gradient(45deg, #f9f9f9, #bdc3c7, #f9f9f9);
-  background: -ms-linear-gradient(45deg, #f9f9f9, #bdc3c7, #f9f9f9);
-  background: linear-gradient(45deg, #f9f9f9, #bdc3c7, #f9f9f9);
 }
 .editor-toolbar:before {
   margin-bottom: 8px;
@@ -7628,7 +7624,7 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {
   color: #2c3e50 !important;
   width: 24px;
   height: 24px;
-  margin: 2px;
+  margin: 2px 4px;
   border: 1px solid transparent;
   border-radius: 3px;
   cursor: pointer;
@@ -7656,6 +7652,7 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {
 }
 .editor-statusbar {
   border-top: 1px solid #ece9e9;
+  margin-top: 20px;
   padding: 8px 10px;
   font-size: 12px;
   color: #959694;
@@ -7743,6 +7740,17 @@ button {
   margin: 0;
   padding: 10px 0;
 }
+#write .actions a.options {
+  color: #B5B5B5;
+  font-size: 21px;
+}
+#write .actions a.options:hover {
+  color: #005580;
+  text-decoration: none;
+}
+#write .actions .btn-group {
+  margin-right: 10px;
+}
 #write .field {
   margin: 5px 0;
 }
@@ -7759,10 +7767,6 @@ button {
   content: ' ';
   height: 1px;
   background-color: #bdc3c7;
-  background: -moz-linear-gradient(45deg, #f9f9f9, #bdc3c7, #f9f9f9);
-  background: -webkit-linear-gradient(45deg, #f9f9f9, #bdc3c7, #f9f9f9);
-  background: -ms-linear-gradient(45deg, #f9f9f9, #bdc3c7, #f9f9f9);
-  background: linear-gradient(45deg, #f9f9f9, #bdc3c7, #f9f9f9);
 }
 #write .info {
   margin-bottom: 10px;
@@ -7772,9 +7776,7 @@ button {
 }
 #write .info i {
   color: #ccc;
-  float: left;
   margin-top: 16px;
-  margin-right: 6px;
 }
 #write .info i.js-toggle {
   margin-top: 23px;
@@ -7798,7 +7800,6 @@ button {
 }
 .editor-toolbar {
   margin-bottom: 10px;
-  text-align: center;
 }
 #write .info input,
 #write .info textarea {
@@ -8243,16 +8244,19 @@ nav li i {
 .editor-toolbar.open {
   text-align: left;
 }
-.tags-bar {
-  width: 90%;
-  position: absolute;
-  left: 30px;
-  top: 5px;
+.tags-bar:before {
+  opacity: 0.6;
+  display: block;
+  content: ' ';
+  height: 1px;
+  background-color: #bdc3c7;
+}
+.tags-bar .selectize-dropdown {
+  z-index: 9;
 }
 .tags-bar .selectize-input,
 .tags-bar .selectize-control.single .selectize-input.focus {
   padding: 7px;
-  margin-left: 10px;
 }
 .tags-bar .selectize-input,
 .tags-bar .selectize-control.single .selectize-input.focus {
