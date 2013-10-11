@@ -80,7 +80,7 @@
         @isMatch(post, sorter, filter)
 
     isMatch: (post, sorter, filter) ->
-      foundId = if sorter is "" or post.get("active") is sorter then post.id else null
+      foundId = if sorter is "" or post.get("active").toString() is sorter then post.id else null
       if foundId and filter isnt ""
         pattern = new RegExp(filter,"gi")
         foundId = pattern.test post.get("title")
