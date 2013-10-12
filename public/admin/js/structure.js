@@ -1,302 +1,12 @@
-/**
-* @preserve HTML5 Shiv v3.6.2 | @afarkas @jdalton @jon_neal @rem | MIT/GPL2 Licensed
+/*
+ HTML5 Shiv v3.7.0 | @afarkas @jdalton @jon_neal @rem | MIT/GPL2 Licensed
 */
-;(function(window, document) {
-/*jshint evil:true */
-  /** version */
-  var version = '3.6.2';
+(function(l,f){function m(){var a=e.elements;return"string"==typeof a?a.split(" "):a}function i(a){var b=n[a[o]];b||(b={},h++,a[o]=h,n[h]=b);return b}function p(a,b,c){b||(b=f);if(g)return b.createElement(a);c||(c=i(b));b=c.cache[a]?c.cache[a].cloneNode():r.test(a)?(c.cache[a]=c.createElem(a)).cloneNode():c.createElem(a);return b.canHaveChildren&&!s.test(a)?c.frag.appendChild(b):b}function t(a,b){if(!b.cache)b.cache={},b.createElem=a.createElement,b.createFrag=a.createDocumentFragment,b.frag=b.createFrag();
+a.createElement=function(c){return!e.shivMethods?b.createElem(c):p(c,a,b)};a.createDocumentFragment=Function("h,f","return function(){var n=f.cloneNode(),c=n.createElement;h.shivMethods&&("+m().join().replace(/[\w\-]+/g,function(a){b.createElem(a);b.frag.createElement(a);return'c("'+a+'")'})+");return n}")(e,b.frag)}function q(a){a||(a=f);var b=i(a);if(e.shivCSS&&!j&&!b.hasCSS){var c,d=a;c=d.createElement("p");d=d.getElementsByTagName("head")[0]||d.documentElement;c.innerHTML="x<style>article,aside,dialog,figcaption,figure,footer,header,hgroup,main,nav,section{display:block}mark{background:#FF0;color:#000}template{display:none}</style>";
+c=d.insertBefore(c.lastChild,d.firstChild);b.hasCSS=!!c}g||t(a,b);return a}var k=l.html5||{},s=/^<|^(?:button|map|select|textarea|object|iframe|option|optgroup)$/i,r=/^(?:a|b|code|div|fieldset|h1|h2|h3|h4|h5|h6|i|label|li|ol|p|q|span|strong|style|table|tbody|td|th|tr|ul)$/i,j,o="_html5shiv",h=0,n={},g;(function(){try{var a=f.createElement("a");a.innerHTML="<xyz></xyz>";j="hidden"in a;var b;if(!(b=1==a.childNodes.length)){f.createElement("a");var c=f.createDocumentFragment();b="undefined"==typeof c.cloneNode||
+"undefined"==typeof c.createDocumentFragment||"undefined"==typeof c.createElement}g=b}catch(d){g=j=!0}})();var e={elements:k.elements||"abbr article aside audio bdi canvas data datalist details dialog figcaption figure footer header hgroup main mark meter nav output progress section summary template time video",version:"3.7.0",shivCSS:!1!==k.shivCSS,supportsUnknownElements:g,shivMethods:!1!==k.shivMethods,type:"default",shivDocument:q,createElement:p,createDocumentFragment:function(a,b){a||(a=f);
+if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=0,e=m(),h=e.length;d<h;d++)c.createElement(e[d]);return c}};l.html5=e;q(f)})(this,document);
 
-  /** Preset options */
-  var options = window.html5 || {};
-
-  /** Used to skip problem elements */
-  var reSkip = /^<|^(?:button|map|select|textarea|object|iframe|option|optgroup)$/i;
-
-  /** Not all elements can be cloned in IE **/
-  var saveClones = /^(?:a|b|code|div|fieldset|h1|h2|h3|h4|h5|h6|i|label|li|ol|p|q|span|strong|style|table|tbody|td|th|tr|ul)$/i;
-
-  /** Detect whether the browser supports default html5 styles */
-  var supportsHtml5Styles;
-
-  /** Name of the expando, to work with multiple documents or to re-shiv one document */
-  var expando = '_html5shiv';
-
-  /** The id for the the documents expando */
-  var expanID = 0;
-
-  /** Cached data for each document */
-  var expandoData = {};
-
-  /** Detect whether the browser supports unknown elements */
-  var supportsUnknownElements;
-
-  (function() {
-    try {
-        var a = document.createElement('a');
-        a.innerHTML = '<xyz></xyz>';
-        //if the hidden property is implemented we can assume, that the browser supports basic HTML5 Styles
-        supportsHtml5Styles = ('hidden' in a);
-
-        supportsUnknownElements = a.childNodes.length == 1 || (function() {
-          // assign a false positive if unable to shiv
-          (document.createElement)('a');
-          var frag = document.createDocumentFragment();
-          return (
-            typeof frag.cloneNode == 'undefined' ||
-            typeof frag.createDocumentFragment == 'undefined' ||
-            typeof frag.createElement == 'undefined'
-          );
-        }());
-    } catch(e) {
-      // assign a false positive if detection fails => unable to shiv
-      supportsHtml5Styles = true;
-      supportsUnknownElements = true;
-    }
-
-  }());
-
-  /*--------------------------------------------------------------------------*/
-
-  /**
-   * Creates a style sheet with the given CSS text and adds it to the document.
-   * @private
-   * @param {Document} ownerDocument The document.
-   * @param {String} cssText The CSS text.
-   * @returns {StyleSheet} The style element.
-   */
-  function addStyleSheet(ownerDocument, cssText) {
-    var p = ownerDocument.createElement('p'),
-        parent = ownerDocument.getElementsByTagName('head')[0] || ownerDocument.documentElement;
-
-    p.innerHTML = 'x<style>' + cssText + '</style>';
-    return parent.insertBefore(p.lastChild, parent.firstChild);
-  }
-
-  /**
-   * Returns the value of `html5.elements` as an array.
-   * @private
-   * @returns {Array} An array of shived element node names.
-   */
-  function getElements() {
-    var elements = html5.elements;
-    return typeof elements == 'string' ? elements.split(' ') : elements;
-  }
-
-    /**
-   * Returns the data associated to the given document
-   * @private
-   * @param {Document} ownerDocument The document.
-   * @returns {Object} An object of data.
-   */
-  function getExpandoData(ownerDocument) {
-    var data = expandoData[ownerDocument[expando]];
-    if (!data) {
-        data = {};
-        expanID++;
-        ownerDocument[expando] = expanID;
-        expandoData[expanID] = data;
-    }
-    return data;
-  }
-
-  /**
-   * returns a shived element for the given nodeName and document
-   * @memberOf html5
-   * @param {String} nodeName name of the element
-   * @param {Document} ownerDocument The context document.
-   * @returns {Object} The shived element.
-   */
-  function createElement(nodeName, ownerDocument, data){
-    if (!ownerDocument) {
-        ownerDocument = document;
-    }
-    if(supportsUnknownElements){
-        return ownerDocument.createElement(nodeName);
-    }
-    if (!data) {
-        data = getExpandoData(ownerDocument);
-    }
-    var node;
-
-    if (data.cache[nodeName]) {
-        node = data.cache[nodeName].cloneNode();
-    } else if (saveClones.test(nodeName)) {
-        node = (data.cache[nodeName] = data.createElem(nodeName)).cloneNode();
-    } else {
-        node = data.createElem(nodeName);
-    }
-
-    // Avoid adding some elements to fragments in IE < 9 because
-    // * Attributes like `name` or `type` cannot be set/changed once an element
-    //   is inserted into a document/fragment
-    // * Link elements with `src` attributes that are inaccessible, as with
-    //   a 403 response, will cause the tab/window to crash
-    // * Script elements appended to fragments will execute when their `src`
-    //   or `text` property is set
-    return node.canHaveChildren && !reSkip.test(nodeName) ? data.frag.appendChild(node) : node;
-  }
-
-  /**
-   * returns a shived DocumentFragment for the given document
-   * @memberOf html5
-   * @param {Document} ownerDocument The context document.
-   * @returns {Object} The shived DocumentFragment.
-   */
-  function createDocumentFragment(ownerDocument, data){
-    if (!ownerDocument) {
-        ownerDocument = document;
-    }
-    if(supportsUnknownElements){
-        return ownerDocument.createDocumentFragment();
-    }
-    data = data || getExpandoData(ownerDocument);
-    var clone = data.frag.cloneNode(),
-        i = 0,
-        elems = getElements(),
-        l = elems.length;
-    for(;i<l;i++){
-        clone.createElement(elems[i]);
-    }
-    return clone;
-  }
-
-  /**
-   * Shivs the `createElement` and `createDocumentFragment` methods of the document.
-   * @private
-   * @param {Document|DocumentFragment} ownerDocument The document.
-   * @param {Object} data of the document.
-   */
-  function shivMethods(ownerDocument, data) {
-    if (!data.cache) {
-        data.cache = {};
-        data.createElem = ownerDocument.createElement;
-        data.createFrag = ownerDocument.createDocumentFragment;
-        data.frag = data.createFrag();
-    }
-
-
-    ownerDocument.createElement = function(nodeName) {
-      //abort shiv
-      if (!html5.shivMethods) {
-          return data.createElem(nodeName);
-      }
-      return createElement(nodeName, ownerDocument, data);
-    };
-
-    ownerDocument.createDocumentFragment = Function('h,f', 'return function(){' +
-      'var n=f.cloneNode(),c=n.createElement;' +
-      'h.shivMethods&&(' +
-        // unroll the `createElement` calls
-        getElements().join().replace(/\w+/g, function(nodeName) {
-          data.createElem(nodeName);
-          data.frag.createElement(nodeName);
-          return 'c("' + nodeName + '")';
-        }) +
-      ');return n}'
-    )(html5, data.frag);
-  }
-
-  /*--------------------------------------------------------------------------*/
-
-  /**
-   * Shivs the given document.
-   * @memberOf html5
-   * @param {Document} ownerDocument The document to shiv.
-   * @returns {Document} The shived document.
-   */
-  function shivDocument(ownerDocument) {
-    if (!ownerDocument) {
-        ownerDocument = document;
-    }
-    var data = getExpandoData(ownerDocument);
-
-    if (html5.shivCSS && !supportsHtml5Styles && !data.hasCSS) {
-      data.hasCSS = !!addStyleSheet(ownerDocument,
-        // corrects block display not defined in IE6/7/8/9
-        'article,aside,figcaption,figure,footer,header,hgroup,main,nav,section{display:block}' +
-        // adds styling not present in IE6/7/8/9
-        'mark{background:#FF0;color:#000}'
-      );
-    }
-    if (!supportsUnknownElements) {
-      shivMethods(ownerDocument, data);
-    }
-    return ownerDocument;
-  }
-
-  /*--------------------------------------------------------------------------*/
-
-  /**
-   * The `html5` object is exposed so that more elements can be shived and
-   * existing shiving can be detected on iframes.
-   * @type Object
-   * @example
-   *
-   * // options can be changed before the script is included
-   * html5 = { 'elements': 'mark section', 'shivCSS': false, 'shivMethods': false };
-   */
-  var html5 = {
-
-    /**
-     * An array or space separated string of node names of the elements to shiv.
-     * @memberOf html5
-     * @type Array|String
-     */
-    'elements': options.elements || 'abbr article aside audio bdi canvas data datalist details figcaption figure footer header hgroup main mark meter nav output progress section summary time video',
-
-    /**
-     * current version of html5shiv
-     */
-    'version': version,
-
-    /**
-     * A flag to indicate that the HTML5 style sheet should be inserted.
-     * @memberOf html5
-     * @type Boolean
-     */
-    'shivCSS': (options.shivCSS !== false),
-
-    /**
-     * Is equal to true if a browser supports creating unknown/HTML5 elements
-     * @memberOf html5
-     * @type boolean
-     */
-    'supportsUnknownElements': supportsUnknownElements,
-
-    /**
-     * A flag to indicate that the document's `createElement` and `createDocumentFragment`
-     * methods should be overwritten.
-     * @memberOf html5
-     * @type Boolean
-     */
-    'shivMethods': (options.shivMethods !== false),
-
-    /**
-     * A string to describe the type of `html5` object ("default" or "default print").
-     * @memberOf html5
-     * @type String
-     */
-    'type': 'default',
-
-    // shivs the document according to the specified `html5` object options
-    'shivDocument': shivDocument,
-
-    //creates a shived element
-    createElement: createElement,
-
-    //creates a shived documentFragment
-    createDocumentFragment: createDocumentFragment
-  };
-
-  /*--------------------------------------------------------------------------*/
-
-  // expose html5
-  window.html5 = html5;
-
-  // shiv the document
-  shivDocument(document);
-
-}(this, document));
 //     Underscore.js 1.5.1
 //     http://underscorejs.org
 //     (c) 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -16736,29 +16446,505 @@ if (typeof exports == "object") {
 } else {
   this["Dropzone"] = require("dropzone");
 }})();
-/*! selectize.js - v0.6.14 | https://github.com/brianreavis/selectize.js | Apache License (v2) */
+/**
+ * sifter.js
+ * Copyright (c) 2013 Brian Reavis & contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
+ * file except in compliance with the License. You may obtain a copy of the License at:
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+ * ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ *
+ * @author Brian Reavis <brian@thirdroute.com>
+ */
 
-(function(factory) {
-	if (typeof exports === 'object') {
-		factory(require('jquery'));
-	} else if (typeof define === 'function' && define.amd) {
-		define(['jquery'], factory);
+(function(root, factory) {
+	if (typeof define === 'function' && define.amd) {
+		define(factory);
+	} else if (typeof exports === 'object') {
+		module.exports = factory();
 	} else {
-		factory(jQuery);
+		root.Sifter = factory();
 	}
-}(function ($) {
-	"use strict";	
-	
-	/* --- file: "src/contrib/highlight.js" --- */
-	
+}(this, function() {
+
 	/**
-	* highlight v3 | MIT license | Johann Burkard <jb@eaio.com>
-	* Highlights arbitrary terms in a node.
-	*
-	* - Modified by Marshal <beatgates@gmail.com> 2011-6-24 (added regex)
-	* - Modified by Brian Reavis <brian@thirdroute.com> 2012-8-27 (cleanup)
-	*/
-	
+	 * Textually searches arrays and hashes of objects
+	 * by property (or multiple properties). Designed
+	 * specifically for autocomplete.
+	 *
+	 * @constructor
+	 * @param {array|object} items
+	 * @param {object} items
+	 */
+	var Sifter = function(items, settings) {
+		this.items = items;
+		this.settings = settings || {diacritics: true};
+	};
+
+	/**
+	 * Splits a search string into an array of individual
+	 * regexps to be used to match results.
+	 *
+	 * @param {string} query
+	 * @returns {array}
+	 */
+	Sifter.prototype.tokenize = function(query) {
+		query = trim(String(query || '').toLowerCase());
+		if (!query || !query.length) return [];
+
+		var i, n, regex, letter;
+		var tokens = [];
+		var words = query.split(/ +/);
+
+		for (i = 0, n = words.length; i < n; i++) {
+			regex = escape_regex(words[i]);
+			if (this.settings.diacritics) {
+				for (letter in DIACRITICS) {
+					if (DIACRITICS.hasOwnProperty(letter)) {
+						regex = regex.replace(new RegExp(letter, 'g'), DIACRITICS[letter]);
+					}
+				}
+			}
+			tokens.push({
+				string : words[i],
+				regex  : new RegExp(regex, 'i')
+			});
+		}
+
+		return tokens;
+	};
+
+	/**
+	 * Iterates over arrays and hashes.
+	 *
+	 * ```
+	 * this.iterator(this.items, function(item, id) {
+	 *    // invoked for each item
+	 * });
+	 * ```
+	 *
+	 * @param {array|object} object
+	 */
+	Sifter.prototype.iterator = function(object, callback) {
+		var iterator;
+		if (is_array(object)) {
+			iterator = Array.prototype.forEach || function(callback) {
+				for (var i = 0, n = this.length; i < n; i++) {
+					callback(this[i], i, this);
+				}
+			};
+		} else {
+			iterator = function(callback) {
+				for (var key in this) {
+					if (this.hasOwnProperty(key)) {
+						callback(this[key], key, this);
+					}
+				}
+			};
+		}
+
+		iterator.apply(object, [callback]);
+	};
+
+	/**
+	 * Returns a function to be used to score individual results.
+	 *
+	 * Good matches will have a higher score than poor matches.
+	 * If an item is not a match, 0 will be returned by the function.
+	 *
+	 * @param {object|string} search
+	 * @param {object} options (optional)
+	 * @returns {function}
+	 */
+	Sifter.prototype.getScoreFunction = function(search, options) {
+		var self, fields, tokens, token_count;
+
+		self        = this;
+		search      = self.prepareSearch(search, options);
+		tokens      = search.tokens;
+		fields      = search.options.fields;
+		token_count = tokens.length;
+
+		/**
+		 * Calculates how close of a match the
+		 * given value is against a search token.
+		 *
+		 * @param {mixed} value
+		 * @param {object} token
+		 * @return {number}
+		 */
+		var scoreValue = function(value, token) {
+			var score, pos;
+
+			if (!value) return 0;
+			value = String(value || '');
+			pos = value.search(token.regex);
+			if (pos === -1) return 0;
+			score = token.string.length / value.length;
+			if (pos === 0) score += 0.5;
+			return score;
+		};
+
+		/**
+		 * Calculates the score of an object
+		 * against the search query.
+		 *
+		 * @param {object} token
+		 * @param {object} data
+		 * @return {number}
+		 */
+		var scoreObject = (function() {
+			var field_count = fields.length;
+			if (!field_count) {
+				return function() { return 0; };
+			}
+			if (field_count === 1) {
+				return function(token, data) {
+					return scoreValue(data[fields[0]], token);
+				};
+			}
+			return function(token, data) {
+				for (var i = 0, sum = 0; i < field_count; i++) {
+					sum += scoreValue(data[fields[i]], token);
+				}
+				return sum / field_count;
+			};
+		})();
+
+		if (!token_count) {
+			return function() { return 0; };
+		}
+		if (token_count === 1) {
+			return function(data) {
+				return scoreObject(tokens[0], data);
+			};
+		}
+		return function(data) {
+			for (var i = 0, sum = 0; i < token_count; i++) {
+				sum += scoreObject(tokens[i], data);
+			}
+			return sum / token_count;
+		};
+	};
+
+	/**
+	 * Parses a search query and returns an object
+	 * with tokens and fields ready to be populated
+	 * with results.
+	 *
+	 * @param {string} query
+	 * @param {object} options
+	 * @returns {object}
+	 */
+	Sifter.prototype.prepareSearch = function(query, options) {
+		if (typeof query === 'object') return query;
+		return {
+			options : extend({}, options),
+			query   : String(query || '').toLowerCase(),
+			tokens  : this.tokenize(query),
+			total   : 0,
+			items   : []
+		};
+	};
+
+	/**
+	 * Searches through all items and returns a sorted array of matches.
+	 *
+	 * The `options` parameter can contain:
+	 *
+	 *   - fields {string|array}
+	 *   - sort {string}
+	 *   - direction {string}
+	 *   - score {function}
+	 *   - limit {integer}
+	 *
+	 * Returns an object containing:
+	 *
+	 *   - options {object}
+	 *   - query {string}
+	 *   - tokens {array}
+	 *   - total {int}
+	 *   - items {array}
+	 *
+	 * @param {string} query
+	 * @param {object} options
+	 * @returns {object}
+	 */
+	Sifter.prototype.search = function(query, options) {
+		var self = this, value, score, search, calculateScore;
+
+		search  = this.prepareSearch(query, options);
+		options = search.options;
+		query   = search.query;
+
+		// generate result scoring function
+		if (!is_array(options.fields)) options.fields = [options.fields];
+		calculateScore = options.score || self.getScoreFunction(search);
+
+		// perform search and sort
+		if (query.length) {
+			self.iterator(self.items, function(item, id) {
+				score = calculateScore(item);
+				if (score > 0) {
+					search.items.push({'score': score, 'id': id});
+				}
+			});
+			search.items.sort(function(a, b) {
+				return b.score - a.score;
+			});
+		} else {
+			self.iterator(self.items, function(item, id) {
+				search.items.push({'score': 1, 'id': id});
+			});
+			if (options.sort) {
+				search.items.sort((function() {
+					var field = options.sort;
+					var multiplier = options.direction === 'desc' ? -1 : 1;
+					return function(a, b) {
+						return cmp(self.items[a.id][field], self.items[b.id][field]) * multiplier;
+					};
+				})());
+			}
+		}
+
+		// apply limits
+		search.total = search.items.length;
+		if (typeof options.limit === 'number') {
+			search.items = search.items.slice(0, options.limit);
+		}
+
+		return search;
+	};
+
+	// utilities
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+	var cmp = function(a, b) {
+		if (typeof a === 'number' && typeof b === 'number') {
+			return a > b ? 1 : (a < b ? -1 : 0);
+		}
+		a = String(a || '').toLowerCase();
+		b = String(b || '').toLowerCase();
+		if (a > b) return 1;
+		if (b > a) return -1;
+		return 0;
+	};
+
+	var extend = function(a, b) {
+		var i, n, k, object;
+		for (i = 1, n = arguments.length; i < n; i++) {
+			object = arguments[i];
+			if (!object) continue;
+			for (k in object) {
+				if (object.hasOwnProperty(k)) {
+					a[k] = object[k];
+				}
+			}
+		}
+		return a;
+	};
+
+	var trim = function(str) {
+		return (str + '').replace(/^\s+|\s+$|/g, '');
+	};
+
+	var escape_regex = function(str) {
+		return (str + '').replace(/([.?*+^$[\]\\(){}|-])/g, '\\$1');
+	};
+
+	var is_array = Array.isArray || ($ && $.isArray) || function(object) {
+		return Object.prototype.toString.call(object) === '[object Array]';
+	};
+
+	var DIACRITICS = {
+		'a': '[aÀÁÂÃÄÅàáâãäå]',
+		'c': '[cÇç]',
+		'e': '[eÈÉÊËèéêë]',
+		'i': '[iÌÍÎÏìíîï]',
+		'n': '[nÑñ]',
+		'o': '[oÒÓÔÕÕÖØòóôõöø]',
+		's': '[sŠš]',
+		'u': '[uÙÚÛÜùúûü]',
+		'y': '[yŸÿý]',
+		'z': '[zŽž]'
+	};
+
+	// export
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+	return Sifter;
+
+}));
+
+/**
+ * microplugin.js
+ * Copyright (c) 2013 Brian Reavis & contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
+ * file except in compliance with the License. You may obtain a copy of the License at:
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+ * ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ *
+ * @author Brian Reavis <brian@thirdroute.com>
+ */
+
+(function(root, factory) {
+	if (typeof define === 'function' && define.amd) {
+		define(factory);
+	} else if (typeof exports === 'object') {
+		module.exports = factory();
+	} else {
+		root.MicroPlugin = factory();
+	}
+}(this, function() {
+	var MicroPlugin = {};
+
+	MicroPlugin.mixin = function(Interface) {
+		Interface.plugins = {};
+
+		/**
+		 * Initializes the listed plugins (with options).
+		 * Acceptable formats:
+		 *
+		 * List (without options):
+		 *   ['a', 'b', 'c']
+		 *
+		 * List (with options):
+		 *   [{'name': 'a', options: {}}, {'name': 'b', options: {}}]
+		 *
+		 * Hash (with options):
+		 *   {'a': { ... }, 'b': { ... }, 'c': { ... }}
+		 *
+		 * @param {mixed} plugins
+		 */
+		Interface.prototype.initializePlugins = function(plugins) {
+			var i, n, key;
+			var self  = this;
+			var queue = [];
+
+			self.plugins = {
+				names     : [],
+				settings  : {},
+				requested : {},
+				loaded    : {}
+			};
+
+			if (utils.isArray(plugins)) {
+				for (i = 0, n = plugins.length; i < n; i++) {
+					if (typeof plugins[i] === 'string') {
+						queue.push(plugins[i]);
+					} else {
+						self.plugins.settings[plugins[i].name] = plugins[i].options;
+						queue.push(plugins[i].name);
+					}
+				}
+			} else if (plugins) {
+				for (key in plugins) {
+					if (plugins.hasOwnProperty(key)) {
+						self.plugins.settings[key] = plugins[key];
+						queue.push(key);
+					}
+				}
+			}
+
+			while (queue.length) {
+				self.require(queue.shift());
+			}
+		};
+
+		Interface.prototype.loadPlugin = function(name) {
+			var self    = this;
+			var plugins = self.plugins;
+			var plugin  = Interface.plugins[name];
+
+			if (!Interface.plugins.hasOwnProperty(name)) {
+				throw new Error('Unable to find "' +  name + '" plugin');
+			}
+
+			plugins.requested[name] = true;
+			plugins.loaded[name] = plugin.fn.apply(self, [self.plugins.settings[name] || {}]);
+			plugins.names.push(name);
+		};
+
+		/**
+		 * Initializes a plugin.
+		 *
+		 * @param {string} name
+		 */
+		Interface.prototype.require = function(name) {
+			var self = this;
+			var plugins = self.plugins;
+
+			if (!self.plugins.loaded.hasOwnProperty(name)) {
+				if (plugins.requested[name]) {
+					throw new Error('Plugin has circular dependency ("' + name + '")');
+				}
+				self.loadPlugin(name);
+			}
+
+			return plugins.loaded[name];
+		};
+
+		/**
+		 * Registers a plugin.
+		 *
+		 * @param {string} name
+		 * @param {function} fn
+		 */
+		Interface.define = function(name, fn) {
+			Interface.plugins[name] = {
+				'name' : name,
+				'fn'   : fn
+			};
+		};
+	};
+
+	var utils = {
+		isArray: Array.isArray || function(vArg) {
+			return Object.prototype.toString.call(vArg) === '[object Array]';
+		}
+	};
+
+	return MicroPlugin;
+}));
+
+/**
+ * selectize.js (v0.7.7)
+ * Copyright (c) 2013 Brian Reavis & contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
+ * file except in compliance with the License. You may obtain a copy of the License at:
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+ * ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ *
+ * @author Brian Reavis <brian@thirdroute.com>
+ */
+
+/*jshint curly:false */
+/*jshint browser:true */
+
+(function(root, factory) {
+	if (typeof define === 'function' && define.amd) {
+		define(['jquery','sifter','microplugin'], factory);
+	} else {
+		root.Selectize = factory(root.jQuery, root.Sifter, root.MicroPlugin);
+	}
+}(this, function($, Sifter, MicroPlugin) {
+	'use strict';
+
 	var highlight = function($element, pattern) {
 		if (typeof pattern === 'string' && !pattern.length) return;
 		var regex = (typeof pattern === 'string') ? new RegExp(pattern, 'i') : pattern;
@@ -16791,26 +16977,6 @@ if (typeof exports == "object") {
 		});
 	};
 	
-	var unhighlight = function($element) {
-		return $element.find('span.highlight').each(function() {
-			var parent = this.parentNode;
-			parent.replaceChild(parent.firstChild, parent);
-			parent.normalize();
-		}).end();
-	};
-	
-	/* --- file: "src/contrib/microevent.js" --- */
-	
-	/**
-	* MicroEvent - to make any js object an event emitter
-	*
-	* - pure javascript - server compatible, browser compatible
-	* - dont rely on the browser doms
-	* - super simple - you get it immediatly, no mistery, no magic involved
-	*
-	* @author Jerome Etienne (https://github.com/jeromeetienne)
-	*/
-	
 	var MicroEvent = function() {};
 	MicroEvent.prototype = {
 		on: function(event, fct){
@@ -16819,6 +16985,10 @@ if (typeof exports == "object") {
 			this._events[event].push(fct);
 		},
 		off: function(event, fct){
+			var n = arguments.length;
+			if (n === 0) return delete this._events;
+			if (n === 1) return delete this._events[event];
+	
 			this._events = this._events || {};
 			if (event in this._events === false) return;
 			this._events[event].splice(this._events[event].indexOf(fct), 1);
@@ -16833,36 +17003,18 @@ if (typeof exports == "object") {
 	};
 	
 	/**
-	* Mixin will delegate all MicroEvent.js function in the destination object.
-	*
-	* - MicroEvent.mixin(Foobar) will make Foobar able to use MicroEvent
-	*
-	* @param {object} the object which will support MicroEvent
-	*/
+	 * Mixin will delegate all MicroEvent.js function in the destination object.
+	 *
+	 * - MicroEvent.mixin(Foobar) will make Foobar able to use MicroEvent
+	 *
+	 * @param {object} the object which will support MicroEvent
+	 */
 	MicroEvent.mixin = function(destObject){
 		var props = ['on', 'off', 'trigger'];
 		for (var i = 0; i < props.length; i++){
 			destObject.prototype[props[i]] = MicroEvent.prototype[props[i]];
 		}
 	};
-	
-	/* --- file: "src/constants.js" --- */
-	
-	/**
-	* selectize - A highly customizable select control with autocomplete.
-	* Copyright (c) 2013 Brian Reavis & contributors
-	*
-	* Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
-	* file except in compliance with the License. You may obtain a copy of the License at:
-	* http://www.apache.org/licenses/LICENSE-2.0
-	*
-	* Unless required by applicable law or agreed to in writing, software distributed under
-	* the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
-	* ANY KIND, either express or implied. See the License for the specific language
-	* governing permissions and limitations under the License.
-	*
-	* @author Brian Reavis <brian@thirdroute.com>
-	*/
 	
 	var IS_MAC        = /Mac/.test(navigator.userAgent);
 	
@@ -16884,125 +17036,26 @@ if (typeof exports == "object") {
 	var TAG_SELECT    = 1;
 	var TAG_INPUT     = 2;
 	
-	var DIACRITICS = {
-		'a': '[aÀÁÂÃÄÅàáâãäå]',
-		'c': '[cÇç]',
-		'e': '[eÈÉÊËèéêë]',
-		'i': '[iÌÍÎÏìíîï]',
-		'n': '[nÑñ]',
-		'o': '[oÒÓÔÕÕÖØòóôõöø]',
-		's': '[sŠš]',
-		'u': '[uÙÚÛÜùúûü]',
-		'y': '[yŸÿý]',
-		'z': '[zŽž]'
-	};
-	
-	/* --- file: "src/plugins.js" --- */
-	
-	var Plugins = {};
-	
-	Plugins.mixin = function(Interface, interfaceName) {
-		Interface.plugins = {};
-	
-		/**
-		 * Initializes the provided functions.
-		 * Acceptable formats:
-		 *
-		 * List (without options):
-		 *   ['a', 'b', 'c']
-		 *
-		 * List (with options)
-		 *   {'a': { ... }, 'b': { ... }, 'c': { ... }}
-		 *
-		 * @param {mixed} plugins
-		 */
-		Interface.prototype.loadPlugins = function(plugins) {
-			var i, n, key;
-			this.plugins = [];
-			this.pluginSettings = {};
-	
-			if ($.isArray(plugins)) {
-				for (i = 0, n = plugins.length; i < n; i++) {
-					this.loadPlugin(plugins[i]);
-				}
-			} else if (plugins) {
-				this.pluginSettings = $.extend({}, plugins);
-				for (key in plugins) {
-					if (plugins.hasOwnProperty(key)) {
-						this.loadPlugin(key);
-					}
-				}
-			}
-		};
-	
-		/**
-		 * Initializes a plugin.
-		 *
-		 * @param {string} name
-		 */
-		Interface.prototype.loadPlugin = function(name) {
-			var plugin, i, n;
-	
-			if (this.plugins.indexOf(name) !== -1) return;
-			if (!Interface.plugins.hasOwnProperty(name)) {
-				throw new Error(interfaceName + ' unable to find "' +  name + '" plugin');
-			}
-	
-			plugin = Interface.plugins[name];
-	
-			// initialize plugin and dependencies
-			this.plugins.push(name);
-			for (i = 0, n = plugin.dependencies.length; i < n; i++) {
-				this.loadPlugin(plugin.dependencies[i]);
-			}
-			plugin.fn.apply(this, [this.pluginSettings[name] || {}]);
-		};
-	
-		/**
-		 * Registers a plugin.
-		 *
-		 * @param {string} name
-		 * @param {array} dependencies (optional)
-		 * @param {function} fn
-		 */
-		Interface.registerPlugin = function(name) {
-			var args = arguments;
-			Interface.plugins[name] = {
-				'name'         : name,
-				'fn'           : args[args.length - 1],
-				'dependencies' : args.length === 3 ? args[1] : []
-			};
-		};
-	};
-	
-	/* --- file: "src/utils.js" --- */
-	
-	/**
-	* Determines if the provided value has been defined.
-	*
-	* @param {mixed} object
-	* @returns {boolean}
-	*/
 	var isset = function(object) {
 		return typeof object !== 'undefined';
 	};
 	
 	/**
-	* Converts a scalar to its best string representation
-	* for hash keys and HTML attribute values.
-	*
-	* Transformations:
-	*   'str'     -> 'str'
-	*   null      -> ''
-	*   undefined -> ''
-	*   true      -> '1'
-	*   false     -> '0'
-	*   0         -> '0'
-	*   1         -> '1'
-	*
-	* @param {string} value
-	* @returns {string}
-	*/
+	 * Converts a scalar to its best string representation
+	 * for hash keys and HTML attribute values.
+	 *
+	 * Transformations:
+	 *   'str'     -> 'str'
+	 *   null      -> ''
+	 *   undefined -> ''
+	 *   true      -> '1'
+	 *   false     -> '0'
+	 *   0         -> '0'
+	 *   1         -> '1'
+	 *
+	 * @param {string} value
+	 * @returns {string}
+	 */
 	var hash_key = function(value) {
 		if (typeof value === 'undefined' || value === null) return '';
 		if (typeof value === 'boolean') return value ? '1' : '0';
@@ -17010,11 +17063,11 @@ if (typeof exports == "object") {
 	};
 	
 	/**
-	* Escapes a string for use within HTML.
-	*
-	* @param {string} str
-	* @returns {string}
-	*/
+	 * Escapes a string for use within HTML.
+	 *
+	 * @param {string} str
+	 * @returns {string}
+	 */
 	var escape_html = function(str) {
 		return (str + '')
 			.replace(/&/g, '&amp;')
@@ -17023,37 +17076,16 @@ if (typeof exports == "object") {
 			.replace(/"/g, '&quot;');
 	};
 	
-	/**
-	* Escapes a string for use within regular expressions.
-	*
-	* @param {string} str
-	* @returns {string}
-	*/
-	var escape_regex = function(str) {
-		return (str + '').replace(/([.?*+^$[\]\\(){}|-])/g, '\\$1');
-	};
-	
-	/**
-	* Escapes quotation marks with backslashes. Useful
-	* for escaping values for use in CSS attribute selectors.
-	*
-	* @param {string} str
-	* @return {string}
-	*/
-	var escape_quotes = function(str) {
-		return str.replace(/(['"])/g, '\\$1');
-	};
-	
 	var hook = {};
 	
 	/**
-	* Wraps `method` on `self` so that `fn`
-	* is invoked before the original method.
-	*
-	* @param {object} self
-	* @param {string} method
-	* @param {function} fn
-	*/
+	 * Wraps `method` on `self` so that `fn`
+	 * is invoked before the original method.
+	 *
+	 * @param {object} self
+	 * @param {string} method
+	 * @param {function} fn
+	 */
 	hook.before = function(self, method, fn) {
 		var original = self[method];
 		self[method] = function() {
@@ -17063,13 +17095,13 @@ if (typeof exports == "object") {
 	};
 	
 	/**
-	* Wraps `method` on `self` so that `fn`
-	* is invoked after the original method.
-	*
-	* @param {object} self
-	* @param {string} method
-	* @param {function} fn
-	*/
+	 * Wraps `method` on `self` so that `fn`
+	 * is invoked after the original method.
+	 *
+	 * @param {object} self
+	 * @param {string} method
+	 * @param {function} fn
+	 */
 	hook.after = function(self, method, fn) {
 		var original = self[method];
 		self[method] = function() {
@@ -17080,13 +17112,13 @@ if (typeof exports == "object") {
 	};
 	
 	/**
-	* Builds a hash table out of an array of
-	* objects, using the specified `key` within
-	* each object.
-	*
-	* @param {string} key
-	* @param {mixed} objects
-	*/
+	 * Builds a hash table out of an array of
+	 * objects, using the specified `key` within
+	 * each object.
+	 *
+	 * @param {string} key
+	 * @param {mixed} objects
+	 */
 	var build_hash_table = function(key, objects) {
 		if (!$.isArray(objects)) return objects;
 		var i, n, table = {};
@@ -17099,11 +17131,11 @@ if (typeof exports == "object") {
 	};
 	
 	/**
-	* Wraps `fn` so that it can only be invoked once.
-	*
-	* @param {function} fn
-	* @returns {function}
-	*/
+	 * Wraps `fn` so that it can only be invoked once.
+	 *
+	 * @param {function} fn
+	 * @returns {function}
+	 */
 	var once = function(fn) {
 		var called = false;
 		return function() {
@@ -17114,13 +17146,13 @@ if (typeof exports == "object") {
 	};
 	
 	/**
-	* Wraps `fn` so that it can only be called once
-	* every `delay` milliseconds (invoked on the falling edge).
-	*
-	* @param {function} fn
-	* @param {int} delay
-	* @returns {function}
-	*/
+	 * Wraps `fn` so that it can only be called once
+	 * every `delay` milliseconds (invoked on the falling edge).
+	 *
+	 * @param {function} fn
+	 * @param {int} delay
+	 * @returns {function}
+	 */
 	var debounce = function(fn, delay) {
 		var timeout;
 		return function() {
@@ -17134,13 +17166,13 @@ if (typeof exports == "object") {
 	};
 	
 	/**
-	* Debounce all fired events types listed in `types`
-	* while executing the provided `fn`.
-	*
-	* @param {object} self
-	* @param {array} types
-	* @param {function} fn
-	*/
+	 * Debounce all fired events types listed in `types`
+	 * while executing the provided `fn`.
+	 *
+	 * @param {object} self
+	 * @param {array} types
+	 * @param {function} fn
+	 */
 	var debounce_events = function(self, types, fn) {
 		var type;
 		var trigger = self.trigger;
@@ -17169,13 +17201,13 @@ if (typeof exports == "object") {
 	};
 	
 	/**
-	* A workaround for http://bugs.jquery.com/ticket/6696
-	*
-	* @param {object} $parent - Parent element to listen on.
-	* @param {string} event - Event name.
-	* @param {string} selector - Descendant selector to filter by.
-	* @param {function} fn - Event handler.
-	*/
+	 * A workaround for http://bugs.jquery.com/ticket/6696
+	 *
+	 * @param {object} $parent - Parent element to listen on.
+	 * @param {string} event - Event name.
+	 * @param {string} selector - Descendant selector to filter by.
+	 * @param {function} fn - Event handler.
+	 */
 	var watchChildEvent = function($parent, event, selector, fn) {
 		$parent.on(event, selector, function(e) {
 			var child = e.target;
@@ -17188,14 +17220,14 @@ if (typeof exports == "object") {
 	};
 	
 	/**
-	* Determines the current selection within a text input control.
-	* Returns an object containing:
-	*   - start
-	*   - length
-	*
-	* @param {object} input
-	* @returns {object}
-	*/
+	 * Determines the current selection within a text input control.
+	 * Returns an object containing:
+	 *   - start
+	 *   - length
+	 *
+	 * @param {object} input
+	 * @returns {object}
+	 */
 	var getSelection = function(input) {
 		var result = {};
 		if ('selectionStart' in input) {
@@ -17213,12 +17245,12 @@ if (typeof exports == "object") {
 	};
 	
 	/**
-	* Copies CSS properties from one element to another.
-	*
-	* @param {object} $from
-	* @param {object} $to
-	* @param {array} properties
-	*/
+	 * Copies CSS properties from one element to another.
+	 *
+	 * @param {object} $from
+	 * @param {object} $to
+	 * @param {array} properties
+	 */
 	var transferStyles = function($from, $to, properties) {
 		var i, n, styles = {};
 		if (properties) {
@@ -17232,13 +17264,13 @@ if (typeof exports == "object") {
 	};
 	
 	/**
-	* Measures the width of a string within a
-	* parent element (in pixels).
-	*
-	* @param {string} str
-	* @param {object} $parent
-	* @returns {int}
-	*/
+	 * Measures the width of a string within a
+	 * parent element (in pixels).
+	 *
+	 * @param {string} str
+	 * @param {object} $parent
+	 * @returns {int}
+	 */
 	var measureString = function(str, $parent) {
 		var $test = $('<test>').css({
 			position: 'absolute',
@@ -17264,14 +17296,14 @@ if (typeof exports == "object") {
 	};
 	
 	/**
-	* Sets up an input to grow horizontally as the user
-	* types. If the value is changed manually, you can
-	* trigger the "update" handler to resize:
-	*
-	* $input.trigger('update');
-	*
-	* @param {object} $input
-	*/
+	 * Sets up an input to grow horizontally as the user
+	 * types. If the value is changed manually, you can
+	 * trigger the "update" handler to resize:
+	 *
+	 * $input.trigger('update');
+	 *
+	 * @param {object} $input
+	 */
 	var autoGrow = function($input) {
 		var update = function(e) {
 			var value, keyCode, printable, placeholder, width;
@@ -17288,7 +17320,7 @@ if (typeof exports == "object") {
 					(keyCode >= 97 && keyCode <= 122) || // a-z
 					(keyCode >= 65 && keyCode <= 90)  || // A-Z
 					(keyCode >= 48 && keyCode <= 57)  || // 0-9
-					keyCode == 32 // space
+					keyCode === 32 // space
 				);
 	
 				if (keyCode === KEY_DELETE || keyCode === KEY_BACKSPACE) {
@@ -17325,24 +17357,6 @@ if (typeof exports == "object") {
 		update();
 	};
 	
-	/* --- file: "src/selectize.js" --- */
-	
-	/**
-	* selectize.js
-	* Copyright (c) 2013 Brian Reavis & contributors
-	*
-	* Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
-	* file except in compliance with the License. You may obtain a copy of the License at:
-	* http://www.apache.org/licenses/LICENSE-2.0
-	*
-	* Unless required by applicable law or agreed to in writing, software distributed under
-	* the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
-	* ANY KIND, either express or implied. See the License for the specific language
-	* governing permissions and limitations under the License.
-	*
-	* @author Brian Reavis <brian@thirdroute.com>
-	*/
-	
 	var Selectize = function($input, settings) {
 		var key, i, n, self = this;
 		$input[0].selectize = self;
@@ -17353,6 +17367,7 @@ if (typeof exports == "object") {
 			$input           : $input,
 			tagType          : $input[0].tagName.toLowerCase() === 'select' ? TAG_SELECT : TAG_INPUT,
 	
+			eventNS          : '.selectize' + (++Selectize.count),
 			highlightedValue : null,
 			isOpen           : false,
 			isDisabled       : false,
@@ -17384,6 +17399,9 @@ if (typeof exports == "object") {
 			onSearchChange   : debounce(self.onSearchChange, settings.loadThrottle)
 		});
 	
+		// search system
+		self.sifter = new Sifter(this.options, {diacritics: settings.diacritics});
+	
 		// build options table
 		$.extend(self.options, build_hash_table(settings.valueField, settings.options));
 		delete self.settings.options;
@@ -17398,8 +17416,9 @@ if (typeof exports == "object") {
 			self.settings.hideSelected = self.settings.mode === 'multi';
 		}
 	
-		self.loadPlugins(self.settings.plugins);
+		self.initializePlugins(self.settings.plugins);
 		self.setupCallbacks();
+		self.setupTemplates();
 		self.setup();
 	};
 	
@@ -17407,7 +17426,7 @@ if (typeof exports == "object") {
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	
 	MicroEvent.mixin(Selectize);
-	Plugins.mixin(Selectize, 'Selectize');
+	MicroPlugin.mixin(Selectize);
 	
 	// methods
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -17418,8 +17437,12 @@ if (typeof exports == "object") {
 		 * Creates all elements and sets up event bindings.
 		 */
 		setup: function() {
-			var self = this;
-			var settings = self.settings;
+			var self      = this;
+			var settings  = self.settings;
+			var eventNS   = self.eventNS;
+			var $window   = $(window);
+			var $document = $(document);
+	
 			var $wrapper;
 			var $control;
 			var $control_input;
@@ -17431,28 +17454,28 @@ if (typeof exports == "object") {
 			var timeout_focus;
 			var tab_index;
 			var classes;
+			var classes_plugins;
 	
+			inputMode         = self.settings.mode;
 			tab_index         = self.$input.attr('tabindex') || '';
 			classes           = self.$input.attr('class') || '';
-			$wrapper          = $('<div>').addClass(settings.theme).addClass(settings.wrapperClass).addClass(classes);
-			$control          = $('<div>').addClass(settings.inputClass).addClass('items').toggleClass('has-options', !$.isEmptyObject(self.options)).appendTo($wrapper);
-			$control_input    = $('<input type="text">').appendTo($control).attr('tabindex',tab_index);
+	
+			$wrapper          = $('<div>').addClass(settings.wrapperClass).addClass(classes).addClass(inputMode);
+			$control          = $('<div>').addClass(settings.inputClass).addClass('items').appendTo($wrapper);
+			$control_input    = $('<input type="text">').appendTo($control).attr('tabindex', tab_index);
 			$dropdown_parent  = $(settings.dropdownParent || $wrapper);
-			$dropdown         = $('<div>').addClass(settings.dropdownClass).hide().appendTo($dropdown_parent);
+			$dropdown         = $('<div>').addClass(settings.dropdownClass).addClass(classes).addClass(inputMode).hide().appendTo($dropdown_parent);
 			$dropdown_content = $('<div>').addClass(settings.dropdownContentClass).appendTo($dropdown);
 	
 			$wrapper.css({
-				width: self.$input[0].style.width,
-				display: self.$input.css('display')
+				width: self.$input[0].style.width
 			});
 	
-			if (self.plugins.length) {
-				$wrapper.addClass('plugin-' + self.plugins.join(' plugin-'));
+			if (self.plugins.names.length) {
+				classes_plugins = 'plugin-' + self.plugins.names.join(' plugin-');
+				$wrapper.addClass(classes_plugins);
+				$dropdown.addClass(classes_plugins);
 			}
-	
-			inputMode = self.settings.mode;
-			$wrapper.toggleClass('single', inputMode === 'single');
-			$wrapper.toggleClass('multi', inputMode === 'multi');
 	
 			if ((settings.maxItems === null || settings.maxItems > 1) && self.tagType === TAG_SELECT) {
 				self.$input.attr('multiple', 'multiple');
@@ -17499,46 +17522,44 @@ if (typeof exports == "object") {
 				focus     : function() { return self.onFocus.apply(self, arguments); }
 			});
 	
-			$(document).on({
-				keydown: function(e) {
-					self.isCmdDown = e[IS_MAC ? 'metaKey' : 'ctrlKey'];
-					self.isCtrlDown = e[IS_MAC ? 'altKey' : 'ctrlKey'];
-					self.isShiftDown = e.shiftKey;
-				},
-				keyup: function(e) {
-					if (e.keyCode === KEY_CTRL) self.isCtrlDown = false;
-					if (e.keyCode === KEY_SHIFT) self.isShiftDown = false;
-					if (e.keyCode === KEY_CMD) self.isCmdDown = false;
-				},
-				mousedown: function(e) {
-					if (self.isFocused) {
-						// prevent events on the dropdown scrollbar from causing the control to blur
-						if (e.target === self.$dropdown[0] || e.target.parentNode === self.$dropdown[0]) {
-							var ignoreFocus = self.ignoreFocus;
-							self.ignoreFocus = true;
-							window.setTimeout(function() {
-								self.ignoreFocus = ignoreFocus;
-								self.focus(false);
-							}, 0);
-							return;
-						}
-						// blur on click outside
-						if (!self.$control.has(e.target).length && e.target !== self.$control[0]) {
-							self.blur();
-						}
+			$document.on('keydown' + eventNS, function(e) {
+				self.isCmdDown = e[IS_MAC ? 'metaKey' : 'ctrlKey'];
+				self.isCtrlDown = e[IS_MAC ? 'altKey' : 'ctrlKey'];
+				self.isShiftDown = e.shiftKey;
+			});
+	
+			$document.on('keyup' + eventNS, function(e) {
+				if (e.keyCode === KEY_CTRL) self.isCtrlDown = false;
+				if (e.keyCode === KEY_SHIFT) self.isShiftDown = false;
+				if (e.keyCode === KEY_CMD) self.isCmdDown = false;
+			});
+	
+			$document.on('mousedown' + eventNS, function(e) {
+				if (self.isFocused) {
+					// prevent events on the dropdown scrollbar from causing the control to blur
+					if (e.target === self.$dropdown[0] || e.target.parentNode === self.$dropdown[0]) {
+						var ignoreFocus = self.ignoreFocus;
+						self.ignoreFocus = true;
+						window.setTimeout(function() {
+							self.ignoreFocus = ignoreFocus;
+							self.focus(false);
+						}, 0);
+						return;
+					}
+					// blur on click outside
+					if (!self.$control.has(e.target).length && e.target !== self.$control[0]) {
+						self.blur();
 					}
 				}
 			});
 	
-			$(window).on({
-				'scroll resize': function() {
-					if (self.isOpen) {
-						self.positionDropdown.apply(self, arguments);
-					}
-				},
-				'mousemove': function() {
-					self.ignoreHover = false;
+			$window.on(['scroll' + eventNS, 'resize' + eventNS].join(' '), function() {
+				if (self.isOpen) {
+					self.positionDropdown.apply(self, arguments);
 				}
+			});
+			$window.on('mousemove' + eventNS, function() {
+				self.ignoreHover = false;
 			});
 	
 			self.$input.attr('tabindex',-1).hide().after(self.$wrapper);
@@ -17550,6 +17571,7 @@ if (typeof exports == "object") {
 	
 			self.updateOriginalInput();
 			self.refreshItems();
+			self.refreshClasses();
 			self.updatePlaceholder();
 			self.isSetup = true;
 	
@@ -17557,12 +17579,42 @@ if (typeof exports == "object") {
 				self.disable();
 			}
 	
+			self.on('change', this.onChange);
 			self.trigger('initialize');
 	
 			// preload options
 			if (settings.preload) {
 				self.onSearchChange('');
 			}
+		},
+	
+		/**
+		 * Sets up default rendering functions.
+		 */
+		setupTemplates: function() {
+			var self = this;
+			var field_label = self.settings.labelField;
+			var field_optgroup = self.settings.optgroupLabelField;
+	
+			var templates = {
+				'optgroup': function(data) {
+					return '<div class="optgroup">' + data.html + '</div>';
+				},
+				'optgroup_header': function(data, escape) {
+					return '<div class="optgroup-header">' + escape(data[field_optgroup]) + '</div>';
+				},
+				'option': function(data, escape) {
+					return '<div class="option">' + escape(data[field_label]) + '</div>';
+				},
+				'item': function(data, escape) {
+					return '<div class="item">' + escape(data[field_label]) + '</div>';
+				},
+				'option_create': function(data, escape) {
+					return '<div class="create">Add <strong>' + escape(data.input) + '</strong>&hellip;</div>';
+				},
+			};
+	
+			self.settings.render = $.extend({}, templates, self.settings.render);
 		},
 	
 		/**
@@ -17593,17 +17645,12 @@ if (typeof exports == "object") {
 		},
 	
 		/**
-		 * Triggers a callback defined in the user-provided settings.
-		 * Events: onItemAdd, onOptionAdd, etc
-		 *
-		 * @param {string} event
+		 * Triggered when the value of the control has been changed.
+		 * This should propagate the event to the original DOM
+		 * input / select element.
 		 */
-		triggerCallback: function(event) {
-			var args;
-			if (typeof this.settings[event] === 'function') {
-				args = Array.prototype.slice.apply(arguments, [1]);
-				this.settings[event].apply(this, args);
-			}
+		onChange: function() {
+			this.$input.trigger('change');
 		},
 	
 		/**
@@ -18061,123 +18108,39 @@ if (typeof exports == "object") {
 		},
 	
 		/**
-		 * Splits a search string into an array of
-		 * individual regexps to be used to match results.
+		 * Returns a function that scores an object
+		 * to show how good of a match it is to the
+		 * provided query.
 		 *
 		 * @param {string} query
-		 * @returns {array}
+		 * @param {object} options
+		 * @return {function}
 		 */
-		parseSearchTokens: function(query) {
-			query = $.trim(String(query || '').toLowerCase());
-			if (!query || !query.length) return [];
-	
-			var i, n, regex, letter;
-			var tokens = [];
-			var words = query.split(/ +/);
-	
-			for (i = 0, n = words.length; i < n; i++) {
-				regex = escape_regex(words[i]);
-				if (this.settings.diacritics) {
-					for (letter in DIACRITICS) {
-						if (DIACRITICS.hasOwnProperty(letter)) {
-							regex = regex.replace(new RegExp(letter, 'g'), DIACRITICS[letter]);
-						}
-					}
-				}
-				tokens.push({
-					string : words[i],
-					regex  : new RegExp(regex, 'i')
-				});
-			}
-	
-			return tokens;
+		getScoreFunction: function(query) {
+			return this.sifter.getScoreFunction(query, this.getSearchOptions());
 		},
 	
 		/**
-		 * Returns a function to be used to score individual results.
-		 * Results will be sorted by the score (descending). Scores less
-		 * than or equal to zero (no match) will not be included in the results.
+		 * Returns search options for sifter (the system
+		 * for scoring and sorting results).
 		 *
-		 * @param {object} data
-		 * @param {object} search
-		 * @returns {function}
+		 * @see https://github.com/brianreavis/sifter.js
+		 * @return {object}
 		 */
-		getScoreFunction: function(search) {
-			var self = this;
-			var tokens = search.tokens;
+		getSearchOptions: function() {
+			var settings = this.settings;
+			var fields = settings.searchField;
 	
-			var calculateFieldScore = (function() {
-				if (!tokens.length) {
-					return function() { return 0; };
-				} else if (tokens.length === 1) {
-					return function(value) {
-						var score, pos;
-	
-						value = String(value || '').toLowerCase();
-						pos = value.search(tokens[0].regex);
-						if (pos === -1) return 0;
-						score = tokens[0].string.length / value.length;
-						if (pos === 0) score += 0.5;
-						return score;
-					};
-				} else {
-					return function(value) {
-						var score, pos, i, j;
-	
-						value = String(value || '').toLowerCase();
-						score = 0;
-						for (i = 0, j = tokens.length; i < j; i++) {
-							pos = value.search(tokens[i].regex);
-							if (pos === -1) return 0;
-							if (pos === 0) score += 0.5;
-							score += tokens[i].string.length / value.length;
-						}
-						return score / tokens.length;
-					};
-				}
-			})();
-	
-			var calculateScore = (function() {
-				var fields = self.settings.searchField;
-				if (typeof fields === 'string') {
-					fields = [fields];
-				}
-				if (!fields || !fields.length) {
-					return function() { return 0; };
-				} else if (fields.length === 1) {
-					var field = fields[0];
-					return function(data) {
-						if (!data.hasOwnProperty(field)) return 0;
-						return calculateFieldScore(data[field]);
-					};
-				} else {
-					return function(data) {
-						var n = 0;
-						var score = 0;
-						for (var i = 0, j = fields.length; i < j; i++) {
-							if (data.hasOwnProperty(fields[i])) {
-								score += calculateFieldScore(data[fields[i]]);
-								n++;
-							}
-						}
-						return score / n;
-					};
-				}
-			})();
-	
-			return calculateScore;
+			return {
+				fields    : $.isArray(fields) ? fields : [fields],
+				sort      : settings.sortField,
+				direction : settings.sortDirection,
+			};
 		},
 	
 		/**
 		 * Searches through available options and returns
-		 * a sorted array of matches. Includes options that
-		 * have already been selected.
-		 *
-		 * The `settings` parameter can contain:
-		 *
-		 *   - searchField
-		 *   - sortField
-		 *   - sortDirection
+		 * a sorted array of matches.
 		 *
 		 * Returns an object containing:
 		 *
@@ -18187,107 +18150,41 @@ if (typeof exports == "object") {
 		 *   - items {array}
 		 *
 		 * @param {string} query
-		 * @param {object} settings
 		 * @returns {object}
 		 */
-		search: function(query, settings) {
-			var self = this;
-			var value, score, search, calculateScore;
+		search: function(query) {
+			var i, value, score, result, calculateScore;
+			var self     = this;
+			var settings = self.settings;
+			var options  = this.getSearchOptions();
 	
-			settings = settings || {};
-			query = $.trim(String(query || '').toLowerCase());
+			// validate user-provided result scoring function
+			if (settings.score) {
+				calculateScore = self.settings.score.apply(this, [query]);
+				if (typeof calculateScore !== 'function') {
+					throw new Error('Selectize "score" setting must be a function that returns a function');
+				}
+			}
 	
+			// perform search
 			if (query !== self.lastQuery) {
 				self.lastQuery = query;
-	
-				search = {
-					query  : query,
-					tokens : self.parseSearchTokens(query),
-					total  : 0,
-					items  : []
-				};
-	
-				// generate result scoring function
-				if (self.settings.score) {
-					calculateScore = self.settings.score.apply(this, [search]);
-					if (typeof calculateScore !== 'function') {
-						throw new Error('Selectize "score" setting must be a function that returns a function');
-					}
-				} else {
-					calculateScore = self.getScoreFunction(search);
-				}
-	
-				// perform search and sort
-				if (query.length) {
-					for (value in self.options) {
-						if (self.options.hasOwnProperty(value)) {
-							score = calculateScore(self.options[value]);
-							if (score > 0) {
-								search.items.push({
-									score: score,
-									value: value
-								});
-							}
-						}
-					}
-					search.items.sort(function(a, b) {
-						return b.score - a.score;
-					});
-				} else {
-					for (value in self.options) {
-						if (self.options.hasOwnProperty(value)) {
-							search.items.push({
-								score: 1,
-								value: value
-							});
-						}
-					}
-					if (self.settings.sortField) {
-						search.items.sort((function() {
-							var field = self.settings.sortField;
-							var multiplier = self.settings.sortDirection === 'desc' ? -1 : 1;
-							return function(a, b) {
-								a = a && String(self.options[a.value][field] || '').toLowerCase();
-								b = b && String(self.options[b.value][field] || '').toLowerCase();
-								if (a > b) return 1 * multiplier;
-								if (b > a) return -1 * multiplier;
-								return 0;
-							};
-						})());
-					}
-				}
-				self.currentResults = search;
+				result = self.sifter.search(query, $.extend(options, {score: calculateScore}));
+				self.currentResults = result;
 			} else {
-				search = $.extend(true, {}, self.currentResults);
+				result = $.extend(true, {}, self.currentResults);
 			}
 	
-			// apply limits and return
-			return self.prepareResults(search, settings);
-		},
-	
-		/**
-		 * Filters out any items that have already been selected
-		 * and applies search limits.
-		 *
-		 * @param {object} results
-		 * @param {object} settings
-		 * @returns {object}
-		 */
-		prepareResults: function(search, settings) {
-			if (this.settings.hideSelected) {
-				for (var i = search.items.length - 1; i >= 0; i--) {
-					if (this.items.indexOf(String(search.items[i].value)) !== -1) {
-						search.items.splice(i, 1);
+			// filter out selected items
+			if (settings.hideSelected) {
+				for (i = result.items.length - 1; i >= 0; i--) {
+					if (self.items.indexOf(hash_key(result.items[i].id)) !== -1) {
+						result.items.splice(i, 1);
 					}
 				}
 			}
 	
-			search.total = search.items.length;
-			if (typeof settings.limit === 'number') {
-				search.items = search.items.slice(0, settings.limit);
-			}
-	
-			return search;
+			return result;
 		},
 	
 		/**
@@ -18305,7 +18202,7 @@ if (typeof exports == "object") {
 			var i, n, groups, groups_order, option, optgroup, html, html_children;
 			var hasCreateOption;
 			var query = self.$control_input.val();
-			var results = self.search(query, {});
+			var results = self.search(query);
 			var $active, $create;
 			var $dropdown_content = self.$dropdown_content;
 	
@@ -18328,7 +18225,7 @@ if (typeof exports == "object") {
 			}
 	
 			for (i = 0; i < n; i++) {
-				option = self.options[results.items[i].value];
+				option = self.options[results.items[i].id];
 				optgroup = option[self.settings.optgroupField] || '';
 				if (!self.optgroups.hasOwnProperty(optgroup)) {
 					optgroup = '';
@@ -18408,24 +18305,22 @@ if (typeof exports == "object") {
 		 *
 		 * Usage:
 		 *
-		 *   this.addOption(value, data)
 		 *   this.addOption(data)
 		 *
-		 * @param {string} value
 		 * @param {object} data
 		 */
-		addOption: function(value, data) {
-			var i, n, optgroup, self = this;
+		addOption: function(data) {
+			var i, n, optgroup, value, self = this;
 	
-			if ($.isArray(value)) {
-				for (i = 0, n = value.length; i < n; i++) {
-					self.addOption(value[i][self.settings.valueField], value[i]);
+			if ($.isArray(data)) {
+				for (i = 0, n = data.length; i < n; i++) {
+					self.addOption(data[i]);
 				}
 				return;
 			}
 	
-			value = hash_key(value);
-			if (self.options.hasOwnProperty(value)) return;
+			value = hash_key(data[self.settings.valueField]);
+			if (!value || self.options.hasOwnProperty(value)) return;
 	
 			self.userOptions[value] = true;
 			self.options[value] = data;
@@ -18442,7 +18337,7 @@ if (typeof exports == "object") {
 		 */
 		addOptionGroup: function(id, data) {
 			this.optgroups[id] = data;
-			this.trigger('optgroup_add', value, data);
+			this.trigger('optgroup_add', id, data);
 		},
 	
 		/**
@@ -18526,7 +18421,7 @@ if (typeof exports == "object") {
 	
 			self.loadedSearches = {};
 			self.userOptions = {};
-			self.options = {};
+			self.options = self.sifter.items = {};
 			self.lastQuery = null;
 			self.trigger('option_clear');
 			self.clear();
@@ -18540,8 +18435,7 @@ if (typeof exports == "object") {
 		 * @returns {object}
 		 */
 		getOption: function(value) {
-			value = hash_key(value);
-			return value ? this.$dropdown_content.find('[data-selectable]').filter('[data-value="' + escape_quotes(value) + '"]:first') : $();
+			return this.getElementWithValue(value, this.$dropdown_content.find('[data-selectable]'));
 		},
 	
 		/**
@@ -18560,6 +18454,28 @@ if (typeof exports == "object") {
 		},
 	
 		/**
+		 * Finds the first element with a "data-value" attribute
+		 * that matches the given value.
+		 *
+		 * @param {mixed} value
+		 * @param {object} $els
+		 * @return {object}
+		 */
+		getElementWithValue: function(value, $els) {
+			value = hash_key(value);
+	
+			if (value) {
+				for (var i = 0, n = $els.length; i < n; i++) {
+					if ($els[i].getAttribute('data-value') === value) {
+						return $($els[i]);
+					}
+				}
+			}
+	
+			return $();
+		},
+	
+		/**
 		 * Returns the jQuery element of the item
 		 * matching the given value.
 		 *
@@ -18567,7 +18483,7 @@ if (typeof exports == "object") {
 		 * @returns {object}
 		 */
 		getItem: function(value) {
-			return this.$control.children('[data-value="' + escape_quotes(hash_key(value)) + '"]');
+			return this.getElementWithValue(value, this.$control.children());
 		},
 	
 		/**
@@ -18702,7 +18618,7 @@ if (typeof exports == "object") {
 				if (!value) return;
 	
 				self.setTextboxValue('');
-				self.addOption(value, data);
+				self.addOption(data);
 				self.setCaret(caret);
 				self.addItem(value);
 				self.refreshOptions(self.settings.mode !== 'single');
@@ -18744,6 +18660,7 @@ if (typeof exports == "object") {
 				.toggleClass('locked', isLocked)
 				.toggleClass('full', isFull).toggleClass('not-full', !isFull)
 				.toggleClass('dropdown-active', self.isOpen)
+				.toggleClass('has-options', !$.isEmptyObject(self.options))
 				.toggleClass('has-items', self.items.length > 0);
 			this.$control_input.data('grow', !isFull && !isLocked);
 		},
@@ -18778,7 +18695,6 @@ if (typeof exports == "object") {
 				self.$input.val(self.getValue());
 			}
 	
-			self.$input.trigger('change');
 			if (self.isSetup) {
 				self.trigger('change', self.$input.val());
 			}
@@ -18922,7 +18838,7 @@ if (typeof exports == "object") {
 			}
 	
 			// allow the callback to abort
-			if (!values.length || (typeof self.settings.onDelete === 'function' && self.settings.onDelete(values) === false)) {
+			if (!values.length || (typeof self.settings.onDelete === 'function' && self.settings.onDelete.apply(self, [values]) === false)) {
 				return false;
 			}
 	
@@ -19063,8 +18979,10 @@ if (typeof exports == "object") {
 		 * While disabled, it cannot receive focus.
 		 */
 		disable: function() {
-			this.isDisabled = true;
-			this.lock();
+			var self = this;
+			self.$input.prop('disabled', true);
+			self.isDisabled = true;
+			self.lock();
 		},
 	
 		/**
@@ -19072,8 +18990,32 @@ if (typeof exports == "object") {
 		 * to focus and user input.
 		 */
 		enable: function() {
-			this.isDisabled = false;
-			this.unlock();
+			var self = this;
+			self.$input.prop('disabled', false);
+			self.isDisabled = false;
+			self.unlock();
+		},
+	
+		/**
+		 * Completely destroys the control and
+		 * unbinds all event listeners so that it can
+		 * be garbage collected.
+		 */
+		destroy: function() {
+			var self = this;
+			var eventNS = self.eventNS;
+	
+			self.trigger('destroy');
+			self.off();
+			self.$wrapper.remove();
+			self.$dropdown.remove();
+			self.$input.show();
+	
+			$(window).off(eventNS);
+			$(document).off(eventNS);
+			$(document.body).off(eventNS);
+	
+			delete self.$input[0].selectize;
 		},
 	
 		/**
@@ -19089,7 +19031,7 @@ if (typeof exports == "object") {
 			var html = '';
 			var cache = false;
 			var self = this;
-			var regex_tag = /^[\	 ]*<([a-z][a-z0-9\-_]*(?:\:[a-z][a-z0-9\-_]*)?)/i;
+			var regex_tag = /^[\t ]*<([a-z][a-z0-9\-_]*(?:\:[a-z][a-z0-9\-_]*)?)/i;
 	
 			if (templateName === 'option' || templateName === 'item') {
 				value = hash_key(data[self.settings.valueField]);
@@ -19107,29 +19049,7 @@ if (typeof exports == "object") {
 			}
 	
 			// render markup
-			if (self.settings.render && typeof self.settings.render[templateName] === 'function') {
-				html = self.settings.render[templateName].apply(this, [data, escape_html]);
-			} else {
-				label = data[self.settings.labelField];
-				switch (templateName) {
-					case 'optgroup':
-						html = '<div class="optgroup">' + data.html + "</div>";
-						break;
-					case 'optgroup_header':
-						label = data[self.settings.optgroupLabelField];
-						html = '<div class="optgroup-header">' + escape_html(label) + '</div>';
-						break;
-					case 'option':
-						html = '<div class="option">' + escape_html(label) + '</div>';
-						break;
-					case 'item':
-						html = '<div class="item">' + escape_html(label) + '</div>';
-						break;
-					case 'option_create':
-						html = '<div class="create">Add <strong>' + escape_html(data.input) + '</strong>&hellip;</div>';
-						break;
-				}
-			}
+			html = self.settings.render[templateName].apply(this, [data, escape_html]);
 	
 			// add mandatory attributes
 			if (templateName === 'option' || templateName === 'option_create') {
@@ -19153,6 +19073,7 @@ if (typeof exports == "object") {
 	
 	});
 	
+	Selectize.count = 0;
 	Selectize.defaults = {
 		plugins: [],
 		delimiter: ',',
@@ -19171,7 +19092,7 @@ if (typeof exports == "object") {
 	
 		dataAttr: 'data-data',
 		optgroupField: 'optgroup',
-		sortField: null,
+		sortField: '$order',
 		sortDirection: 'asc',
 		valueField: 'value',
 		labelField: 'text',
@@ -19181,7 +19102,6 @@ if (typeof exports == "object") {
 		searchField: ['text'],
 	
 		mode: null,
-		theme: 'default',
 		wrapperClass: 'selectize-control',
 		inputClass: 'selectize-input',
 		dropdownClass: 'selectize-dropdown',
@@ -19216,8 +19136,6 @@ if (typeof exports == "object") {
 			*/
 		}
 	};
-	
-	/* --- file: "src/selectize.jquery.js" --- */
 	
 	$.fn.selectize = function(settings) {
 		settings = settings || {};
@@ -19255,6 +19173,7 @@ if (typeof exports == "object") {
 		var init_select = function($input, settings_element) {
 			var i, n, tagName;
 			var $children;
+			var order = 0;
 			settings_element.maxItems = !!$input.attr('multiple') ? null : 1;
 	
 			var readData = function($el) {
@@ -19266,16 +19185,22 @@ if (typeof exports == "object") {
 			};
 	
 			var addOption = function($option, group) {
+				var value, option;
+	
 				$option = $($option);
 	
-				var value = $option.attr('value') || '';
+				value = $option.attr('value') || '';
 				if (!value.length) return;
 	
-				settings_element.options[value] = readData($option) || {
+				option = readData($option) || {
 					'text'     : $option.text(),
 					'value'    : value,
 					'optgroup' : group
 				};
+	
+				option.$order = ++order;
+				settings_element.options[value] = option;
+	
 				if ($option.is(':selected')) {
 					settings_element.items.push(value);
 				}
@@ -19333,26 +19258,8 @@ if (typeof exports == "object") {
 	
 	$.fn.selectize.defaults = Selectize.defaults;
 	
-	/* --- file: "src/plugins/drag_drop/plugin.js" --- */
-	
-	/**
-	* Plugin: "drag_drop" (selectize.js)
-	* Copyright (c) 2013 Brian Reavis & contributors
-	*
-	* Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
-	* file except in compliance with the License. You may obtain a copy of the License at:
-	* http://www.apache.org/licenses/LICENSE-2.0
-	*
-	* Unless required by applicable law or agreed to in writing, software distributed under
-	* the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
-	* ANY KIND, either express or implied. See the License for the specific language
-	* governing permissions and limitations under the License.
-	*
-	* @author Brian Reavis <brian@thirdroute.com>
-	*/
-	
-	Selectize.registerPlugin('drag_drop', function(options) {
-		if (!$.fn.sortable) throw new Error('The "drag_drop" Selectize plugin requires jQuery UI "sortable".');
+	Selectize.define('drag_drop', function(options) {
+		if (!$.fn.sortable) throw new Error('The "drag_drop" plugin requires jQuery UI "sortable".');
 		if (this.settings.mode !== 'multi') return;
 		var self = this;
 	
@@ -19384,25 +19291,7 @@ if (typeof exports == "object") {
 	
 	});
 	
-	/* --- file: "src/plugins/dropdown_header/plugin.js" --- */
-	
-	/**
-	* Plugin: "dropdown_header" (selectize.js)
-	* Copyright (c) 2013 Brian Reavis & contributors
-	*
-	* Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
-	* file except in compliance with the License. You may obtain a copy of the License at:
-	* http://www.apache.org/licenses/LICENSE-2.0
-	*
-	* Unless required by applicable law or agreed to in writing, software distributed under
-	* the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
-	* ANY KIND, either express or implied. See the License for the specific language
-	* governing permissions and limitations under the License.
-	*
-	* @author Brian Reavis <brian@thirdroute.com>
-	*/
-	
-	Selectize.registerPlugin('dropdown_header', function(options) {
+	Selectize.define('dropdown_header', function(options) {
 		var self = this;
 	
 		options = $.extend({
@@ -19435,25 +19324,7 @@ if (typeof exports == "object") {
 	
 	});
 	
-	/* --- file: "src/plugins/optgroup_columns/plugin.js" --- */
-	
-	/**
-	* Plugin: "optgroup_columns" (selectize.js)
-	* Copyright (c) 2013 Simon Hewitt & contributors
-	*
-	* Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
-	* file except in compliance with the License. You may obtain a copy of the License at:
-	* http://www.apache.org/licenses/LICENSE-2.0
-	*
-	* Unless required by applicable law or agreed to in writing, software distributed under
-	* the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
-	* ANY KIND, either express or implied. See the License for the specific language
-	* governing permissions and limitations under the License.
-	*
-	* @author Simon Hewitt <si@sjhewitt.co.uk>
-	*/
-	
-	Selectize.registerPlugin('optgroup_columns', function(options) {
+	Selectize.define('optgroup_columns', function(options) {
 		var self = this;
 	
 		options = $.extend({
@@ -19530,40 +19401,46 @@ if (typeof exports == "object") {
 	
 	});
 	
-	/* --- file: "src/plugins/remove_button/plugin.js" --- */
+	Selectize.define('remove_button', function(options) {
+		if (this.settings.mode === 'single') return;
 	
-	/**
-	* Plugin: "remove_button" (selectize.js)
-	* Copyright (c) 2013 Brian Reavis & contributors
-	*
-	* Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
-	* file except in compliance with the License. You may obtain a copy of the License at:
-	* http://www.apache.org/licenses/LICENSE-2.0
-	*
-	* Unless required by applicable law or agreed to in writing, software distributed under
-	* the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
-	* ANY KIND, either express or implied. See the License for the specific language
-	* governing permissions and limitations under the License.
-	*
-	* @author Brian Reavis <brian@thirdroute.com>
-	*/
+		options = $.extend({
+			label     : '&times;',
+			title     : 'Remove',
+			className : 'remove',
+			append    : true,
+		}, options);
 	
-	Selectize.registerPlugin('remove_button', function(options) {
 		var self = this;
+		var html = '<a href="javascript:void(0)" class="' + options.className + '" tabindex="-1" title="' + escape_html(options.title) + '">' + options.label + '</a>';
 	
-		// override the item rendering method to add a "x" to each
-		this.settings.render.item = function(data) {
-			var label = data[self.settings.labelField];
-			return '<div class="item">' + label + ' <a href="javascript:void(0)" class="remove" tabindex="-1" title="Remove">&times;</a></div>';
+		/**
+		 * Appends an element as a child (with raw HTML).
+		 *
+		 * @param {string} html_container
+		 * @param {string} html_element
+		 * @return {string}
+		 */
+		var append = function(html_container, html_element) {
+			var pos = html_container.search(/(<\/[^>]+>\s*)$/);
+			return html_container.substring(0, pos) + html_element + html_container.substring(pos);
 		};
 	
-		// override the setup method to add an extra "click" handler
-		// that listens for mousedown events on the "x"
 		this.setup = (function() {
 			var original = self.setup;
 			return function() {
+				// override the item rendering method to add the button to each
+				if (options.append) {
+					var render_item = self.settings.render.item;
+					self.settings.render.item = function(data) {
+						return append(render_item.apply(this, arguments), html);
+					};
+				}
+	
 				original.apply(this, arguments);
-				this.$control.on('click', '.remove', function(e) {
+	
+				// add event listener
+				this.$control.on('click', '.' + options.className, function(e) {
 					e.preventDefault();
 					var $item = $(e.target).parent();
 					self.setActiveItem($item);
@@ -19571,30 +19448,13 @@ if (typeof exports == "object") {
 						self.setCaret(self.items.length);
 					}
 				});
+	
 			};
 		})();
 	
 	});
 	
-	/* --- file: "src/plugins/restore_on_backspace/plugin.js" --- */
-	
-	/**
-	* Plugin: "restore_on_backspace" (selectize.js)
-	* Copyright (c) 2013 Brian Reavis & contributors
-	*
-	* Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
-	* file except in compliance with the License. You may obtain a copy of the License at:
-	* http://www.apache.org/licenses/LICENSE-2.0
-	*
-	* Unless required by applicable law or agreed to in writing, software distributed under
-	* the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
-	* ANY KIND, either express or implied. See the License for the specific language
-	* governing permissions and limitations under the License.
-	*
-	* @author Brian Reavis <brian@thirdroute.com>
-	*/
-	
-	Selectize.registerPlugin('restore_on_backspace', function(options) {
+	Selectize.define('restore_on_backspace', function(options) {
 		var self = this;
 	
 		options.text = options.text || function(option) {
@@ -19623,9 +19483,7 @@ if (typeof exports == "object") {
 	});
 
 	return Selectize;
-
 }));
-
 /*
  * ----------------------------- JSTORAGE -------------------------------------
  * Simple local storage wrapper to save data on the browser side, supporting
