@@ -21,7 +21,7 @@
       @include(theme_view('inc.post'))
     @endforeach
 
-    {{ $posts->links() }}
+    {{ $posts->appends(array('q' => Input::get('q')))->links() }}
 
   </section>
 @stop
