@@ -2168,7 +2168,7 @@ this.Wardrobe.module("PostApp.List", function(List, App, Backbone, Marionette, $
 
     Posts.prototype.isMatch = function(post, sorter, filter) {
       var foundId, pattern;
-      foundId = sorter === "" || post.get("active") === sorter ? post.id : null;
+      foundId = sorter === "" || post.get("active").toString() === sorter ? post.id : null;
       if (foundId && filter !== "") {
         pattern = new RegExp(filter, "gi");
         foundId = pattern.test(post.get("title"));
