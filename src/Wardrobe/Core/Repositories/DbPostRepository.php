@@ -101,7 +101,7 @@ class DbPostRepository implements PostRepositoryInterface {
 							->orWhere('content', 'like', '%'.$search.'%');
 			})
 			->orderBy('posts.publish_date', 'desc')
-			->where('posts.active', 1)
+			->where('posts.active', '=', 1)
 			->where('posts.publish_date', '<=', new DateTime)
 			->distinct()
 			->paginate($per_page);
