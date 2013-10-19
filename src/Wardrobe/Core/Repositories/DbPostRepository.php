@@ -103,6 +103,7 @@ class DbPostRepository implements PostRepositoryInterface {
 			->orderBy('posts.publish_date', 'desc')
 			->where('posts.active', '=', 1)
 			->where('posts.publish_date', '<=', new DateTime)
+			->groupBy('id')
 			->distinct()
 			->paginate($per_page);
 	}
