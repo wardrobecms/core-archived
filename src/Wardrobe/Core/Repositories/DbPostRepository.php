@@ -237,7 +237,7 @@ class DbPostRepository implements PostRepositoryInterface {
 	 */
 	public function allTags()
 	{
-		return Tag::orderBy('tag', 'asc')->groupBy('tag')->distinct()->get()->toArray();
+		return Tag::orderBy('tag', 'asc')->groupBy('tag')->distinct()->get(array('tag'))->toArray();
 	}
 
 	/**
