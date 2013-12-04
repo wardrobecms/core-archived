@@ -70,7 +70,7 @@ function wardrobe_url($link)
     	$link = substr($link, 1);
 	}
 	if (route('wardrobe.index', null, false) !== '/') {
-		return route('wardrobe.index')."/{$link}";
+		return route('wardrobe.index')."{$link}";
 	} else {
 		return url($link);
 	}
