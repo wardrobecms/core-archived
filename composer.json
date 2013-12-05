@@ -25,6 +25,10 @@
     "symfony/yaml": "2.4.*@dev",
     "intervention/image": "1.4.*"
   },
+  "require-dev": {
+    "mockery/mockery": "dev-master",
+    "phpunit/phpunit": "3.7.*"
+  },
   "autoload": {
     "psr-0": {
       "Wardrobe\\Core": "src/",
