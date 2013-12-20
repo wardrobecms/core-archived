@@ -1,17 +1,41 @@
 <?php
 
+Wardrobe::setupViews();
+
 $wardrobeControllers = 'Wardrobe\Core\Controllers\\';
 
 Route::group(Config::get('core::routes.blog_group_rules'), function() use ($wardrobeControllers)
 {
 	Route::get('/', array('uses' => $wardrobeControllers.'HomeController@index', 'as' => 'wardrobe.index'));
-
+	Route::get('page/{slug}', array('uses' => $wardrobeControllers.'PageController@show', 'as' => 'wardrobe.pages.show'));
 	Route::get('post/{slug}', array('uses' => $wardrobeControllers.'PostController@show', 'as' => 'wardrobe.posts.show'));
 	Route::get('post/preview/{id}', array('uses' => $wardrobeControllers.'PostController@preview', 'as' => 'wardrobe.posts.preview'));
 	Route::get('tag/{tag}', array('uses' => $wardrobeControllers.'PostController@tag', 'as' => 'wardrobe.posts.tags'));
 	Route::get('archive', array('uses' => $wardrobeControllers.'PostController@index', 'as' => 'wardrobe.posts.archive'));
+	Route::get('rss', array('uses' => $wardrobeControllers.'RssController@index', 'as' => 'wardrobe.posts.rss'));
 
-	Route::controller('rss', $wardrobeControllers.'RssController');
+	/**
+	 * Password reset
+	 */
+	Route::get('password/reset/{token}', function($token)
+	{
+		return View::make('core::admin.auth.reset')->with('token', $token);
+	});
+
+	/**
+	 * Password reset Success
+	 */
+	Route::post('password/reset/{token}', function()
+	{
+		$credentials = array('email' => Input::get('email'));
+
+		return Password::reset($credentials, function($user, $password)
+		{
+			$user->password = Hash::make($password);
+			$user->save();
+			return Redirect::to('wardrobe');
+		});
+	});
 });
 
 Route::group(Config::get('core::routes.admin_group_rules'), function() use ($wardrobeControllers)
@@ -20,6 +44,8 @@ Route::group(Config::get('core::routes.admin_group_rules'), function() use ($war
 	Route::get('logout', array('uses' => $wardrobeControllers.'LoginController@destroy', 'as' => 'wardrobe.admin.logout'));
 	Route::get('login', array('uses' => $wardrobeControllers.'LoginController@create', 'as' => 'wardrobe.admin.login'));
 	Route::post('login', array('uses' => $wardrobeControllers.'LoginController@store'));
+	Route::get('login/remind', array('uses' => $wardrobeControllers.'LoginController@remindForm', 'as' => 'wardrobe.admin.remindForm'));
+	Route::post('login/remind', array('uses' => $wardrobeControllers.'LoginController@remindSend'));
 });
 
 Route::group(Config::get('core::routes.api_group_rules'), function() use ($wardrobeControllers)

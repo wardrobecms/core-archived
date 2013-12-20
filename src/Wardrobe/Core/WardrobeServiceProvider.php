@@ -24,9 +24,9 @@ class WardrobeServiceProvider extends ServiceProvider {
 		$this->bindRepositories();
 		$this->bootCommands();
 
-		require __DIR__.'/../../themeHelpers.php';
-		require __DIR__.'/../../routes.php';
-		require __DIR__.'/../../filters.php';
+		require_once __DIR__.'/../../themeHelpers.php';
+		require_once __DIR__.'/../../routes.php';
+		require_once __DIR__.'/../../filters.php';
 	}
 
 	/**
@@ -49,29 +49,29 @@ class WardrobeServiceProvider extends ServiceProvider {
 	protected function bootCommands()
 	{
 		$this->app['wardrobe.console.theme'] = $this->app->share(function($app)
-        {
-            return new Console\ThemeCommand;
-        });
-        $this->app['wardrobe.console.config'] = $this->app->share(function($app)
-        {
-            return new Console\ConfigCommand;
-        });
-        $this->app['wardrobe.console.migrate'] = $this->app->share(function($app)
-        {
-            return new Console\MigrateCommand;
-        });
-        $this->app['wardrobe.console.user'] = $this->app->share(function($app)
-        {
-            return new Console\UserCommand;
-        });
+		{
+			return new Console\ThemeCommand;
+		});
 
-        $this->commands('wardrobe.console.theme', 'wardrobe.console.config', 'wardrobe.console.migrate', 'wardrobe.console.user');
+		$this->app['wardrobe.console.config'] = $this->app->share(function($app)
+		{
+			return new Console\ConfigCommand;
+		});
+
+		$this->app['wardrobe.console.migrate'] = $this->app->share(function($app)
+		{
+			return new Console\MigrateCommand;
+		});
+
+		$this->app['wardrobe.console.user'] = $this->app->share(function($app)
+		{
+			return new Console\UserCommand;
+		});
+
+		$this->commands('wardrobe.console.theme', 'wardrobe.console.config', 'wardrobe.console.migrate', 'wardrobe.console.user');
 	}
 
-	public function register()
-	{
-
-	}
+	public function register(){}
 
 	/**
 	 * Get the services provided by the provider.
@@ -83,13 +83,21 @@ class WardrobeServiceProvider extends ServiceProvider {
 		return array();
 	}
 
+	/**
+	 * Set up the db connection
+	 *
+	 * @return  void
+	 */
 	public function setConnection()
 	{
 		$connection = Config::get('core::database.default');
 
-		if ($connection !== 'default') {
+		if ($connection !== 'default')
+		{
 			$wardrobeConfig = Config::get('core::database.connections.'.$connection);
-		} else {
+		}
+		else
+		{
 			$connection = Config::get('database.default');
 			$wardrobeConfig = Config::get('database.connections.'.$connection);
 		}

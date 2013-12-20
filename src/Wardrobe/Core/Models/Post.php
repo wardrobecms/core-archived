@@ -49,16 +49,19 @@ class Post extends BaseModel {
 		if (Config::get('core::wardrobe.cache'))
 		{
 			$content = $this->attributes['content'];
+
 			return Cache::rememberForever('post-'.$this->attributes['id'], function() use ($content)
 			{
 				return md($content);
 			});
 		}
+
 		return md($this->attributes['content']);
 	}
 
 	/**
 	 * Get the atom date for atom feeds
+	 *
 	 * @return DateTime
 	 */
 	public function getAtomDateAttribute()
@@ -70,6 +73,7 @@ class Post extends BaseModel {
 
 	/**
 	 * Get the atom date for rss feeds
+	 *
 	 * @return DateTime
 	 */
 	public function getRssDateAttribute()
@@ -79,6 +83,11 @@ class Post extends BaseModel {
 		return $dt->toRSSString();
 	}
 
+	/**
+	 * Return an array of all the post dates.
+	 *
+	 * @return array
+	 */
 	public function getDates()
 	{
 	    return array('created_at', 'updated_at', 'publish_date');
@@ -86,22 +95,34 @@ class Post extends BaseModel {
 
 	/**
 	 * Get the short version of a post
-	 * @return
+	 *
+	 * @return string
 	 */
-	public function getShortAttribute()
+	public function getIntroAttribute()
 	{
 		$content = $this->attributes['content'];
-
-		return explode('<!-- more -->', $content)[0];
+		$start = explode('<!-- more -->', $content);
+		return $start[0];
 	}
 
 	/**
 	 * Get the parsed short version of a post
-	 * @return
+	 *
+	 * @return string
 	 */
-	public function getParsedShortAttribute()
+	public function getParsedIntroAttribute()
 	{
-		return md($this->getShortAttribute());
+		$intro = $this->getIntroAttribute();
+
+		if (Config::get('core::wardrobe.cache'))
+		{
+			return Cache::rememberForever('post-intro-'.$this->attributes['id'], function() use ($intro)
+			{
+				return md($intro);
+			});
+		}
+
+		return md($intro);
 	}
 
 }

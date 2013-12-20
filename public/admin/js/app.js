@@ -1549,7 +1549,12 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
     };
 
     PostView.prototype.insertReadMore = function() {
-      return this.insert('<!-- more -->');
+      if (this.editor.codemirror.getValue().match(/!-- more/g)) {
+        return this.$("#js-errors").show().find("span").html(Lang.post_more_added);
+      } else {
+        this.$(".icon-ellipsis-horizontal").addClass("disabled");
+        return this.insert('<!-- more -->');
+      }
     };
 
     PostView.prototype.modelEvents = {
@@ -1606,14 +1611,13 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
         _this = this;
       toolbar = ['bold', 'italic', '|', 'quote', 'unordered-list', 'ordered-list', 'ellipsis-horizontal', '|', 'link', 'image', 'code', 'film', '|', 'undo', 'redo', '|', 'tags', 'calendar'];
       this.editor = new Editor({
+        element: document.getElementById("content"),
         toolbar: toolbar
       });
-      this.editor.render(document.getElementById("content"));
       this.imageUpload(this.editor);
-      this.editor.codemirror.on("change", function(cm, change) {
+      return this.editor.codemirror.on("change", function(cm, change) {
         return _this.localStorage();
       });
-      return this.$('.editor-statusbar').find('.lines').html(this.editor.codemirror.lineCount()).find('.words').html(this.editor.codemirror.getValue().length).find('.cursorActivity').html(this.editor.codemirror.getCursor().line + ':' + this.editor.codemirror.getCursor().ch);
     };
 
     PostView.prototype.localStorage = function() {
@@ -1871,9 +1875,6 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
         allowedTypes: ["image/jpeg", "image/png", "image/jpg", "image/gif"],
         progressText: "![Uploading file...]()",
         urlText: "![file]({filename})",
-        onUploadedFile: function(json) {
-          debugger;
-        },
         errorText: "Error uploading file"
       };
       return inlineAttach.attachToCodeMirror(editor.codemirror, options);
@@ -2167,7 +2168,7 @@ this.Wardrobe.module("PostApp.List", function(List, App, Backbone, Marionette, $
 
     Posts.prototype.isMatch = function(post, sorter, filter) {
       var foundId, pattern;
-      foundId = sorter === "" || post.get("active") === sorter ? post.id : null;
+      foundId = sorter === "" || post.get("active").toString() === sorter ? post.id : null;
       if (foundId && filter !== "") {
         pattern = new RegExp(filter, "gi");
         foundId = pattern.test(post.get("title"));

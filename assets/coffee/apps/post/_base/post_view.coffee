@@ -26,7 +26,11 @@
       "change #js-user" : "localStorage"
 
     insertReadMore: ->
-      @.insert '<!-- more -->'
+      if @editor.codemirror.getValue().match /!-- more/g
+        @$("#js-errors").show().find("span").html Lang.post_more_added
+      else
+        @$(".icon-ellipsis-horizontal").addClass("disabled")
+        @insert '<!-- more -->'
 
     # When the model changes it's private _errors method call the changeErrors method.
     modelEvents:
@@ -78,10 +82,11 @@
       ]
 
       @editor = new Editor
+        element: document.getElementById("content")
         toolbar: toolbar
 
       # Render to the #content holder.
-      @editor.render(document.getElementById("content"))
+      # @editor.render(document.getElementById("content"))
 
       # Allow images to be drag and dropped into the editor.
       @imageUpload @editor
@@ -91,10 +96,10 @@
         @localStorage()
 
       # Manually over ride the editor status bar.
-      @$('.editor-statusbar')
-        .find('.lines').html(@editor.codemirror.lineCount())
-        .find('.words').html(@editor.codemirror.getValue().length)
-        .find('.cursorActivity').html(@editor.codemirror.getCursor().line + ':' + @editor.codemirror.getCursor().ch)
+      # @$('.editor-statusbar')
+      #   .find('.lines').html(@editor.codemirror.lineCount())
+      #   .find('.words').html(@editor.codemirror.getValue().length)
+      #   .find('.cursorActivity').html(@editor.codemirror.getCursor().line + ':' + @editor.codemirror.getCursor().ch)
 
     # Save the post data to local storage
     localStorage: ->
@@ -289,8 +294,8 @@
         allowedTypes: ["image/jpeg", "image/png", "image/jpg", "image/gif"]
         progressText: "![Uploading file...]()"
         urlText: "![file]({filename})"
-        onUploadedFile: (json) ->
-          debugger
+        # onUploadedFile: (json) ->
         errorText: "Error uploading file"
+
       # Attach it to the code mirror.
       inlineAttach.attachToCodeMirror(editor.codemirror, options)

@@ -9,7 +9,10 @@
     <h1>{{ Lang::get('core::wardrobe.forgot_password') }}</h1>
     @if (Session::has('error'))
       <div class="alert alert-block alert-error">
-        <p>{{ trans(Session::get('core::reason')) }}</p>
+        <p>
+          {{ trans(Session::get('reason')) }}
+          {{ trans(Session::get('core::reason')) }}
+        </p>
       </div>
     @elseif (Session::has('success'))
       <div class="alert alert-block alert-success">

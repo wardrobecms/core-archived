@@ -34,9 +34,7 @@ class Wardrobe {
 	 */
 	public function posts($params = array())
 	{
-		$per_page = isset($params['per_page']) ? $params['per_page'] : Config::get('core::wardrobe.per_page');
-
-		return $this->postsRepo->active($per_page);
+		return $this->postsRepo->facadeSearch($params);
 	}
 
 	/**
@@ -45,6 +43,25 @@ class Wardrobe {
 	public function tags()
 	{
 		return $this->postsRepo->allTags();
+	}
+
+	/**
+	 * Generate a route to a named group
+	 *
+	 * @param  string $route
+	 * @param  mixed $param
+	 * @return string
+	 */
+	public function route($route, $param = null)
+	{
+		if($route == '/')
+		{
+    	return route('wardrobe.index');
+		}
+		else
+		{
+			return \URL::route('wardrobe.'.$route, $param);
+		}
 	}
 
 	public function setupViews()
@@ -59,7 +76,7 @@ class Wardrobe {
 	{
 		$provider = $this->createEloquentProvider();
 
-		$guard = new Guard($provider, App::make('session'));
+		$guard = new Guard($provider, App::make('session.store'));
 
 		$guard->setCookieJar(App::make('cookie'));
 

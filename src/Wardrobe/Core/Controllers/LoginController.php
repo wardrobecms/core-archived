@@ -1,6 +1,6 @@
 <?php namespace Wardrobe\Core\Controllers;
 
-use View, Input, Redirect, Auth, Wardrobe;
+use View, Input, Redirect, Auth, Password, Wardrobe;
 
 use Wardrobe\Core\Repositories\UserRepositoryInterface;
 

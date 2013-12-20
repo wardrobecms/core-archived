@@ -1,16 +1,16 @@
 @extends(theme_view('layout'))
 
 @section('title')
-  {{ $post->title }}
+	{{ $post->title }}
 @stop
 
 @section('content')
-  <section>
-    <h2 class="title">{{ $post->title }}</h2>
+	<section>
+		<h2 class="title">{{ $post->title }}</h2>
 
-    {{ $post->parsed_content }}
+		{{ $post->parsed_content }}
 
-    @include(theme_view('inc.tags'))
-  </section>
+		@include(theme_view('inc.tags'))
+	</section>
 @stop
 

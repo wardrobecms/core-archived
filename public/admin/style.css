@@ -9805,7 +9805,6 @@ button {
   position: relative;
 }
 #write .author select {
-  height: 25px;
   margin-top: 11px;
   margin-left: 5px;
 }
@@ -10277,7 +10276,7 @@ nav li i {
   border: none;
   box-shadow: none;
 }
-.tags-bar .selectize-control.default.multi .selectize-input > div {
+.tags-bar .selectize-input > div {
   color: #2c3e50;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.1);
   border: 1px solid #cccccc;
@@ -10290,6 +10289,6 @@ nav li i {
   -moz-box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
 }
-.tags-bar .selectize-control.default.multi .selectize-input > div i {
+.tags-bar .selectize-input > div i {
   color: #2c3e50;
 }

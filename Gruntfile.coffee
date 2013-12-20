@@ -59,7 +59,7 @@ module.exports = (grunt) ->
     concat:
       structure:
         src: [
-          'assets/vendor/components/html5shiv/src/html5shiv.js'
+          'assets/vendor/components/html5shiv/dist/html5shiv.js'
           'assets/vendor/components/underscore/underscore.js'
           'assets/vendor/components/backbone/backbone.js'
           'assets/vendor/components/backbone.marionette/lib/backbone.marionette.js'
@@ -68,7 +68,7 @@ module.exports = (grunt) ->
           'assets/vendor/components/js-md5/js/md5.js'
           'assets/vendor/plugins/bootstrap/*.js'
           'assets/vendor/components/dropzone/downloads/dropzone.js'
-          'assets/vendor/components/selectize/selectize.js'
+          'assets/vendor/components/selectize/dist/js/standalone/selectize.js'
           'assets/vendor/components/jstorage/jstorage.js'
           'assets/vendor/plugins/qtip.js'
           'assets/vendor/plugins/editor/inline-attach.js'

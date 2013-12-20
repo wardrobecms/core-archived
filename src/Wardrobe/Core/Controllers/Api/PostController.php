@@ -57,7 +57,7 @@ class PostController extends BaseController {
 
 		$date = (Input::get('publish_date') == "") ? "Now" : Input::get('publish_date');
 
-		return $this->posts->create(
+		$post = $this->posts->create(
 			Input::get('title'),
 			Input::get('content'),
 			Input::get('slug'),
@@ -66,6 +66,8 @@ class PostController extends BaseController {
 			Input::get('user_id', $this->auth->user()->id),
 			Carbon::createFromTimestamp(strtotime($date))
 		);
+
+		return (string) $this->posts->find($post->id);
 	}
 
 	/**
@@ -105,7 +107,7 @@ class PostController extends BaseController {
 			return Response::json($messages->all(), 400);
 		}
 
-		return $this->posts->update(
+		$post = $this->posts->update(
 			$id,
 			Input::get('title'),
 			Input::get('content'),
@@ -115,6 +117,8 @@ class PostController extends BaseController {
 			(int) Input::get('user_id'),
 			Carbon::createFromTimestamp(strtotime(Input::get('publish_date')))
 		);
+
+		return (string) $this->posts->find($id);
 	}
 
 	/**
