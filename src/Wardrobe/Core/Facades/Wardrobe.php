@@ -76,7 +76,7 @@ class Wardrobe {
 	{
 		$provider = $this->createEloquentProvider();
 
-		$guard = new Guard($provider, App::make('session.store'));
+		$guard = new Guard($provider, App::make('session.store'), App::make('request'));
 
 		$guard->setCookieJar(App::make('cookie'));
 
