@@ -6,8 +6,23 @@ use Input, Config, Response, Exception, File;
 use Carbon\Carbon;
 use Symfony\Component\Yaml\Parser;
 use Intervention\Image\Image;
+use Aws\S3\S3Client;
 
 class DropzoneController extends BaseController {
+
+	/**
+	 * The type of image storage to use.
+	 *
+	 * @var string
+	 */
+	protected $imageStorage;
+
+	/**
+	 * AWS S3 Client 
+	 *
+	 * @var AWS\S3\S3Client
+	 */
+	protected $s3Client;
 
 	/**
 	 * Create a new API Dropzone controller.
@@ -19,6 +34,16 @@ class DropzoneController extends BaseController {
 		parent::__construct();
 
 		$this->beforeFilter('wardrobe.auth');
+
+		$this->imageStorage = Config::get('core::wardrobe.image_driver');
+
+		if(strtolower($this->imageStorage) == "s3")
+		{
+			$this->s3Client = S3Client::factory(array(
+			    'key'    => Config::get('core::wardrobe.image_s3_creds.api_key'),
+			    'secret' => Config::get('core::wardrobe.image_s3_creds.api_secret')
+			));
+		}
 	}
 
 	/**
@@ -86,9 +111,26 @@ class DropzoneController extends BaseController {
 
 		if (File::exists($destinationPath.$filename))
 		{
-			// @note - Using the absolute url so it loads images when ran in sub folder
-			// this will make exporting less portable and may need to re-address at a later point.
-			return Response::json(array('filename' => url("/{$imageDir}/".$filename)));
+			// @note - If S3 is connected, move the resized image to it and delete the locally stored version
+			if($this->s3Client)
+			{
+				$result = $this->s3Client->putObject(array(
+				    'Bucket' => Config::get('core::wardrobe.image_s3_creds.bucket'),
+				    'Key'    => $filename,
+				    'Body'   => fopen($destinationPath.$filename, 'r+'),
+				    'ACL'    => 'public-read'
+				));
+
+				File::delete($destinationPath.$filename);
+
+				return Response::json(array('filename' => $result['ObjectURL']));
+			}
+			else
+			{
+				// @note - Using the absolute url so it loads images when ran in sub folder
+				// this will make exporting less portable and may need to re-address at a later point.
+				return Response::json(array('filename' => url("/{$imageDir}/".$filename)));
+			}
 		}
 		return Response::json(array('error' => 'Upload failed. Please ensure your public/img directory is writable.'));
 	}

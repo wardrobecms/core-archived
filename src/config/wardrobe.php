@@ -15,6 +15,17 @@ return array(
 
     /*
     |--------------------------------------------------------------------------
+    | Image Storage
+    |--------------------------------------------------------------------------
+    |
+    | Set this to indicate how to store uploaded imates. Values are 'filesystem'
+    | or 's3'. If s3 is indicated, set your credentials below.
+    |
+    */
+    'image_storage' => 'filesystem',
+
+    /*
+    |--------------------------------------------------------------------------
     | Image Uploads Directory
     |--------------------------------------------------------------------------
     |
@@ -37,6 +48,20 @@ return array(
         'enabled'       => false,
         'width'         => '600',
         'height'        => '600',
+    ),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Image S3 Creds
+    |--------------------------------------------------------------------------
+    |
+    | If using S3 as the image storage, specify your S3 credentials here.
+    |
+    */
+    'image_s3_creds' => array(
+        'bucket'       => 'bucket',
+        'api_key'      => 'key',
+        'api_secret'   => 'secret',
     ),
 
     /*
