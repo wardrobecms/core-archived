@@ -1,6 +1,7 @@
 <?php namespace Wardrobe\Core\Controllers\Api;
 
 use Wardrobe\Core\Controllers\BaseController;
+use Wardrobe\Core\Repositories\FileStorageRepositoryInterface;
 
 use Input, Config, Response, Exception, File;
 use Carbon\Carbon;
@@ -10,15 +11,24 @@ use Intervention\Image\Image;
 class DropzoneController extends BaseController {
 
 	/**
+	 * The file storage driver
+	 *
+	 * @var Wardrobe\Core\Repositories\FileStorageRepositoryInterface
+	 */
+	protected $fileStorage;
+
+	/**
 	 * Create a new API Dropzone controller.
 	 *
 	 * @return \ApiDropzoneController
 	 */
-	public function __construct()
+	public function __construct(FileStorageRepositoryInterface $fileStorage)
 	{
 		parent::__construct();
 
 		$this->beforeFilter('wardrobe.auth');
+
+		$this->fileStorage = $fileStorage;
 	}
 
 	/**
@@ -67,29 +77,23 @@ class DropzoneController extends BaseController {
 	public function postImage()
 	{
 		$file = Input::file('file');
-		$imageDir = Config::get('core::wardrobe.image_dir');
-		$destinationPath = public_path(). "/{$imageDir}/";
 		$filename = $file->getClientOriginalName();
 		$resizeEnabled = Config::get('core::wardrobe.image_resize.enabled');
+
+		//move the file to tmp location
+		$file->move(sys_get_temp_dir(), 'Wardrobe_'.$filename);
+		$tmpPath = sys_get_temp_dir().'/Wardrobe_'.$filename;
 		
 		if ($resizeEnabled)
 		{
 			$resizeWidth = Config::get('core::wardrobe.image_resize.width');
 			$resizeHeight = Config::get('core::wardrobe.image_resize.height');
-			$image = Image::make($file->getRealPath())->resize($resizeWidth, $resizeHeight, true);
-			$image->save($destinationPath.$filename);
-		}
-		else
-		{
-			$file->move($destinationPath, $filename);
+			$image = Image::make($tmpPath)->resize($resizeWidth, $resizeHeight, true);
+			$image->save($tmpPath);
 		}
 
-		if (File::exists($destinationPath.$filename))
-		{
-			// @note - Using the absolute url so it loads images when ran in sub folder
-			// this will make exporting less portable and may need to re-address at a later point.
-			return Response::json(array('filename' => url("/{$imageDir}/".$filename)));
-		}
-		return Response::json(array('error' => 'Upload failed. Please ensure your public/img directory is writable.'));
+		$result = $this->fileStorage->store(file_get_contents($tmpPath), $filename, "image");
+
+		return Response::json($result);
 	}
 }

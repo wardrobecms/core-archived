@@ -15,14 +15,28 @@ return array(
 
     /*
     |--------------------------------------------------------------------------
-    | Image Uploads Directory
+    | File Storage
     |--------------------------------------------------------------------------
     |
-    | Set this to the directory where your images will be located in your public
+    | Set this to indicate how to store uploaded files. Values are 'filesystem'
+    | or 's3'. If s3 is indicated, set your credentials below.
+    |
+    */
+    'file_storage' => 'filesystem',
+
+    /*
+    |--------------------------------------------------------------------------
+    | File Uploads Directory
+    |--------------------------------------------------------------------------
+    |
+    | Set this to the directory where your files will be located in your public
     | folder.
     |
     */
-    'image_dir' => 'img',
+    'storage_directories' => array(
+        'image'     => 'img',
+        'default'     => 'files',
+    ),
 
     /*
     |--------------------------------------------------------------------------
@@ -37,6 +51,20 @@ return array(
         'enabled'       => false,
         'width'         => '600',
         'height'        => '600',
+    ),
+
+    /*
+    |--------------------------------------------------------------------------
+    | S3 Creds
+    |--------------------------------------------------------------------------
+    |
+    | If using S3 for file storage, specify your S3 credentials here.
+    |
+    */
+    's3_creds' => array(
+        'bucket'       => 'bucket',
+        'api_key'      => 'key',
+        'api_secret'   => 'secret',
     ),
 
     /*
@@ -90,16 +118,16 @@ return array(
     */
     'installed' => true,
 
-	/*
-	|--------------------------------------------------------------------------
-	| Enable Cache
-	|--------------------------------------------------------------------------
-	|
-	| Set this to true to enable caching. If true it will then use the
-	| default laravel cache setup.
-	|
-	*/
-	'cache' => null,
+    /*
+    |--------------------------------------------------------------------------
+    | Enable Cache
+    |--------------------------------------------------------------------------
+    |
+    | Set this to true to enable caching. If true it will then use the
+    | default laravel cache setup.
+    |
+    */
+    'cache' => null,
 
     /*
     |--------------------------------------------------------------------------
