@@ -13,6 +13,13 @@ class S3FileStorageRepository extends FileStorageRepository {
      */
     protected $s3Client;
 
+    /**
+     * Constructor
+     *
+     * @param  Illuminate\Support\Contracts\MessageProviderInterface  $messages
+     * 
+     * @return \Wardrobe\Core\Repositories\FileStorageRepositoryInterface
+     */
     public function __construct(MessageProviderInterface $messages)
     {
         parent::__construct($messages);
@@ -24,7 +31,7 @@ class S3FileStorageRepository extends FileStorageRepository {
     }
 
     /**
-     * Saves file in chosen storge 
+     * Saves file in chosen storage 
      *
      * @param  string  $content
      * @param  string  $last_name
