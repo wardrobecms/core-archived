@@ -27,6 +27,17 @@ class Wardrobe {
 	}
 
 	/**
+	 * Fetch post by slug
+	 *
+	 * @param string $slug
+	 * @return Post
+	 */
+	public function post($slug)
+	{
+		return $this->postsRepo->findBySlug($slug);
+	}
+	
+	/**
 	 * Fetch Posts
 	 *
 	 * @param array $params
