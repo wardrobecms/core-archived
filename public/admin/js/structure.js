@@ -1,15 +1,3346 @@
-/*
- HTML5 Shiv v3.7.0 | @afarkas @jdalton @jon_neal @rem | MIT/GPL2 Licensed
-*/
-(function(l,f){function m(){var a=e.elements;return"string"==typeof a?a.split(" "):a}function i(a){var b=n[a[o]];b||(b={},h++,a[o]=h,n[h]=b);return b}function p(a,b,c){b||(b=f);if(g)return b.createElement(a);c||(c=i(b));b=c.cache[a]?c.cache[a].cloneNode():r.test(a)?(c.cache[a]=c.createElem(a)).cloneNode():c.createElem(a);return b.canHaveChildren&&!s.test(a)?c.frag.appendChild(b):b}function t(a,b){if(!b.cache)b.cache={},b.createElem=a.createElement,b.createFrag=a.createDocumentFragment,b.frag=b.createFrag();
-a.createElement=function(c){return!e.shivMethods?b.createElem(c):p(c,a,b)};a.createDocumentFragment=Function("h,f","return function(){var n=f.cloneNode(),c=n.createElement;h.shivMethods&&("+m().join().replace(/[\w\-]+/g,function(a){b.createElem(a);b.frag.createElement(a);return'c("'+a+'")'})+");return n}")(e,b.frag)}function q(a){a||(a=f);var b=i(a);if(e.shivCSS&&!j&&!b.hasCSS){var c,d=a;c=d.createElement("p");d=d.getElementsByTagName("head")[0]||d.documentElement;c.innerHTML="x<style>article,aside,dialog,figcaption,figure,footer,header,hgroup,main,nav,section{display:block}mark{background:#FF0;color:#000}template{display:none}</style>";
-c=d.insertBefore(c.lastChild,d.firstChild);b.hasCSS=!!c}g||t(a,b);return a}var k=l.html5||{},s=/^<|^(?:button|map|select|textarea|object|iframe|option|optgroup)$/i,r=/^(?:a|b|code|div|fieldset|h1|h2|h3|h4|h5|h6|i|label|li|ol|p|q|span|strong|style|table|tbody|td|th|tr|ul)$/i,j,o="_html5shiv",h=0,n={},g;(function(){try{var a=f.createElement("a");a.innerHTML="<xyz></xyz>";j="hidden"in a;var b;if(!(b=1==a.childNodes.length)){f.createElement("a");var c=f.createDocumentFragment();b="undefined"==typeof c.cloneNode||
-"undefined"==typeof c.createDocumentFragment||"undefined"==typeof c.createElement}g=b}catch(d){g=j=!0}})();var e={elements:k.elements||"abbr article aside audio bdi canvas data datalist details dialog figcaption figure footer header hgroup main mark meter nav output progress section summary template time video",version:"3.7.0",shivCSS:!1!==k.shivCSS,supportsUnknownElements:g,shivMethods:!1!==k.shivMethods,type:"default",shivDocument:q,createElement:p,createDocumentFragment:function(a,b){a||(a=f);
-if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=0,e=m(),h=e.length;d<h;d++)c.createElement(e[d]);return c}};l.html5=e;q(f)})(this,document);
+/**
+ * sifter.js
+ * Copyright (c) 2013 Brian Reavis & contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
+ * file except in compliance with the License. You may obtain a copy of the License at:
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+ * ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ *
+ * @author Brian Reavis <brian@thirdroute.com>
+ */
 
-//     Underscore.js 1.5.1
+(function(root, factory) {
+	if (typeof define === 'function' && define.amd) {
+		define(factory);
+	} else if (typeof exports === 'object') {
+		module.exports = factory();
+	} else {
+		root.Sifter = factory();
+	}
+}(this, function() {
+
+	/**
+	 * Textually searches arrays and hashes of objects
+	 * by property (or multiple properties). Designed
+	 * specifically for autocomplete.
+	 *
+	 * @constructor
+	 * @param {array|object} items
+	 * @param {object} items
+	 */
+	var Sifter = function(items, settings) {
+		this.items = items;
+		this.settings = settings || {diacritics: true};
+	};
+
+	/**
+	 * Splits a search string into an array of individual
+	 * regexps to be used to match results.
+	 *
+	 * @param {string} query
+	 * @returns {array}
+	 */
+	Sifter.prototype.tokenize = function(query) {
+		query = trim(String(query || '').toLowerCase());
+		if (!query || !query.length) return [];
+
+		var i, n, regex, letter;
+		var tokens = [];
+		var words = query.split(/ +/);
+
+		for (i = 0, n = words.length; i < n; i++) {
+			regex = escape_regex(words[i]);
+			if (this.settings.diacritics) {
+				for (letter in DIACRITICS) {
+					if (DIACRITICS.hasOwnProperty(letter)) {
+						regex = regex.replace(new RegExp(letter, 'g'), DIACRITICS[letter]);
+					}
+				}
+			}
+			tokens.push({
+				string : words[i],
+				regex  : new RegExp(regex, 'i')
+			});
+		}
+
+		return tokens;
+	};
+
+	/**
+	 * Iterates over arrays and hashes.
+	 *
+	 * ```
+	 * this.iterator(this.items, function(item, id) {
+	 *    // invoked for each item
+	 * });
+	 * ```
+	 *
+	 * @param {array|object} object
+	 */
+	Sifter.prototype.iterator = function(object, callback) {
+		var iterator;
+		if (is_array(object)) {
+			iterator = Array.prototype.forEach || function(callback) {
+				for (var i = 0, n = this.length; i < n; i++) {
+					callback(this[i], i, this);
+				}
+			};
+		} else {
+			iterator = function(callback) {
+				for (var key in this) {
+					if (this.hasOwnProperty(key)) {
+						callback(this[key], key, this);
+					}
+				}
+			};
+		}
+
+		iterator.apply(object, [callback]);
+	};
+
+	/**
+	 * Returns a function to be used to score individual results.
+	 *
+	 * Good matches will have a higher score than poor matches.
+	 * If an item is not a match, 0 will be returned by the function.
+	 *
+	 * @param {object|string} search
+	 * @param {object} options (optional)
+	 * @returns {function}
+	 */
+	Sifter.prototype.getScoreFunction = function(search, options) {
+		var self, fields, tokens, token_count;
+
+		self        = this;
+		search      = self.prepareSearch(search, options);
+		tokens      = search.tokens;
+		fields      = search.options.fields;
+		token_count = tokens.length;
+
+		/**
+		 * Calculates how close of a match the
+		 * given value is against a search token.
+		 *
+		 * @param {mixed} value
+		 * @param {object} token
+		 * @return {number}
+		 */
+		var scoreValue = function(value, token) {
+			var score, pos;
+
+			if (!value) return 0;
+			value = String(value || '');
+			pos = value.search(token.regex);
+			if (pos === -1) return 0;
+			score = token.string.length / value.length;
+			if (pos === 0) score += 0.5;
+			return score;
+		};
+
+		/**
+		 * Calculates the score of an object
+		 * against the search query.
+		 *
+		 * @param {object} token
+		 * @param {object} data
+		 * @return {number}
+		 */
+		var scoreObject = (function() {
+			var field_count = fields.length;
+			if (!field_count) {
+				return function() { return 0; };
+			}
+			if (field_count === 1) {
+				return function(token, data) {
+					return scoreValue(data[fields[0]], token);
+				};
+			}
+			return function(token, data) {
+				for (var i = 0, sum = 0; i < field_count; i++) {
+					sum += scoreValue(data[fields[i]], token);
+				}
+				return sum / field_count;
+			};
+		})();
+
+		if (!token_count) {
+			return function() { return 0; };
+		}
+		if (token_count === 1) {
+			return function(data) {
+				return scoreObject(tokens[0], data);
+			};
+		}
+		return function(data) {
+			for (var i = 0, sum = 0; i < token_count; i++) {
+				sum += scoreObject(tokens[i], data);
+			}
+			return sum / token_count;
+		};
+	};
+
+	/**
+	 * Parses a search query and returns an object
+	 * with tokens and fields ready to be populated
+	 * with results.
+	 *
+	 * @param {string} query
+	 * @param {object} options
+	 * @returns {object}
+	 */
+	Sifter.prototype.prepareSearch = function(query, options) {
+		if (typeof query === 'object') return query;
+		return {
+			options : extend({}, options),
+			query   : String(query || '').toLowerCase(),
+			tokens  : this.tokenize(query),
+			total   : 0,
+			items   : []
+		};
+	};
+
+	/**
+	 * Searches through all items and returns a sorted array of matches.
+	 *
+	 * The `options` parameter can contain:
+	 *
+	 *   - fields {string|array}
+	 *   - sort {string}
+	 *   - direction {string}
+	 *   - score {function}
+	 *   - limit {integer}
+	 *
+	 * Returns an object containing:
+	 *
+	 *   - options {object}
+	 *   - query {string}
+	 *   - tokens {array}
+	 *   - total {int}
+	 *   - items {array}
+	 *
+	 * @param {string} query
+	 * @param {object} options
+	 * @returns {object}
+	 */
+	Sifter.prototype.search = function(query, options) {
+		var self = this, value, score, search, calculateScore;
+
+		search  = this.prepareSearch(query, options);
+		options = search.options;
+		query   = search.query;
+
+		// generate result scoring function
+		if (!is_array(options.fields)) options.fields = [options.fields];
+		calculateScore = options.score || self.getScoreFunction(search);
+
+		// perform search and sort
+		if (query.length) {
+			self.iterator(self.items, function(item, id) {
+				score = calculateScore(item);
+				if (score > 0) {
+					search.items.push({'score': score, 'id': id});
+				}
+			});
+			search.items.sort(function(a, b) {
+				return b.score - a.score;
+			});
+		} else {
+			self.iterator(self.items, function(item, id) {
+				search.items.push({'score': 1, 'id': id});
+			});
+			if (options.sort) {
+				search.items.sort((function() {
+					var field = options.sort;
+					var multiplier = options.direction === 'desc' ? -1 : 1;
+					return function(a, b) {
+						return cmp(self.items[a.id][field], self.items[b.id][field]) * multiplier;
+					};
+				})());
+			}
+		}
+
+		// apply limits
+		search.total = search.items.length;
+		if (typeof options.limit === 'number') {
+			search.items = search.items.slice(0, options.limit);
+		}
+
+		return search;
+	};
+
+	// utilities
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+	var cmp = function(a, b) {
+		if (typeof a === 'number' && typeof b === 'number') {
+			return a > b ? 1 : (a < b ? -1 : 0);
+		}
+		a = String(a || '').toLowerCase();
+		b = String(b || '').toLowerCase();
+		if (a > b) return 1;
+		if (b > a) return -1;
+		return 0;
+	};
+
+	var extend = function(a, b) {
+		var i, n, k, object;
+		for (i = 1, n = arguments.length; i < n; i++) {
+			object = arguments[i];
+			if (!object) continue;
+			for (k in object) {
+				if (object.hasOwnProperty(k)) {
+					a[k] = object[k];
+				}
+			}
+		}
+		return a;
+	};
+
+	var trim = function(str) {
+		return (str + '').replace(/^\s+|\s+$|/g, '');
+	};
+
+	var escape_regex = function(str) {
+		return (str + '').replace(/([.?*+^$[\]\\(){}|-])/g, '\\$1');
+	};
+
+	var is_array = Array.isArray || ($ && $.isArray) || function(object) {
+		return Object.prototype.toString.call(object) === '[object Array]';
+	};
+
+	var DIACRITICS = {
+		'a': '[aÀÁÂÃÄÅàáâãäå]',
+		'c': '[cÇç]',
+		'e': '[eÈÉÊËèéêë]',
+		'i': '[iÌÍÎÏìíîï]',
+		'n': '[nÑñ]',
+		'o': '[oÒÓÔÕÕÖØòóôõöø]',
+		's': '[sŠš]',
+		'u': '[uÙÚÛÜùúûü]',
+		'y': '[yŸÿý]',
+		'z': '[zŽž]'
+	};
+
+	// export
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+	return Sifter;
+
+}));
+
+/**
+ * microplugin.js
+ * Copyright (c) 2013 Brian Reavis & contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
+ * file except in compliance with the License. You may obtain a copy of the License at:
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+ * ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ *
+ * @author Brian Reavis <brian@thirdroute.com>
+ */
+
+(function(root, factory) {
+	if (typeof define === 'function' && define.amd) {
+		define(factory);
+	} else if (typeof exports === 'object') {
+		module.exports = factory();
+	} else {
+		root.MicroPlugin = factory();
+	}
+}(this, function() {
+	var MicroPlugin = {};
+
+	MicroPlugin.mixin = function(Interface) {
+		Interface.plugins = {};
+
+		/**
+		 * Initializes the listed plugins (with options).
+		 * Acceptable formats:
+		 *
+		 * List (without options):
+		 *   ['a', 'b', 'c']
+		 *
+		 * List (with options):
+		 *   [{'name': 'a', options: {}}, {'name': 'b', options: {}}]
+		 *
+		 * Hash (with options):
+		 *   {'a': { ... }, 'b': { ... }, 'c': { ... }}
+		 *
+		 * @param {mixed} plugins
+		 */
+		Interface.prototype.initializePlugins = function(plugins) {
+			var i, n, key;
+			var self  = this;
+			var queue = [];
+
+			self.plugins = {
+				names     : [],
+				settings  : {},
+				requested : {},
+				loaded    : {}
+			};
+
+			if (utils.isArray(plugins)) {
+				for (i = 0, n = plugins.length; i < n; i++) {
+					if (typeof plugins[i] === 'string') {
+						queue.push(plugins[i]);
+					} else {
+						self.plugins.settings[plugins[i].name] = plugins[i].options;
+						queue.push(plugins[i].name);
+					}
+				}
+			} else if (plugins) {
+				for (key in plugins) {
+					if (plugins.hasOwnProperty(key)) {
+						self.plugins.settings[key] = plugins[key];
+						queue.push(key);
+					}
+				}
+			}
+
+			while (queue.length) {
+				self.require(queue.shift());
+			}
+		};
+
+		Interface.prototype.loadPlugin = function(name) {
+			var self    = this;
+			var plugins = self.plugins;
+			var plugin  = Interface.plugins[name];
+
+			if (!Interface.plugins.hasOwnProperty(name)) {
+				throw new Error('Unable to find "' +  name + '" plugin');
+			}
+
+			plugins.requested[name] = true;
+			plugins.loaded[name] = plugin.fn.apply(self, [self.plugins.settings[name] || {}]);
+			plugins.names.push(name);
+		};
+
+		/**
+		 * Initializes a plugin.
+		 *
+		 * @param {string} name
+		 */
+		Interface.prototype.require = function(name) {
+			var self = this;
+			var plugins = self.plugins;
+
+			if (!self.plugins.loaded.hasOwnProperty(name)) {
+				if (plugins.requested[name]) {
+					throw new Error('Plugin has circular dependency ("' + name + '")');
+				}
+				self.loadPlugin(name);
+			}
+
+			return plugins.loaded[name];
+		};
+
+		/**
+		 * Registers a plugin.
+		 *
+		 * @param {string} name
+		 * @param {function} fn
+		 */
+		Interface.define = function(name, fn) {
+			Interface.plugins[name] = {
+				'name' : name,
+				'fn'   : fn
+			};
+		};
+	};
+
+	var utils = {
+		isArray: Array.isArray || function(vArg) {
+			return Object.prototype.toString.call(vArg) === '[object Array]';
+		}
+	};
+
+	return MicroPlugin;
+}));
+
+/**
+ * selectize.js (v0.7.7)
+ * Copyright (c) 2013 Brian Reavis & contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
+ * file except in compliance with the License. You may obtain a copy of the License at:
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+ * ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ *
+ * @author Brian Reavis <brian@thirdroute.com>
+ */
+
+/*jshint curly:false */
+/*jshint browser:true */
+
+(function(root, factory) {
+	if (typeof define === 'function' && define.amd) {
+		define(['jquery','sifter','microplugin'], factory);
+	} else {
+		root.Selectize = factory(root.jQuery, root.Sifter, root.MicroPlugin);
+	}
+}(this, function($, Sifter, MicroPlugin) {
+	'use strict';
+
+	var highlight = function($element, pattern) {
+		if (typeof pattern === 'string' && !pattern.length) return;
+		var regex = (typeof pattern === 'string') ? new RegExp(pattern, 'i') : pattern;
+	
+		var highlight = function(node) {
+			var skip = 0;
+			if (node.nodeType === 3) {
+				var pos = node.data.search(regex);
+				if (pos >= 0 && node.data.length > 0) {
+					var match = node.data.match(regex);
+					var spannode = document.createElement('span');
+					spannode.className = 'highlight';
+					var middlebit = node.splitText(pos);
+					var endbit = middlebit.splitText(match[0].length);
+					var middleclone = middlebit.cloneNode(true);
+					spannode.appendChild(middleclone);
+					middlebit.parentNode.replaceChild(spannode, middlebit);
+					skip = 1;
+				}
+			} else if (node.nodeType === 1 && node.childNodes && !/(script|style)/i.test(node.tagName)) {
+				for (var i = 0; i < node.childNodes.length; ++i) {
+					i += highlight(node.childNodes[i]);
+				}
+			}
+			return skip;
+		};
+	
+		return $element.each(function() {
+			highlight(this);
+		});
+	};
+	
+	var MicroEvent = function() {};
+	MicroEvent.prototype = {
+		on: function(event, fct){
+			this._events = this._events || {};
+			this._events[event] = this._events[event] || [];
+			this._events[event].push(fct);
+		},
+		off: function(event, fct){
+			var n = arguments.length;
+			if (n === 0) return delete this._events;
+			if (n === 1) return delete this._events[event];
+	
+			this._events = this._events || {};
+			if (event in this._events === false) return;
+			this._events[event].splice(this._events[event].indexOf(fct), 1);
+		},
+		trigger: function(event /* , args... */){
+			this._events = this._events || {};
+			if (event in this._events === false) return;
+			for (var i = 0; i < this._events[event].length; i++){
+				this._events[event][i].apply(this, Array.prototype.slice.call(arguments, 1));
+			}
+		}
+	};
+	
+	/**
+	 * Mixin will delegate all MicroEvent.js function in the destination object.
+	 *
+	 * - MicroEvent.mixin(Foobar) will make Foobar able to use MicroEvent
+	 *
+	 * @param {object} the object which will support MicroEvent
+	 */
+	MicroEvent.mixin = function(destObject){
+		var props = ['on', 'off', 'trigger'];
+		for (var i = 0; i < props.length; i++){
+			destObject.prototype[props[i]] = MicroEvent.prototype[props[i]];
+		}
+	};
+	
+	var IS_MAC        = /Mac/.test(navigator.userAgent);
+	
+	var KEY_A         = 65;
+	var KEY_COMMA     = 188;
+	var KEY_RETURN    = 13;
+	var KEY_ESC       = 27;
+	var KEY_LEFT      = 37;
+	var KEY_UP        = 38;
+	var KEY_RIGHT     = 39;
+	var KEY_DOWN      = 40;
+	var KEY_BACKSPACE = 8;
+	var KEY_DELETE    = 46;
+	var KEY_SHIFT     = 16;
+	var KEY_CMD       = IS_MAC ? 91 : 17;
+	var KEY_CTRL      = IS_MAC ? 18 : 17;
+	var KEY_TAB       = 9;
+	
+	var TAG_SELECT    = 1;
+	var TAG_INPUT     = 2;
+	
+	var isset = function(object) {
+		return typeof object !== 'undefined';
+	};
+	
+	/**
+	 * Converts a scalar to its best string representation
+	 * for hash keys and HTML attribute values.
+	 *
+	 * Transformations:
+	 *   'str'     -> 'str'
+	 *   null      -> ''
+	 *   undefined -> ''
+	 *   true      -> '1'
+	 *   false     -> '0'
+	 *   0         -> '0'
+	 *   1         -> '1'
+	 *
+	 * @param {string} value
+	 * @returns {string}
+	 */
+	var hash_key = function(value) {
+		if (typeof value === 'undefined' || value === null) return '';
+		if (typeof value === 'boolean') return value ? '1' : '0';
+		return value + '';
+	};
+	
+	/**
+	 * Escapes a string for use within HTML.
+	 *
+	 * @param {string} str
+	 * @returns {string}
+	 */
+	var escape_html = function(str) {
+		return (str + '')
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;');
+	};
+	
+	var hook = {};
+	
+	/**
+	 * Wraps `method` on `self` so that `fn`
+	 * is invoked before the original method.
+	 *
+	 * @param {object} self
+	 * @param {string} method
+	 * @param {function} fn
+	 */
+	hook.before = function(self, method, fn) {
+		var original = self[method];
+		self[method] = function() {
+			fn.apply(self, arguments);
+			return original.apply(self, arguments);
+		};
+	};
+	
+	/**
+	 * Wraps `method` on `self` so that `fn`
+	 * is invoked after the original method.
+	 *
+	 * @param {object} self
+	 * @param {string} method
+	 * @param {function} fn
+	 */
+	hook.after = function(self, method, fn) {
+		var original = self[method];
+		self[method] = function() {
+			var result = original.apply(self, arguments);
+			fn.apply(self, arguments);
+			return result;
+		};
+	};
+	
+	/**
+	 * Builds a hash table out of an array of
+	 * objects, using the specified `key` within
+	 * each object.
+	 *
+	 * @param {string} key
+	 * @param {mixed} objects
+	 */
+	var build_hash_table = function(key, objects) {
+		if (!$.isArray(objects)) return objects;
+		var i, n, table = {};
+		for (i = 0, n = objects.length; i < n; i++) {
+			if (objects[i].hasOwnProperty(key)) {
+				table[objects[i][key]] = objects[i];
+			}
+		}
+		return table;
+	};
+	
+	/**
+	 * Wraps `fn` so that it can only be invoked once.
+	 *
+	 * @param {function} fn
+	 * @returns {function}
+	 */
+	var once = function(fn) {
+		var called = false;
+		return function() {
+			if (called) return;
+			called = true;
+			fn.apply(this, arguments);
+		};
+	};
+	
+	/**
+	 * Wraps `fn` so that it can only be called once
+	 * every `delay` milliseconds (invoked on the falling edge).
+	 *
+	 * @param {function} fn
+	 * @param {int} delay
+	 * @returns {function}
+	 */
+	var debounce = function(fn, delay) {
+		var timeout;
+		return function() {
+			var self = this;
+			var args = arguments;
+			window.clearTimeout(timeout);
+			timeout = window.setTimeout(function() {
+				fn.apply(self, args);
+			}, delay);
+		};
+	};
+	
+	/**
+	 * Debounce all fired events types listed in `types`
+	 * while executing the provided `fn`.
+	 *
+	 * @param {object} self
+	 * @param {array} types
+	 * @param {function} fn
+	 */
+	var debounce_events = function(self, types, fn) {
+		var type;
+		var trigger = self.trigger;
+		var event_args = {};
+	
+		// override trigger method
+		self.trigger = function() {
+			var type = arguments[0];
+			if (types.indexOf(type) !== -1) {
+				event_args[type] = arguments;
+			} else {
+				return trigger.apply(self, arguments);
+			}
+		};
+	
+		// invoke provided function
+		fn.apply(self, []);
+		self.trigger = trigger;
+	
+		// trigger queued events
+		for (type in event_args) {
+			if (event_args.hasOwnProperty(type)) {
+				trigger.apply(self, event_args[type]);
+			}
+		}
+	};
+	
+	/**
+	 * A workaround for http://bugs.jquery.com/ticket/6696
+	 *
+	 * @param {object} $parent - Parent element to listen on.
+	 * @param {string} event - Event name.
+	 * @param {string} selector - Descendant selector to filter by.
+	 * @param {function} fn - Event handler.
+	 */
+	var watchChildEvent = function($parent, event, selector, fn) {
+		$parent.on(event, selector, function(e) {
+			var child = e.target;
+			while (child && child.parentNode !== $parent[0]) {
+				child = child.parentNode;
+			}
+			e.currentTarget = child;
+			return fn.apply(this, [e]);
+		});
+	};
+	
+	/**
+	 * Determines the current selection within a text input control.
+	 * Returns an object containing:
+	 *   - start
+	 *   - length
+	 *
+	 * @param {object} input
+	 * @returns {object}
+	 */
+	var getSelection = function(input) {
+		var result = {};
+		if ('selectionStart' in input) {
+			result.start = input.selectionStart;
+			result.length = input.selectionEnd - result.start;
+		} else if (document.selection) {
+			input.focus();
+			var sel = document.selection.createRange();
+			var selLen = document.selection.createRange().text.length;
+			sel.moveStart('character', -input.value.length);
+			result.start = sel.text.length - selLen;
+			result.length = selLen;
+		}
+		return result;
+	};
+	
+	/**
+	 * Copies CSS properties from one element to another.
+	 *
+	 * @param {object} $from
+	 * @param {object} $to
+	 * @param {array} properties
+	 */
+	var transferStyles = function($from, $to, properties) {
+		var i, n, styles = {};
+		if (properties) {
+			for (i = 0, n = properties.length; i < n; i++) {
+				styles[properties[i]] = $from.css(properties[i]);
+			}
+		} else {
+			styles = $from.css();
+		}
+		$to.css(styles);
+	};
+	
+	/**
+	 * Measures the width of a string within a
+	 * parent element (in pixels).
+	 *
+	 * @param {string} str
+	 * @param {object} $parent
+	 * @returns {int}
+	 */
+	var measureString = function(str, $parent) {
+		var $test = $('<test>').css({
+			position: 'absolute',
+			top: -99999,
+			left: -99999,
+			width: 'auto',
+			padding: 0,
+			whiteSpace: 'nowrap'
+		}).text(str).appendTo('body');
+	
+		transferStyles($parent, $test, [
+			'letterSpacing',
+			'fontSize',
+			'fontFamily',
+			'fontWeight',
+			'textTransform'
+		]);
+	
+		var width = $test.width();
+		$test.remove();
+	
+		return width;
+	};
+	
+	/**
+	 * Sets up an input to grow horizontally as the user
+	 * types. If the value is changed manually, you can
+	 * trigger the "update" handler to resize:
+	 *
+	 * $input.trigger('update');
+	 *
+	 * @param {object} $input
+	 */
+	var autoGrow = function($input) {
+		var update = function(e) {
+			var value, keyCode, printable, placeholder, width;
+			var shift, character, selection;
+			e = e || window.event || {};
+	
+			if (e.metaKey || e.altKey) return;
+			if ($input.data('grow') === false) return;
+	
+			value = $input.val();
+			if (e.type && e.type.toLowerCase() === 'keydown') {
+				keyCode = e.keyCode;
+				printable = (
+					(keyCode >= 97 && keyCode <= 122) || // a-z
+					(keyCode >= 65 && keyCode <= 90)  || // A-Z
+					(keyCode >= 48 && keyCode <= 57)  || // 0-9
+					keyCode === 32 // space
+				);
+	
+				if (keyCode === KEY_DELETE || keyCode === KEY_BACKSPACE) {
+					selection = getSelection($input[0]);
+					if (selection.length) {
+						value = value.substring(0, selection.start) + value.substring(selection.start + selection.length);
+					} else if (keyCode === KEY_BACKSPACE && selection.start) {
+						value = value.substring(0, selection.start - 1) + value.substring(selection.start + 1);
+					} else if (keyCode === KEY_DELETE && typeof selection.start !== 'undefined') {
+						value = value.substring(0, selection.start) + value.substring(selection.start + 1);
+					}
+				} else if (printable) {
+					shift = e.shiftKey;
+					character = String.fromCharCode(e.keyCode);
+					if (shift) character = character.toUpperCase();
+					else character = character.toLowerCase();
+					value += character;
+				}
+			}
+	
+			placeholder = $input.attr('placeholder') || '';
+			if (!value.length && placeholder.length) {
+				value = placeholder;
+			}
+	
+			width = measureString(value, $input) + 4;
+			if (width !== $input.width()) {
+				$input.width(width);
+				$input.triggerHandler('resize');
+			}
+		};
+	
+		$input.on('keydown keyup update blur', update);
+		update();
+	};
+	
+	var Selectize = function($input, settings) {
+		var key, i, n, self = this;
+		$input[0].selectize = self;
+	
+		// setup default state
+		$.extend(self, {
+			settings         : settings,
+			$input           : $input,
+			tagType          : $input[0].tagName.toLowerCase() === 'select' ? TAG_SELECT : TAG_INPUT,
+	
+			eventNS          : '.selectize' + (++Selectize.count),
+			highlightedValue : null,
+			isOpen           : false,
+			isDisabled       : false,
+			isLocked         : false,
+			isFocused        : false,
+			isInputFocused   : false,
+			isInputHidden    : false,
+			isSetup          : false,
+			isShiftDown      : false,
+			isCmdDown        : false,
+			isCtrlDown       : false,
+			ignoreFocus      : false,
+			ignoreHover      : false,
+			hasOptions       : false,
+			currentResults   : null,
+			lastValue        : '',
+			caretPos         : 0,
+			loading          : 0,
+			loadedSearches   : {},
+	
+			$activeOption    : null,
+			$activeItems     : [],
+	
+			optgroups        : {},
+			options          : {},
+			userOptions      : {},
+			items            : [],
+			renderCache      : {},
+			onSearchChange   : debounce(self.onSearchChange, settings.loadThrottle)
+		});
+	
+		// search system
+		self.sifter = new Sifter(this.options, {diacritics: settings.diacritics});
+	
+		// build options table
+		$.extend(self.options, build_hash_table(settings.valueField, settings.options));
+		delete self.settings.options;
+	
+		// build optgroup table
+		$.extend(self.optgroups, build_hash_table(settings.optgroupValueField, settings.optgroups));
+		delete self.settings.optgroups;
+	
+		// option-dependent defaults
+		self.settings.mode = self.settings.mode || (self.settings.maxItems === 1 ? 'single' : 'multi');
+		if (typeof self.settings.hideSelected !== 'boolean') {
+			self.settings.hideSelected = self.settings.mode === 'multi';
+		}
+	
+		self.initializePlugins(self.settings.plugins);
+		self.setupCallbacks();
+		self.setupTemplates();
+		self.setup();
+	};
+	
+	// mixins
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	
+	MicroEvent.mixin(Selectize);
+	MicroPlugin.mixin(Selectize);
+	
+	// methods
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	
+	$.extend(Selectize.prototype, {
+	
+		/**
+		 * Creates all elements and sets up event bindings.
+		 */
+		setup: function() {
+			var self      = this;
+			var settings  = self.settings;
+			var eventNS   = self.eventNS;
+			var $window   = $(window);
+			var $document = $(document);
+	
+			var $wrapper;
+			var $control;
+			var $control_input;
+			var $dropdown;
+			var $dropdown_content;
+			var $dropdown_parent;
+			var inputMode;
+			var timeout_blur;
+			var timeout_focus;
+			var tab_index;
+			var classes;
+			var classes_plugins;
+	
+			inputMode         = self.settings.mode;
+			tab_index         = self.$input.attr('tabindex') || '';
+			classes           = self.$input.attr('class') || '';
+	
+			$wrapper          = $('<div>').addClass(settings.wrapperClass).addClass(classes).addClass(inputMode);
+			$control          = $('<div>').addClass(settings.inputClass).addClass('items').appendTo($wrapper);
+			$control_input    = $('<input type="text">').appendTo($control).attr('tabindex', tab_index);
+			$dropdown_parent  = $(settings.dropdownParent || $wrapper);
+			$dropdown         = $('<div>').addClass(settings.dropdownClass).addClass(classes).addClass(inputMode).hide().appendTo($dropdown_parent);
+			$dropdown_content = $('<div>').addClass(settings.dropdownContentClass).appendTo($dropdown);
+	
+			$wrapper.css({
+				width: self.$input[0].style.width
+			});
+	
+			if (self.plugins.names.length) {
+				classes_plugins = 'plugin-' + self.plugins.names.join(' plugin-');
+				$wrapper.addClass(classes_plugins);
+				$dropdown.addClass(classes_plugins);
+			}
+	
+			if ((settings.maxItems === null || settings.maxItems > 1) && self.tagType === TAG_SELECT) {
+				self.$input.attr('multiple', 'multiple');
+			}
+	
+			if (self.settings.placeholder) {
+				$control_input.attr('placeholder', settings.placeholder);
+			}
+	
+			self.$wrapper          = $wrapper;
+			self.$control          = $control;
+			self.$control_input    = $control_input;
+			self.$dropdown         = $dropdown;
+			self.$dropdown_content = $dropdown_content;
+	
+			$control.on('mousedown', function(e) {
+				if (!e.isDefaultPrevented()) {
+					window.setTimeout(function() {
+						self.focus(true);
+					}, 0);
+				}
+			});
+	
+			// necessary for mobile webkit devices (manual focus triggering
+			// is ignored unless invoked within a click event)
+			$control.on('click', function(e) {
+				if (!self.isInputFocused) {
+					self.focus(true);
+				}
+			});
+	
+			$dropdown.on('mouseenter', '[data-selectable]', function() { return self.onOptionHover.apply(self, arguments); });
+			$dropdown.on('mousedown', '[data-selectable]', function() { return self.onOptionSelect.apply(self, arguments); });
+			watchChildEvent($control, 'mousedown', '*:not(input)', function() { return self.onItemSelect.apply(self, arguments); });
+			autoGrow($control_input);
+	
+			$control_input.on({
+				mousedown : function(e) { e.stopPropagation(); },
+				keydown   : function() { return self.onKeyDown.apply(self, arguments); },
+				keyup     : function() { return self.onKeyUp.apply(self, arguments); },
+				keypress  : function() { return self.onKeyPress.apply(self, arguments); },
+				resize    : function() { self.positionDropdown.apply(self, []); },
+				blur      : function() { return self.onBlur.apply(self, arguments); },
+				focus     : function() { return self.onFocus.apply(self, arguments); }
+			});
+	
+			$document.on('keydown' + eventNS, function(e) {
+				self.isCmdDown = e[IS_MAC ? 'metaKey' : 'ctrlKey'];
+				self.isCtrlDown = e[IS_MAC ? 'altKey' : 'ctrlKey'];
+				self.isShiftDown = e.shiftKey;
+			});
+	
+			$document.on('keyup' + eventNS, function(e) {
+				if (e.keyCode === KEY_CTRL) self.isCtrlDown = false;
+				if (e.keyCode === KEY_SHIFT) self.isShiftDown = false;
+				if (e.keyCode === KEY_CMD) self.isCmdDown = false;
+			});
+	
+			$document.on('mousedown' + eventNS, function(e) {
+				if (self.isFocused) {
+					// prevent events on the dropdown scrollbar from causing the control to blur
+					if (e.target === self.$dropdown[0] || e.target.parentNode === self.$dropdown[0]) {
+						var ignoreFocus = self.ignoreFocus;
+						self.ignoreFocus = true;
+						window.setTimeout(function() {
+							self.ignoreFocus = ignoreFocus;
+							self.focus(false);
+						}, 0);
+						return;
+					}
+					// blur on click outside
+					if (!self.$control.has(e.target).length && e.target !== self.$control[0]) {
+						self.blur();
+					}
+				}
+			});
+	
+			$window.on(['scroll' + eventNS, 'resize' + eventNS].join(' '), function() {
+				if (self.isOpen) {
+					self.positionDropdown.apply(self, arguments);
+				}
+			});
+			$window.on('mousemove' + eventNS, function() {
+				self.ignoreHover = false;
+			});
+	
+			self.$input.attr('tabindex',-1).hide().after(self.$wrapper);
+	
+			if ($.isArray(settings.items)) {
+				self.setValue(settings.items);
+				delete settings.items;
+			}
+	
+			self.updateOriginalInput();
+			self.refreshItems();
+			self.refreshClasses();
+			self.updatePlaceholder();
+			self.isSetup = true;
+	
+			if (self.$input.is(':disabled')) {
+				self.disable();
+			}
+	
+			self.on('change', this.onChange);
+			self.trigger('initialize');
+	
+			// preload options
+			if (settings.preload) {
+				self.onSearchChange('');
+			}
+		},
+	
+		/**
+		 * Sets up default rendering functions.
+		 */
+		setupTemplates: function() {
+			var self = this;
+			var field_label = self.settings.labelField;
+			var field_optgroup = self.settings.optgroupLabelField;
+	
+			var templates = {
+				'optgroup': function(data) {
+					return '<div class="optgroup">' + data.html + '</div>';
+				},
+				'optgroup_header': function(data, escape) {
+					return '<div class="optgroup-header">' + escape(data[field_optgroup]) + '</div>';
+				},
+				'option': function(data, escape) {
+					return '<div class="option">' + escape(data[field_label]) + '</div>';
+				},
+				'item': function(data, escape) {
+					return '<div class="item">' + escape(data[field_label]) + '</div>';
+				},
+				'option_create': function(data, escape) {
+					return '<div class="create">Add <strong>' + escape(data.input) + '</strong>&hellip;</div>';
+				},
+			};
+	
+			self.settings.render = $.extend({}, templates, self.settings.render);
+		},
+	
+		/**
+		 * Maps fired events to callbacks provided
+		 * in the settings used when creating the control.
+		 */
+		setupCallbacks: function() {
+			var key, fn, callbacks = {
+				'initialize'     : 'onInitialize',
+				'change'         : 'onChange',
+				'item_add'       : 'onItemAdd',
+				'item_remove'    : 'onItemRemove',
+				'clear'          : 'onClear',
+				'option_add'     : 'onOptionAdd',
+				'option_remove'  : 'onOptionRemove',
+				'option_clear'   : 'onOptionClear',
+				'dropdown_open'  : 'onDropdownOpen',
+				'dropdown_close' : 'onDropdownClose',
+				'type'           : 'onType'
+			};
+	
+			for (key in callbacks) {
+				if (callbacks.hasOwnProperty(key)) {
+					fn = this.settings[callbacks[key]];
+					if (fn) this.on(key, fn);
+				}
+			}
+		},
+	
+		/**
+		 * Triggered when the value of the control has been changed.
+		 * This should propagate the event to the original DOM
+		 * input / select element.
+		 */
+		onChange: function() {
+			this.$input.trigger('change');
+		},
+	
+		/**
+		 * Triggered on <input> keypress.
+		 *
+		 * @param {object} e
+		 * @returns {boolean}
+		 */
+		onKeyPress: function(e) {
+			if (this.isLocked) return e && e.preventDefault();
+			var character = String.fromCharCode(e.keyCode || e.which);
+			if (this.settings.create && character === this.settings.delimiter) {
+				this.createItem();
+				e.preventDefault();
+				return false;
+			}
+		},
+	
+		/**
+		 * Triggered on <input> keydown.
+		 *
+		 * @param {object} e
+		 * @returns {boolean}
+		 */
+		onKeyDown: function(e) {
+			var isInput = e.target === this.$control_input[0];
+			var self = this;
+	
+			if (self.isLocked) {
+				if (e.keyCode !== KEY_TAB) {
+					e.preventDefault();
+				}
+				return;
+			}
+	
+			switch (e.keyCode) {
+				case KEY_A:
+					if (self.isCmdDown) {
+						self.selectAll();
+						return;
+					}
+					break;
+				case KEY_ESC:
+					self.blur();
+					return;
+				case KEY_DOWN:
+					if (!self.isOpen && self.hasOptions) {
+						self.open();
+					} else if (self.$activeOption) {
+						self.ignoreHover = true;
+						var $next = self.getAdjacentOption(self.$activeOption, 1);
+						if ($next.length) self.setActiveOption($next, true, true);
+					}
+					e.preventDefault();
+					return;
+				case KEY_UP:
+					if (self.$activeOption) {
+						self.ignoreHover = true;
+						var $prev = self.getAdjacentOption(self.$activeOption, -1);
+						if ($prev.length) self.setActiveOption($prev, true, true);
+					}
+					e.preventDefault();
+					return;
+				case KEY_RETURN:
+					if (self.$activeOption) {
+						self.onOptionSelect({currentTarget: self.$activeOption});
+					}
+					e.preventDefault();
+					return;
+				case KEY_LEFT:
+					self.advanceSelection(-1, e);
+					return;
+				case KEY_RIGHT:
+					self.advanceSelection(1, e);
+					return;
+				case KEY_TAB:
+					if (self.settings.create && $.trim(self.$control_input.val()).length) {
+						self.createItem();
+						e.preventDefault();
+					}
+					return;
+				case KEY_BACKSPACE:
+				case KEY_DELETE:
+					self.deleteSelection(e);
+					return;
+			}
+			if (self.isFull() || self.isInputHidden) {
+				e.preventDefault();
+				return;
+			}
+		},
+	
+		/**
+		 * Triggered on <input> keyup.
+		 *
+		 * @param {object} e
+		 * @returns {boolean}
+		 */
+		onKeyUp: function(e) {
+			var self = this;
+	
+			if (self.isLocked) return e && e.preventDefault();
+			var value = self.$control_input.val() || '';
+			if (self.lastValue !== value) {
+				self.lastValue = value;
+				self.onSearchChange(value);
+				self.refreshOptions();
+				self.trigger('type', value);
+			}
+		},
+	
+		/**
+		 * Invokes the user-provide option provider / loader.
+		 *
+		 * Note: this function is debounced in the Selectize
+		 * constructor (by `settings.loadDelay` milliseconds)
+		 *
+		 * @param {string} value
+		 */
+		onSearchChange: function(value) {
+			var self = this;
+			var fn = self.settings.load;
+			if (!fn) return;
+			if (self.loadedSearches.hasOwnProperty(value)) return;
+			self.loadedSearches[value] = true;
+			self.load(function(callback) {
+				fn.apply(self, [value, callback]);
+			});
+		},
+	
+		/**
+		 * Triggered on <input> focus.
+		 *
+		 * @param {object} e (optional)
+		 * @returns {boolean}
+		 */
+		onFocus: function(e) {
+			var self = this;
+	
+			self.isInputFocused = true;
+			self.isFocused = true;
+			if (self.isDisabled) {
+				self.blur();
+				e.preventDefault();
+				return false;
+			}
+	
+			if (self.ignoreFocus) return;
+			if (self.settings.preload === 'focus') self.onSearchChange('');
+	
+			self.showInput();
+			self.setActiveItem(null);
+			self.refreshOptions(!!self.settings.openOnFocus);
+			self.refreshClasses();
+		},
+	
+		/**
+		 * Triggered on <input> blur.
+		 *
+		 * @param {object} e
+		 * @returns {boolean}
+		 */
+		onBlur: function(e) {
+			var self = this;
+			self.isInputFocused = false;
+			if (self.ignoreFocus) return;
+	
+			self.close();
+			self.setTextboxValue('');
+			self.setActiveItem(null);
+			self.setActiveOption(null);
+			self.setCaret(self.items.length);
+			self.isFocused = false;
+			self.refreshClasses();
+		},
+	
+		/**
+		 * Triggered when the user rolls over
+		 * an option in the autocomplete dropdown menu.
+		 *
+		 * @param {object} e
+		 * @returns {boolean}
+		 */
+		onOptionHover: function(e) {
+			if (this.ignoreHover) return;
+			this.setActiveOption(e.currentTarget, false);
+		},
+	
+		/**
+		 * Triggered when the user clicks on an option
+		 * in the autocomplete dropdown menu.
+		 *
+		 * @param {object} e
+		 * @returns {boolean}
+		 */
+		onOptionSelect: function(e) {
+			var value, $target, $option, self = this;
+	
+			e.preventDefault && e.preventDefault();
+			e.stopPropagation && e.stopPropagation();
+			self.focus(false);
+	
+			$target = $(e.currentTarget);
+			if ($target.hasClass('create')) {
+				self.createItem();
+			} else {
+				value = $target.attr('data-value');
+				if (value) {
+					self.setTextboxValue('');
+					self.addItem(value);
+					if (!self.settings.hideSelected && e.type && /mouse/.test(e.type)) {
+						self.setActiveOption(self.getOption(value));
+					}
+				}
+			}
+		},
+	
+		/**
+		 * Triggered when the user clicks on an item
+		 * that has been selected.
+		 *
+		 * @param {object} e
+		 * @returns {boolean}
+		 */
+		onItemSelect: function(e) {
+			var self = this;
+	
+			if (self.settings.mode === 'multi') {
+				e.preventDefault();
+				self.setActiveItem(e.currentTarget, e);
+				self.focus(false);
+				self.hideInput();
+			}
+		},
+	
+		/**
+		 * Invokes the provided method that provides
+		 * results to a callback---which are then added
+		 * as options to the control.
+		 *
+		 * @param {function} fn
+		 */
+		load: function(fn) {
+			var self = this;
+			var $wrapper = self.$wrapper.addClass('loading');
+	
+			self.loading++;
+			fn.apply(self, [function(results) {
+				self.loading = Math.max(self.loading - 1, 0);
+				if (results && results.length) {
+					self.addOption(results);
+					self.refreshOptions(false);
+					if (self.isInputFocused) self.open();
+				}
+				if (!self.loading) {
+					$wrapper.removeClass('loading');
+				}
+				self.trigger('load', results);
+			}]);
+		},
+	
+		/**
+		 * Sets the input field of the control to the specified value.
+		 *
+		 * @param {string} value
+		 */
+		setTextboxValue: function(value) {
+			this.$control_input.val(value).triggerHandler('update');
+			this.lastValue = value;
+		},
+	
+		/**
+		 * Returns the value of the control. If multiple items
+		 * can be selected (e.g. <select multiple>), this returns
+		 * an array. If only one item can be selected, this
+		 * returns a string.
+		 *
+		 * @returns {mixed}
+		 */
+		getValue: function() {
+			if (this.tagType === TAG_SELECT && this.$input.attr('multiple')) {
+				return this.items;
+			} else {
+				return this.items.join(this.settings.delimiter);
+			}
+		},
+	
+		/**
+		 * Resets the selected items to the given value.
+		 *
+		 * @param {mixed} value
+		 */
+		setValue: function(value) {
+			debounce_events(this, ['change'], function() {
+				this.clear();
+				var items = $.isArray(value) ? value : [value];
+				for (var i = 0, n = items.length; i < n; i++) {
+					this.addItem(items[i]);
+				}
+			});
+		},
+	
+		/**
+		 * Sets the selected item.
+		 *
+		 * @param {object} $item
+		 * @param {object} e (optional)
+		 */
+		setActiveItem: function($item, e) {
+			var self = this;
+			var eventName;
+			var i, idx, begin, end, item, swap;
+			var $last;
+	
+			$item = $($item);
+	
+			// clear the active selection
+			if (!$item.length) {
+				$(self.$activeItems).removeClass('active');
+				self.$activeItems = [];
+				self.isFocused = self.isInputFocused;
+				return;
+			}
+	
+			// modify selection
+			eventName = e && e.type.toLowerCase();
+	
+			if (eventName === 'mousedown' && self.isShiftDown && self.$activeItems.length) {
+				$last = self.$control.children('.active:last');
+				begin = Array.prototype.indexOf.apply(self.$control[0].childNodes, [$last[0]]);
+				end   = Array.prototype.indexOf.apply(self.$control[0].childNodes, [$item[0]]);
+				if (begin > end) {
+					swap  = begin;
+					begin = end;
+					end   = swap;
+				}
+				for (i = begin; i <= end; i++) {
+					item = self.$control[0].childNodes[i];
+					if (self.$activeItems.indexOf(item) === -1) {
+						$(item).addClass('active');
+						self.$activeItems.push(item);
+					}
+				}
+				e.preventDefault();
+			} else if ((eventName === 'mousedown' && self.isCtrlDown) || (eventName === 'keydown' && this.isShiftDown)) {
+				if ($item.hasClass('active')) {
+					idx = self.$activeItems.indexOf($item[0]);
+					self.$activeItems.splice(idx, 1);
+					$item.removeClass('active');
+				} else {
+					self.$activeItems.push($item.addClass('active')[0]);
+				}
+			} else {
+				$(self.$activeItems).removeClass('active');
+				self.$activeItems = [$item.addClass('active')[0]];
+			}
+	
+			self.isFocused = !!self.$activeItems.length || self.isInputFocused;
+		},
+	
+		/**
+		 * Sets the selected item in the dropdown menu
+		 * of available options.
+		 *
+		 * @param {object} $object
+		 * @param {boolean} scroll
+		 * @param {boolean} animate
+		 */
+		setActiveOption: function($option, scroll, animate) {
+			var height_menu, height_item, y;
+			var scroll_top, scroll_bottom;
+			var self = this;
+	
+			if (self.$activeOption) self.$activeOption.removeClass('active');
+			self.$activeOption = null;
+	
+			$option = $($option);
+			if (!$option.length) return;
+	
+			self.$activeOption = $option.addClass('active');
+	
+			if (scroll || !isset(scroll)) {
+	
+				height_menu   = self.$dropdown_content.height();
+				height_item   = self.$activeOption.outerHeight(true);
+				scroll        = self.$dropdown_content.scrollTop() || 0;
+				y             = self.$activeOption.offset().top - self.$dropdown_content.offset().top + scroll;
+				scroll_top    = y;
+				scroll_bottom = y - height_menu + height_item;
+	
+				if (y + height_item > height_menu - scroll) {
+					self.$dropdown_content.stop().animate({scrollTop: scroll_bottom}, animate ? self.settings.scrollDuration : 0);
+				} else if (y < scroll) {
+					self.$dropdown_content.stop().animate({scrollTop: scroll_top}, animate ? self.settings.scrollDuration : 0);
+				}
+	
+			}
+		},
+	
+		/**
+		 * Selects all items (CTRL + A).
+		 */
+		selectAll: function() {
+			this.$activeItems = Array.prototype.slice.apply(this.$control.children(':not(input)').addClass('active'));
+			this.isFocused = true;
+			if (this.$activeItems.length) this.hideInput();
+		},
+	
+		/**
+		 * Hides the input element out of view, while
+		 * retaining its focus.
+		 */
+		hideInput: function() {
+			var self = this;
+	
+			self.close();
+			self.setTextboxValue('');
+			self.$control_input.css({opacity: 0, position: 'absolute', left: -10000});
+			self.isInputHidden = true;
+		},
+	
+		/**
+		 * Restores input visibility.
+		 */
+		showInput: function() {
+			this.$control_input.css({opacity: 1, position: 'relative', left: 0});
+			this.isInputHidden = false;
+		},
+	
+		/**
+		 * Gives the control focus. If "trigger" is falsy,
+		 * focus handlers won't be fired--causing the focus
+		 * to happen silently in the background.
+		 *
+		 * @param {boolean} trigger
+		 */
+		focus: function(trigger) {
+			var self = this;
+	
+			if (self.isDisabled) return;
+			self.ignoreFocus = true;
+			self.$control_input[0].focus();
+			self.isInputFocused = true;
+			window.setTimeout(function() {
+				self.ignoreFocus = false;
+				if (trigger) self.onFocus();
+			}, 0);
+		},
+	
+		/**
+		 * Forces the control out of focus.
+		 */
+		blur: function() {
+			this.$control_input.trigger('blur');
+		},
+	
+		/**
+		 * Returns a function that scores an object
+		 * to show how good of a match it is to the
+		 * provided query.
+		 *
+		 * @param {string} query
+		 * @param {object} options
+		 * @return {function}
+		 */
+		getScoreFunction: function(query) {
+			return this.sifter.getScoreFunction(query, this.getSearchOptions());
+		},
+	
+		/**
+		 * Returns search options for sifter (the system
+		 * for scoring and sorting results).
+		 *
+		 * @see https://github.com/brianreavis/sifter.js
+		 * @return {object}
+		 */
+		getSearchOptions: function() {
+			var settings = this.settings;
+			var fields = settings.searchField;
+	
+			return {
+				fields    : $.isArray(fields) ? fields : [fields],
+				sort      : settings.sortField,
+				direction : settings.sortDirection,
+			};
+		},
+	
+		/**
+		 * Searches through available options and returns
+		 * a sorted array of matches.
+		 *
+		 * Returns an object containing:
+		 *
+		 *   - query {string}
+		 *   - tokens {array}
+		 *   - total {int}
+		 *   - items {array}
+		 *
+		 * @param {string} query
+		 * @returns {object}
+		 */
+		search: function(query) {
+			var i, value, score, result, calculateScore;
+			var self     = this;
+			var settings = self.settings;
+			var options  = this.getSearchOptions();
+	
+			// validate user-provided result scoring function
+			if (settings.score) {
+				calculateScore = self.settings.score.apply(this, [query]);
+				if (typeof calculateScore !== 'function') {
+					throw new Error('Selectize "score" setting must be a function that returns a function');
+				}
+			}
+	
+			// perform search
+			if (query !== self.lastQuery) {
+				self.lastQuery = query;
+				result = self.sifter.search(query, $.extend(options, {score: calculateScore}));
+				self.currentResults = result;
+			} else {
+				result = $.extend(true, {}, self.currentResults);
+			}
+	
+			// filter out selected items
+			if (settings.hideSelected) {
+				for (i = result.items.length - 1; i >= 0; i--) {
+					if (self.items.indexOf(hash_key(result.items[i].id)) !== -1) {
+						result.items.splice(i, 1);
+					}
+				}
+			}
+	
+			return result;
+		},
+	
+		/**
+		 * Refreshes the list of available options shown
+		 * in the autocomplete dropdown menu.
+		 *
+		 * @param {boolean} triggerDropdown
+		 */
+		refreshOptions: function(triggerDropdown) {
+			if (typeof triggerDropdown === 'undefined') {
+				triggerDropdown = true;
+			}
+	
+			var self = this;
+			var i, n, groups, groups_order, option, optgroup, html, html_children;
+			var hasCreateOption;
+			var query = self.$control_input.val();
+			var results = self.search(query);
+			var $active, $create;
+			var $dropdown_content = self.$dropdown_content;
+	
+			// build markup
+			n = results.items.length;
+			if (typeof self.settings.maxOptions === 'number') {
+				n = Math.min(n, self.settings.maxOptions);
+			}
+	
+			// render and group available options individually
+			groups = {};
+	
+			if (self.settings.optgroupOrder) {
+				groups_order = self.settings.optgroupOrder;
+				for (i = 0; i < groups_order.length; i++) {
+					groups[groups_order[i]] = [];
+				}
+			} else {
+				groups_order = [];
+			}
+	
+			for (i = 0; i < n; i++) {
+				option = self.options[results.items[i].id];
+				optgroup = option[self.settings.optgroupField] || '';
+				if (!self.optgroups.hasOwnProperty(optgroup)) {
+					optgroup = '';
+				}
+				if (!groups.hasOwnProperty(optgroup)) {
+					groups[optgroup] = [];
+					groups_order.push(optgroup);
+				}
+				groups[optgroup].push(self.render('option', option));
+			}
+	
+			// render optgroup headers & join groups
+			html = [];
+			for (i = 0, n = groups_order.length; i < n; i++) {
+				optgroup = groups_order[i];
+				if (self.optgroups.hasOwnProperty(optgroup) && groups[optgroup].length) {
+					// render the optgroup header and options within it,
+					// then pass it to the wrapper template
+					html_children = self.render('optgroup_header', self.optgroups[optgroup]) || '';
+					html_children += groups[optgroup].join('');
+					html.push(self.render('optgroup', $.extend({}, self.optgroups[optgroup], {
+						html: html_children
+					})));
+				} else {
+					html.push(groups[optgroup].join(''));
+				}
+			}
+	
+			$dropdown_content.html(html.join(''));
+	
+			// highlight matching terms inline
+			if (self.settings.highlight && results.query.length && results.tokens.length) {
+				for (i = 0, n = results.tokens.length; i < n; i++) {
+					highlight($dropdown_content, results.tokens[i].regex);
+				}
+			}
+	
+			// add "selected" class to selected options
+			if (!self.settings.hideSelected) {
+				for (i = 0, n = self.items.length; i < n; i++) {
+					self.getOption(self.items[i]).addClass('selected');
+				}
+			}
+	
+			// add create option
+			hasCreateOption = self.settings.create && results.query.length;
+			if (hasCreateOption) {
+				$dropdown_content.prepend(self.render('option_create', {input: query}));
+				$create = $($dropdown_content[0].childNodes[0]);
+			}
+	
+			// activate
+			self.hasOptions = results.items.length > 0 || hasCreateOption;
+			if (self.hasOptions) {
+				if (results.items.length > 0) {
+					if ($create) {
+						$active = self.getAdjacentOption($create, 1);
+					} else {
+						$active = $dropdown_content.find("[data-selectable]").first();
+					}
+				} else {
+					$active = $create;
+				}
+				self.setActiveOption($active);
+				if (triggerDropdown && !self.isOpen) { self.open(); }
+			} else {
+				self.setActiveOption(null);
+				if (triggerDropdown && self.isOpen) { self.close(); }
+			}
+		},
+	
+		/**
+		 * Adds an available option. If it already exists,
+		 * nothing will happen. Note: this does not refresh
+		 * the options list dropdown (use `refreshOptions`
+		 * for that).
+		 *
+		 * Usage:
+		 *
+		 *   this.addOption(data)
+		 *
+		 * @param {object} data
+		 */
+		addOption: function(data) {
+			var i, n, optgroup, value, self = this;
+	
+			if ($.isArray(data)) {
+				for (i = 0, n = data.length; i < n; i++) {
+					self.addOption(data[i]);
+				}
+				return;
+			}
+	
+			value = hash_key(data[self.settings.valueField]);
+			if (!value || self.options.hasOwnProperty(value)) return;
+	
+			self.userOptions[value] = true;
+			self.options[value] = data;
+			self.lastQuery = null;
+			self.trigger('option_add', value, data);
+		},
+	
+		/**
+		 * Registers a new optgroup for options
+		 * to be bucketed into.
+		 *
+		 * @param {string} id
+		 * @param {object} data
+		 */
+		addOptionGroup: function(id, data) {
+			this.optgroups[id] = data;
+			this.trigger('optgroup_add', id, data);
+		},
+	
+		/**
+		 * Updates an option available for selection. If
+		 * it is visible in the selected items or options
+		 * dropdown, it will be re-rendered automatically.
+		 *
+		 * @param {string} value
+		 * @param {object} data
+		 */
+		updateOption: function(value, data) {
+			var self = this;
+			var $item, $item_new;
+			var value_new, index_item, cache_items, cache_options;
+	
+			value     = hash_key(value);
+			value_new = hash_key(data[self.settings.valueField]);
+	
+			// sanity checks
+			if (!self.options.hasOwnProperty(value)) return;
+			if (!value_new) throw new Error('Value must be set in option data');
+	
+			// update references
+			if (value_new !== value) {
+				delete self.options[value];
+				index_item = self.items.indexOf(value);
+				if (index_item !== -1) {
+					self.items.splice(index_item, 1, value_new);
+				}
+			}
+			self.options[value_new] = data;
+	
+			// invalidate render cache
+			cache_items = self.renderCache['item'];
+			cache_options = self.renderCache['option'];
+	
+			if (isset(cache_items)) {
+				delete cache_items[value];
+				delete cache_items[value_new];
+			}
+			if (isset(cache_options)) {
+				delete cache_options[value];
+				delete cache_options[value_new];
+			}
+	
+			// update the item if it's selected
+			if (self.items.indexOf(value_new) !== -1) {
+				$item = self.getItem(value);
+				$item_new = $(self.render('item', data));
+				if ($item.hasClass('active')) $item_new.addClass('active');
+				$item.replaceWith($item_new);
+			}
+	
+			// update dropdown contents
+			if (self.isOpen) {
+				self.refreshOptions(false);
+			}
+		},
+	
+		/**
+		 * Removes a single option.
+		 *
+		 * @param {string} value
+		 */
+		removeOption: function(value) {
+			var self = this;
+	
+			value = hash_key(value);
+			delete self.userOptions[value];
+			delete self.options[value];
+			self.lastQuery = null;
+			self.trigger('option_remove', value);
+			self.removeItem(value);
+		},
+	
+		/**
+		 * Clears all options.
+		 */
+		clearOptions: function() {
+			var self = this;
+	
+			self.loadedSearches = {};
+			self.userOptions = {};
+			self.options = self.sifter.items = {};
+			self.lastQuery = null;
+			self.trigger('option_clear');
+			self.clear();
+		},
+	
+		/**
+		 * Returns the jQuery element of the option
+		 * matching the given value.
+		 *
+		 * @param {string} value
+		 * @returns {object}
+		 */
+		getOption: function(value) {
+			return this.getElementWithValue(value, this.$dropdown_content.find('[data-selectable]'));
+		},
+	
+		/**
+		 * Returns the jQuery element of the next or
+		 * previous selectable option.
+		 *
+		 * @param {object} $option
+		 * @param {int} direction  can be 1 for next or -1 for previous
+		 * @return {object}
+		 */
+		getAdjacentOption: function($option, direction) {
+			var $options = this.$dropdown.find('[data-selectable]');
+			var index    = $options.index($option) + direction;
+	
+			return index >= 0 && index < $options.length ? $options.eq(index) : $();
+		},
+	
+		/**
+		 * Finds the first element with a "data-value" attribute
+		 * that matches the given value.
+		 *
+		 * @param {mixed} value
+		 * @param {object} $els
+		 * @return {object}
+		 */
+		getElementWithValue: function(value, $els) {
+			value = hash_key(value);
+	
+			if (value) {
+				for (var i = 0, n = $els.length; i < n; i++) {
+					if ($els[i].getAttribute('data-value') === value) {
+						return $($els[i]);
+					}
+				}
+			}
+	
+			return $();
+		},
+	
+		/**
+		 * Returns the jQuery element of the item
+		 * matching the given value.
+		 *
+		 * @param {string} value
+		 * @returns {object}
+		 */
+		getItem: function(value) {
+			return this.getElementWithValue(value, this.$control.children());
+		},
+	
+		/**
+		 * "Selects" an item. Adds it to the list
+		 * at the current caret position.
+		 *
+		 * @param {string} value
+		 */
+		addItem: function(value) {
+			debounce_events(this, ['change'], function() {
+				var $item, $option;
+				var self = this;
+				var inputMode = self.settings.mode;
+				var i, active, options, value_next;
+				value = hash_key(value);
+	
+				if (inputMode === 'single') self.clear();
+				if (inputMode === 'multi' && self.isFull()) return;
+				if (self.items.indexOf(value) !== -1) return;
+				if (!self.options.hasOwnProperty(value)) return;
+	
+				$item = $(self.render('item', self.options[value]));
+				self.items.splice(self.caretPos, 0, value);
+				self.insertAtCaret($item);
+				self.refreshClasses();
+	
+				if (self.isSetup) {
+					options = self.$dropdown_content.find('[data-selectable]');
+	
+					// update menu / remove the option
+					$option = self.getOption(value);
+					value_next = self.getAdjacentOption($option, 1).attr('data-value');
+					self.refreshOptions(self.isFocused && inputMode !== 'single');
+					if (value_next) {
+						self.setActiveOption(self.getOption(value_next));
+					}
+	
+					// hide the menu if the maximum number of items have been selected or no options are left
+					if (!options.length || (self.settings.maxItems !== null && self.items.length >= self.settings.maxItems)) {
+						self.close();
+					} else {
+						self.positionDropdown();
+					}
+	
+					// restore focus to input
+					if (self.isFocused) {
+						window.setTimeout(function() {
+							if (inputMode === 'single') {
+								self.blur();
+								self.focus(false);
+								self.hideInput();
+							} else {
+								self.focus(false);
+							}
+						}, 0);
+					}
+	
+					self.updatePlaceholder();
+					self.trigger('item_add', value, $item);
+					self.updateOriginalInput();
+				}
+			});
+		},
+	
+		/**
+		 * Removes the selected item matching
+		 * the provided value.
+		 *
+		 * @param {string} value
+		 */
+		removeItem: function(value) {
+			var self = this;
+			var $item, i, idx;
+	
+			$item = (typeof value === 'object') ? value : self.getItem(value);
+			value = hash_key($item.attr('data-value'));
+			i = self.items.indexOf(value);
+	
+			if (i !== -1) {
+				$item.remove();
+				if ($item.hasClass('active')) {
+					idx = self.$activeItems.indexOf($item[0]);
+					self.$activeItems.splice(idx, 1);
+				}
+	
+				self.items.splice(i, 1);
+				self.lastQuery = null;
+				if (!self.settings.persist && self.userOptions.hasOwnProperty(value)) {
+					self.removeOption(value);
+				}
+	
+				if (i < self.caretPos) {
+					self.setCaret(self.caretPos - 1);
+				}
+	
+				self.refreshClasses();
+				self.updatePlaceholder();
+				self.updateOriginalInput();
+				self.positionDropdown();
+				self.trigger('item_remove', value);
+			}
+		},
+	
+		/**
+		 * Invokes the `create` method provided in the
+		 * selectize options that should provide the data
+		 * for the new item, given the user input.
+		 *
+		 * Once this completes, it will be added
+		 * to the item list.
+		 */
+		createItem: function() {
+			var self  = this;
+			var input = $.trim(self.$control_input.val() || '');
+			var caret = self.caretPos;
+			if (!input.length) return;
+			self.lock();
+	
+			var setup = (typeof self.settings.create === 'function') ? this.settings.create : function(input) {
+				var data = {};
+				data[self.settings.labelField] = input;
+				data[self.settings.valueField] = input;
+				return data;
+			};
+	
+			var create = once(function(data) {
+				self.unlock();
+				self.focus(false);
+	
+				if (!data || typeof data !== 'object') return;
+				var value = hash_key(data[self.settings.valueField]);
+				if (!value) return;
+	
+				self.setTextboxValue('');
+				self.addOption(data);
+				self.setCaret(caret);
+				self.addItem(value);
+				self.refreshOptions(self.settings.mode !== 'single');
+				self.focus(false);
+			});
+	
+			var output = setup.apply(this, [input, create]);
+			if (typeof output !== 'undefined') {
+				create(output);
+			}
+		},
+	
+		/**
+		 * Re-renders the selected item lists.
+		 */
+		refreshItems: function() {
+			this.lastQuery = null;
+	
+			if (this.isSetup) {
+				for (var i = 0; i < this.items.length; i++) {
+					this.addItem(this.items);
+				}
+			}
+	
+			this.refreshClasses();
+			this.updateOriginalInput();
+		},
+	
+		/**
+		 * Updates all state-dependent CSS classes.
+		 */
+		refreshClasses: function() {
+			var self = this;
+			var isFull = self.isFull();
+			var isLocked = self.isLocked;
+			this.$control
+				.toggleClass('focus', self.isFocused)
+				.toggleClass('disabled', self.isDisabled)
+				.toggleClass('locked', isLocked)
+				.toggleClass('full', isFull).toggleClass('not-full', !isFull)
+				.toggleClass('dropdown-active', self.isOpen)
+				.toggleClass('has-options', !$.isEmptyObject(self.options))
+				.toggleClass('has-items', self.items.length > 0);
+			this.$control_input.data('grow', !isFull && !isLocked);
+		},
+	
+		/**
+		 * Determines whether or not more items can be added
+		 * to the control without exceeding the user-defined maximum.
+		 *
+		 * @returns {boolean}
+		 */
+		isFull: function() {
+			return this.settings.maxItems !== null && this.items.length >= this.settings.maxItems;
+		},
+	
+		/**
+		 * Refreshes the original <select> or <input>
+		 * element to reflect the current state.
+		 */
+		updateOriginalInput: function() {
+			var i, n, options, self = this;
+	
+			if (self.$input[0].tagName.toLowerCase() === 'select') {
+				options = [];
+				for (i = 0, n = self.items.length; i < n; i++) {
+					options.push('<option value="' + escape_html(self.items[i]) + '" selected="selected"></option>');
+				}
+				if (!options.length && !this.$input.attr('multiple')) {
+					options.push('<option value="" selected="selected"></option>');
+				}
+				self.$input.html(options.join(''));
+			} else {
+				self.$input.val(self.getValue());
+			}
+	
+			if (self.isSetup) {
+				self.trigger('change', self.$input.val());
+			}
+		},
+	
+		/**
+		 * Shows/hide the input placeholder depending
+		 * on if there items in the list already.
+		 */
+		updatePlaceholder: function() {
+			if (!this.settings.placeholder) return;
+			var $input = this.$control_input;
+	
+			if (this.items.length) {
+				$input.removeAttr('placeholder');
+			} else {
+				$input.attr('placeholder', this.settings.placeholder);
+			}
+			$input.triggerHandler('update');
+		},
+	
+		/**
+		 * Shows the autocomplete dropdown containing
+		 * the available options.
+		 */
+		open: function() {
+			var self = this;
+	
+			if (self.isLocked || self.isOpen || (self.settings.mode === 'multi' && self.isFull())) return;
+			self.focus(true);
+			self.isOpen = true;
+			self.refreshClasses();
+			self.$dropdown.css({visibility: 'hidden', display: 'block'});
+			self.positionDropdown();
+			self.$dropdown.css({visibility: 'visible'});
+			self.trigger('dropdown_open', this.$dropdown);
+		},
+	
+		/**
+		 * Closes the autocomplete dropdown menu.
+		 */
+		close: function() {
+			var self = this;
+	
+			if (!self.isOpen) return;
+			self.$dropdown.hide();
+			self.setActiveOption(null);
+			self.isOpen = false;
+			self.refreshClasses();
+			self.trigger('dropdown_close', self.$dropdown);
+		},
+	
+		/**
+		 * Calculates and applies the appropriate
+		 * position of the dropdown.
+		 */
+		positionDropdown: function() {
+			var $control = this.$control;
+			var offset = this.settings.dropdownParent === 'body' ? $control.offset() : $control.position();
+			offset.top += $control.outerHeight(true);
+	
+			this.$dropdown.css({
+				width : $control.outerWidth(),
+				top   : offset.top,
+				left  : offset.left
+			});
+		},
+	
+		/**
+		 * Resets / clears all selected items
+		 * from the control.
+		 */
+		clear: function() {
+			var self = this;
+	
+			if (!self.items.length) return;
+			self.$control.children(':not(input)').remove();
+			self.items = [];
+			self.setCaret(0);
+			self.updatePlaceholder();
+			self.updateOriginalInput();
+			self.refreshClasses();
+			self.showInput();
+			self.trigger('clear');
+		},
+	
+		/**
+		 * A helper method for inserting an element
+		 * at the current caret position.
+		 *
+		 * @param {object} $el
+		 */
+		insertAtCaret: function($el) {
+			var caret = Math.min(this.caretPos, this.items.length);
+			if (caret === 0) {
+				this.$control.prepend($el);
+			} else {
+				$(this.$control[0].childNodes[caret]).before($el);
+			}
+			this.setCaret(caret + 1);
+		},
+	
+		/**
+		 * Removes the current selected item(s).
+		 *
+		 * @param {object} e (optional)
+		 * @returns {boolean}
+		 */
+		deleteSelection: function(e) {
+			var i, n, direction, selection, values, caret, option_select, $option_select, $tail;
+			var self = this;
+	
+			direction = (e && e.keyCode === KEY_BACKSPACE) ? -1 : 1;
+			selection = getSelection(self.$control_input[0]);
+	
+			if (self.$activeOption && !self.settings.hideSelected) {
+				option_select = self.getAdjacentOption(self.$activeOption, -1).attr('data-value');
+			}
+	
+			// determine items that will be removed
+			values = [];
+	
+			if (self.$activeItems.length) {
+				$tail = self.$control.children('.active:' + (direction > 0 ? 'last' : 'first'));
+				caret = self.$control.children(':not(input)').index($tail);
+				if (direction > 0) { caret++; }
+	
+				for (i = 0, n = self.$activeItems.length; i < n; i++) {
+					values.push($(self.$activeItems[i]).attr('data-value'));
+				}
+				if (e) {
+					e.preventDefault();
+					e.stopPropagation();
+				}
+			} else if ((self.isFocused || self.settings.mode === 'single') && self.items.length) {
+				if (direction < 0 && selection.start === 0 && selection.length === 0) {
+					values.push(self.items[self.caretPos - 1]);
+				} else if (direction > 0 && selection.start === self.$control_input.val().length) {
+					values.push(self.items[self.caretPos]);
+				}
+			}
+	
+			// allow the callback to abort
+			if (!values.length || (typeof self.settings.onDelete === 'function' && self.settings.onDelete.apply(self, [values]) === false)) {
+				return false;
+			}
+	
+			// perform removal
+			if (typeof caret !== 'undefined') {
+				self.setCaret(caret);
+			}
+			while (values.length) {
+				self.removeItem(values.pop());
+			}
+	
+			self.showInput();
+			self.refreshOptions(true);
+	
+			// select previous option
+			if (option_select) {
+				$option_select = self.getOption(option_select);
+				if ($option_select.length) {
+					self.setActiveOption($option_select);
+				}
+			}
+	
+			return true;
+		},
+	
+		/**
+		 * Selects the previous / next item (depending
+		 * on the `direction` argument).
+		 *
+		 * > 0 - right
+		 * < 0 - left
+		 *
+		 * @param {int} direction
+		 * @param {object} e (optional)
+		 */
+		advanceSelection: function(direction, e) {
+			var tail, selection, idx, valueLength, cursorAtEdge, $tail;
+			var self = this;
+	
+			if (direction === 0) return;
+	
+			tail = direction > 0 ? 'last' : 'first';
+			selection = getSelection(self.$control_input[0]);
+	
+			if (self.isInputFocused && !self.isInputHidden) {
+				valueLength = self.$control_input.val().length;
+				cursorAtEdge = direction < 0
+					? selection.start === 0 && selection.length === 0
+					: selection.start === valueLength;
+	
+				if (cursorAtEdge && !valueLength) {
+					self.advanceCaret(direction, e);
+				}
+			} else {
+				$tail = self.$control.children('.active:' + tail);
+				if ($tail.length) {
+					idx = self.$control.children(':not(input)').index($tail);
+					self.setActiveItem(null);
+					self.setCaret(direction > 0 ? idx + 1 : idx);
+					self.showInput();
+				}
+			}
+		},
+	
+		/**
+		 * Moves the caret left / right.
+		 *
+		 * @param {int} direction
+		 * @param {object} e (optional)
+		 */
+		advanceCaret: function(direction, e) {
+			if (direction === 0) return;
+			var self = this;
+			var fn = direction > 0 ? 'next' : 'prev';
+			if (self.isShiftDown) {
+				var $adj = self.$control_input[fn]();
+				if ($adj.length) {
+					self.hideInput();
+					self.setActiveItem($adj);
+					e && e.preventDefault();
+				}
+			} else {
+				self.setCaret(self.caretPos + direction);
+			}
+		},
+	
+		/**
+		 * Moves the caret to the specified index.
+		 *
+		 * @param {int} i
+		 */
+		setCaret: function(i) {
+			var self = this;
+	
+			if (self.settings.mode === 'single') {
+				i = self.items.length;
+			} else {
+				i = Math.max(0, Math.min(self.items.length, i));
+			}
+	
+			// the input must be moved by leaving it in place and moving the
+			// siblings, due to the fact that focus cannot be restored once lost
+			// on mobile webkit devices
+			var j, n, fn, $children, $child;
+			$children = self.$control.children(':not(input)');
+			for (j = 0, n = $children.length; j < n; j++) {
+				$child = $($children[j]).detach();
+				if (j <  i) {
+					self.$control_input.before($child);
+				} else {
+					self.$control.append($child);
+				}
+			}
+	
+			self.caretPos = i;
+		},
+	
+		/**
+		 * Disables user input on the control. Used while
+		 * items are being asynchronously created.
+		 */
+		lock: function() {
+			this.close();
+			this.isLocked = true;
+			this.refreshClasses();
+		},
+	
+		/**
+		 * Re-enables user input on the control.
+		 */
+		unlock: function() {
+			this.isLocked = false;
+			this.refreshClasses();
+		},
+	
+		/**
+		 * Disables user input on the control completely.
+		 * While disabled, it cannot receive focus.
+		 */
+		disable: function() {
+			var self = this;
+			self.$input.prop('disabled', true);
+			self.isDisabled = true;
+			self.lock();
+		},
+	
+		/**
+		 * Enables the control so that it can respond
+		 * to focus and user input.
+		 */
+		enable: function() {
+			var self = this;
+			self.$input.prop('disabled', false);
+			self.isDisabled = false;
+			self.unlock();
+		},
+	
+		/**
+		 * Completely destroys the control and
+		 * unbinds all event listeners so that it can
+		 * be garbage collected.
+		 */
+		destroy: function() {
+			var self = this;
+			var eventNS = self.eventNS;
+	
+			self.trigger('destroy');
+			self.off();
+			self.$wrapper.remove();
+			self.$dropdown.remove();
+			self.$input.show();
+	
+			$(window).off(eventNS);
+			$(document).off(eventNS);
+			$(document.body).off(eventNS);
+	
+			delete self.$input[0].selectize;
+		},
+	
+		/**
+		 * A helper method for rendering "item" and
+		 * "option" templates, given the data.
+		 *
+		 * @param {string} templateName
+		 * @param {object} data
+		 * @returns {string}
+		 */
+		render: function(templateName, data) {
+			var value, id, label;
+			var html = '';
+			var cache = false;
+			var self = this;
+			var regex_tag = /^[\t ]*<([a-z][a-z0-9\-_]*(?:\:[a-z][a-z0-9\-_]*)?)/i;
+	
+			if (templateName === 'option' || templateName === 'item') {
+				value = hash_key(data[self.settings.valueField]);
+				cache = !!value;
+			}
+	
+			// pull markup from cache if it exists
+			if (cache) {
+				if (!isset(self.renderCache[templateName])) {
+					self.renderCache[templateName] = {};
+				}
+				if (self.renderCache[templateName].hasOwnProperty(value)) {
+					return self.renderCache[templateName][value];
+				}
+			}
+	
+			// render markup
+			html = self.settings.render[templateName].apply(this, [data, escape_html]);
+	
+			// add mandatory attributes
+			if (templateName === 'option' || templateName === 'option_create') {
+				html = html.replace(regex_tag, '<$1 data-selectable');
+			}
+			if (templateName === 'optgroup') {
+				id = data[self.settings.optgroupValueField] || '';
+				html = html.replace(regex_tag, '<$1 data-group="' + escape_html(id) + '"');
+			}
+			if (templateName === 'option' || templateName === 'item') {
+				html = html.replace(regex_tag, '<$1 data-value="' + escape_html(value || '') + '"');
+			}
+	
+			// update cache
+			if (cache) {
+				self.renderCache[templateName][value] = html;
+			}
+	
+			return html;
+		}
+	
+	});
+	
+	Selectize.count = 0;
+	Selectize.defaults = {
+		plugins: [],
+		delimiter: ',',
+		persist: true,
+		diacritics: true,
+		create: false,
+		highlight: true,
+		openOnFocus: true,
+		maxOptions: 1000,
+		maxItems: null,
+		hideSelected: null,
+		preload: false,
+	
+		scrollDuration: 60,
+		loadThrottle: 300,
+	
+		dataAttr: 'data-data',
+		optgroupField: 'optgroup',
+		sortField: '$order',
+		sortDirection: 'asc',
+		valueField: 'value',
+		labelField: 'text',
+		optgroupLabelField: 'label',
+		optgroupValueField: 'value',
+		optgroupOrder: null,
+		searchField: ['text'],
+	
+		mode: null,
+		wrapperClass: 'selectize-control',
+		inputClass: 'selectize-input',
+		dropdownClass: 'selectize-dropdown',
+		dropdownContentClass: 'selectize-dropdown-content',
+	
+		dropdownParent: null,
+	
+		/*
+		load            : null, // function(query, callback) { ... }
+		score           : null, // function(search) { ... }
+		onInitialize    : null, // function() { ... }
+		onChange        : null, // function(value) { ... }
+		onItemAdd       : null, // function(value, $item) { ... }
+		onItemRemove    : null, // function(value) { ... }
+		onClear         : null, // function() { ... }
+		onOptionAdd     : null, // function(value, data) { ... }
+		onOptionRemove  : null, // function(value) { ... }
+		onOptionClear   : null, // function() { ... }
+		onDropdownOpen  : null, // function($dropdown) { ... }
+		onDropdownClose : null, // function($dropdown) { ... }
+		onType          : null, // function(str) { ... }
+		onDelete        : null, // function(values) { ... }
+		*/
+	
+		render: {
+			/*
+			item: null,
+			optgroup: null,
+			optgroup_header: null,
+			option: null,
+			option_create: null
+			*/
+		}
+	};
+	
+	$.fn.selectize = function(settings) {
+		settings = settings || {};
+	
+		var defaults = $.fn.selectize.defaults;
+		var dataAttr = settings.dataAttr || defaults.dataAttr;
+	
+		/**
+		 * Initializes selectize from a <input type="text"> element.
+		 *
+		 * @param {object} $input
+		 * @param {object} settings
+		 */
+		var init_textbox = function($input, settings_element) {
+			var i, n, values, value = $.trim($input.val() || '');
+			if (!value.length) return;
+	
+			values = value.split(settings.delimiter || defaults.delimiter);
+			for (i = 0, n = values.length; i < n; i++) {
+				settings_element.options[values[i]] = {
+					'text'  : values[i],
+					'value' : values[i]
+				};
+			}
+	
+			settings_element.items = values;
+		};
+	
+		/**
+		 * Initializes selectize from a <select> element.
+		 *
+		 * @param {object} $input
+		 * @param {object} settings
+		 */
+		var init_select = function($input, settings_element) {
+			var i, n, tagName;
+			var $children;
+			var order = 0;
+			settings_element.maxItems = !!$input.attr('multiple') ? null : 1;
+	
+			var readData = function($el) {
+				var data = dataAttr && $el.attr(dataAttr);
+				if (typeof data === 'string' && data.length) {
+					return JSON.parse(data);
+				}
+				return null;
+			};
+	
+			var addOption = function($option, group) {
+				var value, option;
+	
+				$option = $($option);
+	
+				value = $option.attr('value') || '';
+				if (!value.length) return;
+	
+				option = readData($option) || {
+					'text'     : $option.text(),
+					'value'    : value,
+					'optgroup' : group
+				};
+	
+				option.$order = ++order;
+				settings_element.options[value] = option;
+	
+				if ($option.is(':selected')) {
+					settings_element.items.push(value);
+				}
+			};
+	
+			var addGroup = function($optgroup) {
+				var i, n, $options = $('option', $optgroup);
+				$optgroup = $($optgroup);
+	
+				var id = $optgroup.attr('label');
+				if (id && id.length) {
+					settings_element.optgroups[id] = readData($optgroup) || {
+						'label': id
+					};
+				}
+	
+				for (i = 0, n = $options.length; i < n; i++) {
+					addOption($options[i], id);
+				}
+			};
+	
+			$children = $input.children();
+			for (i = 0, n = $children.length; i < n; i++) {
+				tagName = $children[i].tagName.toLowerCase();
+				if (tagName === 'optgroup') {
+					addGroup($children[i]);
+				} else if (tagName === 'option') {
+					addOption($children[i]);
+				}
+			}
+		};
+	
+		return this.each(function() {
+			var instance;
+			var $input = $(this);
+			var tag_name = $input[0].tagName.toLowerCase();
+			var settings_element = {
+				'placeholder' : $input.children('option[value=""]').text() || $input.attr('placeholder'),
+				'options'     : {},
+				'optgroups'   : {},
+				'items'       : []
+			};
+	
+			if (tag_name === 'select') {
+				init_select($input, settings_element);
+			} else {
+				init_textbox($input, settings_element);
+			}
+	
+			instance = new Selectize($input, $.extend(true, {}, defaults, settings_element, settings));
+			$input.data('selectize', instance);
+			$input.addClass('selectized');
+		});
+	};
+	
+	$.fn.selectize.defaults = Selectize.defaults;
+	
+	Selectize.define('drag_drop', function(options) {
+		if (!$.fn.sortable) throw new Error('The "drag_drop" plugin requires jQuery UI "sortable".');
+		if (this.settings.mode !== 'multi') return;
+		var self = this;
+	
+		this.setup = (function() {
+			var original = self.setup;
+			return function() {
+				original.apply(this, arguments);
+	
+				var $control = this.$control.sortable({
+					items: '[data-value]',
+					forcePlaceholderSize: true,
+					start: function(e, ui) {
+						ui.placeholder.css('width', ui.helper.css('width'));
+						$control.css({overflow: 'visible'});
+					},
+					stop: function() {
+						$control.css({overflow: 'hidden'});
+						var active = this.$activeItems ? this.$activeItems.slice() : null;
+						var values = [];
+						$control.children('[data-value]').each(function() {
+							values.push($(this).attr('data-value'));
+						});
+						self.setValue(values);
+						self.setActiveItem(active);
+					}
+				});
+			};
+		})();
+	
+	});
+	
+	Selectize.define('dropdown_header', function(options) {
+		var self = this;
+	
+		options = $.extend({
+			title         : 'Untitled',
+			headerClass   : 'selectize-dropdown-header',
+			titleRowClass : 'selectize-dropdown-header-title',
+			labelClass    : 'selectize-dropdown-header-label',
+			closeClass    : 'selectize-dropdown-header-close',
+	
+			html: function(data) {
+				return (
+					'<div class="' + data.headerClass + '">' +
+						'<div class="' + data.titleRowClass + '">' +
+							'<span class="' + data.labelClass + '">' + data.title + '</span>' +
+							'<a href="javascript:void(0)" class="' + data.closeClass + '">&times;</a>' +
+						'</div>' +
+					'</div>'
+				);
+			}
+		}, options);
+	
+		self.setup = (function() {
+			var original = self.setup;
+			return function() {
+				original.apply(self, arguments);
+				self.$dropdown_header = $(options.html(options));
+				self.$dropdown.prepend(self.$dropdown_header);
+			};
+		})();
+	
+	});
+	
+	Selectize.define('optgroup_columns', function(options) {
+		var self = this;
+	
+		options = $.extend({
+			equalizeWidth  : true,
+			equalizeHeight : true
+		}, options);
+	
+		this.getAdjacentOption = function($option, direction) {
+			var $options = $option.closest('[data-group]').find('[data-selectable]');
+			var index    = $options.index($option) + direction;
+	
+			return index >= 0 && index < $options.length ? $options.eq(index) : $();
+		};
+	
+		this.onKeyDown = (function() {
+			var original = self.onKeyDown;
+			return function(e) {
+				var index, $option, $options, $optgroup;
+	
+				if (this.isOpen && (e.keyCode === KEY_LEFT || e.keyCode === KEY_RIGHT)) {
+					self.ignoreHover = true;
+					$optgroup = this.$activeOption.closest('[data-group]');
+					index = $optgroup.find('[data-selectable]').index(this.$activeOption);
+	
+					if(e.keyCode === KEY_LEFT) {
+						$optgroup = $optgroup.prev('[data-group]');
+					} else {
+						$optgroup = $optgroup.next('[data-group]');
+					}
+	
+					$options = $optgroup.find('[data-selectable]');
+					$option  = $options.eq(Math.min($options.length - 1, index));
+					if ($option.length) {
+						this.setActiveOption($option);
+					}
+					return;
+				}
+	
+				return original.apply(this, arguments);
+			};
+		})();
+	
+		var equalizeSizes = function() {
+			var i, n, height_max, width, width_last, width_parent, $optgroups;
+	
+			$optgroups = $('[data-group]', self.$dropdown_content);
+			n = $optgroups.length;
+			if (!n || !self.$dropdown_content.width()) return;
+	
+			if (options.equalizeHeight) {
+				height_max = 0;
+				for (i = 0; i < n; i++) {
+					height_max = Math.max(height_max, $optgroups.eq(i).height());
+				}
+				$optgroups.css({height: height_max});
+			}
+	
+			if (options.equalizeWidth) {
+				width_parent = self.$dropdown_content.innerWidth();
+				width = Math.round(width_parent / n);
+				$optgroups.css({width: width});
+				if (n > 1) {
+					width_last = width_parent - width * (n - 1);
+					$optgroups.eq(n - 1).css({width: width_last});
+				}
+			}
+		};
+	
+		if (options.equalizeHeight || options.equalizeWidth) {
+			hook.after(this, 'positionDropdown', equalizeSizes);
+			hook.after(this, 'refreshOptions', equalizeSizes);
+		}
+	
+	
+	});
+	
+	Selectize.define('remove_button', function(options) {
+		if (this.settings.mode === 'single') return;
+	
+		options = $.extend({
+			label     : '&times;',
+			title     : 'Remove',
+			className : 'remove',
+			append    : true,
+		}, options);
+	
+		var self = this;
+		var html = '<a href="javascript:void(0)" class="' + options.className + '" tabindex="-1" title="' + escape_html(options.title) + '">' + options.label + '</a>';
+	
+		/**
+		 * Appends an element as a child (with raw HTML).
+		 *
+		 * @param {string} html_container
+		 * @param {string} html_element
+		 * @return {string}
+		 */
+		var append = function(html_container, html_element) {
+			var pos = html_container.search(/(<\/[^>]+>\s*)$/);
+			return html_container.substring(0, pos) + html_element + html_container.substring(pos);
+		};
+	
+		this.setup = (function() {
+			var original = self.setup;
+			return function() {
+				// override the item rendering method to add the button to each
+				if (options.append) {
+					var render_item = self.settings.render.item;
+					self.settings.render.item = function(data) {
+						return append(render_item.apply(this, arguments), html);
+					};
+				}
+	
+				original.apply(this, arguments);
+	
+				// add event listener
+				this.$control.on('click', '.' + options.className, function(e) {
+					e.preventDefault();
+					var $item = $(e.target).parent();
+					self.setActiveItem($item);
+					if (self.deleteSelection()) {
+						self.setCaret(self.items.length);
+					}
+				});
+	
+			};
+		})();
+	
+	});
+	
+	Selectize.define('restore_on_backspace', function(options) {
+		var self = this;
+	
+		options.text = options.text || function(option) {
+			return option[this.settings.labelField];
+		};
+	
+		this.onKeyDown = (function(e) {
+			var original = self.onKeyDown;
+			return function(e) {
+				var index, option;
+				if (e.keyCode === KEY_BACKSPACE && this.$control_input.val() === '' && !this.$activeItems.length) {
+					index = this.caretPos - 1;
+					if (index >= 0 && index < this.items.length) {
+						option = this.options[this.items[index]];
+						if (this.deleteSelection(e)) {
+							this.setTextboxValue(options.text.apply(this, [option]));
+							this.refreshOptions(true);
+						}
+						e.preventDefault();
+						return;
+					}
+				}
+				return original.apply(this, arguments);
+			};
+		})();
+	});
+
+	return Selectize;
+}));
+/**
+* @preserve HTML5 Shiv 3.7.1 | @afarkas @jdalton @jon_neal @rem | MIT/GPL2 Licensed
+*/
+;(function(window, document) {
+/*jshint evil:true */
+  /** version */
+  var version = '3.7.1';
+
+  /** Preset options */
+  var options = window.html5 || {};
+
+  /** Used to skip problem elements */
+  var reSkip = /^<|^(?:button|map|select|textarea|object|iframe|option|optgroup)$/i;
+
+  /** Not all elements can be cloned in IE **/
+  var saveClones = /^(?:a|b|code|div|fieldset|h1|h2|h3|h4|h5|h6|i|label|li|ol|p|q|span|strong|style|table|tbody|td|th|tr|ul)$/i;
+
+  /** Detect whether the browser supports default html5 styles */
+  var supportsHtml5Styles;
+
+  /** Name of the expando, to work with multiple documents or to re-shiv one document */
+  var expando = '_html5shiv';
+
+  /** The id for the the documents expando */
+  var expanID = 0;
+
+  /** Cached data for each document */
+  var expandoData = {};
+
+  /** Detect whether the browser supports unknown elements */
+  var supportsUnknownElements;
+
+  (function() {
+    try {
+        var a = document.createElement('a');
+        a.innerHTML = '<xyz></xyz>';
+        //if the hidden property is implemented we can assume, that the browser supports basic HTML5 Styles
+        supportsHtml5Styles = ('hidden' in a);
+
+        supportsUnknownElements = a.childNodes.length == 1 || (function() {
+          // assign a false positive if unable to shiv
+          (document.createElement)('a');
+          var frag = document.createDocumentFragment();
+          return (
+            typeof frag.cloneNode == 'undefined' ||
+            typeof frag.createDocumentFragment == 'undefined' ||
+            typeof frag.createElement == 'undefined'
+          );
+        }());
+    } catch(e) {
+      // assign a false positive if detection fails => unable to shiv
+      supportsHtml5Styles = true;
+      supportsUnknownElements = true;
+    }
+
+  }());
+
+  /*--------------------------------------------------------------------------*/
+
+  /**
+   * Creates a style sheet with the given CSS text and adds it to the document.
+   * @private
+   * @param {Document} ownerDocument The document.
+   * @param {String} cssText The CSS text.
+   * @returns {StyleSheet} The style element.
+   */
+  function addStyleSheet(ownerDocument, cssText) {
+    var p = ownerDocument.createElement('p'),
+        parent = ownerDocument.getElementsByTagName('head')[0] || ownerDocument.documentElement;
+
+    p.innerHTML = 'x<style>' + cssText + '</style>';
+    return parent.insertBefore(p.lastChild, parent.firstChild);
+  }
+
+  /**
+   * Returns the value of `html5.elements` as an array.
+   * @private
+   * @returns {Array} An array of shived element node names.
+   */
+  function getElements() {
+    var elements = html5.elements;
+    return typeof elements == 'string' ? elements.split(' ') : elements;
+  }
+
+    /**
+   * Returns the data associated to the given document
+   * @private
+   * @param {Document} ownerDocument The document.
+   * @returns {Object} An object of data.
+   */
+  function getExpandoData(ownerDocument) {
+    var data = expandoData[ownerDocument[expando]];
+    if (!data) {
+        data = {};
+        expanID++;
+        ownerDocument[expando] = expanID;
+        expandoData[expanID] = data;
+    }
+    return data;
+  }
+
+  /**
+   * returns a shived element for the given nodeName and document
+   * @memberOf html5
+   * @param {String} nodeName name of the element
+   * @param {Document} ownerDocument The context document.
+   * @returns {Object} The shived element.
+   */
+  function createElement(nodeName, ownerDocument, data){
+    if (!ownerDocument) {
+        ownerDocument = document;
+    }
+    if(supportsUnknownElements){
+        return ownerDocument.createElement(nodeName);
+    }
+    if (!data) {
+        data = getExpandoData(ownerDocument);
+    }
+    var node;
+
+    if (data.cache[nodeName]) {
+        node = data.cache[nodeName].cloneNode();
+    } else if (saveClones.test(nodeName)) {
+        node = (data.cache[nodeName] = data.createElem(nodeName)).cloneNode();
+    } else {
+        node = data.createElem(nodeName);
+    }
+
+    // Avoid adding some elements to fragments in IE < 9 because
+    // * Attributes like `name` or `type` cannot be set/changed once an element
+    //   is inserted into a document/fragment
+    // * Link elements with `src` attributes that are inaccessible, as with
+    //   a 403 response, will cause the tab/window to crash
+    // * Script elements appended to fragments will execute when their `src`
+    //   or `text` property is set
+    return node.canHaveChildren && !reSkip.test(nodeName) && !node.tagUrn ? data.frag.appendChild(node) : node;
+  }
+
+  /**
+   * returns a shived DocumentFragment for the given document
+   * @memberOf html5
+   * @param {Document} ownerDocument The context document.
+   * @returns {Object} The shived DocumentFragment.
+   */
+  function createDocumentFragment(ownerDocument, data){
+    if (!ownerDocument) {
+        ownerDocument = document;
+    }
+    if(supportsUnknownElements){
+        return ownerDocument.createDocumentFragment();
+    }
+    data = data || getExpandoData(ownerDocument);
+    var clone = data.frag.cloneNode(),
+        i = 0,
+        elems = getElements(),
+        l = elems.length;
+    for(;i<l;i++){
+        clone.createElement(elems[i]);
+    }
+    return clone;
+  }
+
+  /**
+   * Shivs the `createElement` and `createDocumentFragment` methods of the document.
+   * @private
+   * @param {Document|DocumentFragment} ownerDocument The document.
+   * @param {Object} data of the document.
+   */
+  function shivMethods(ownerDocument, data) {
+    if (!data.cache) {
+        data.cache = {};
+        data.createElem = ownerDocument.createElement;
+        data.createFrag = ownerDocument.createDocumentFragment;
+        data.frag = data.createFrag();
+    }
+
+
+    ownerDocument.createElement = function(nodeName) {
+      //abort shiv
+      if (!html5.shivMethods) {
+          return data.createElem(nodeName);
+      }
+      return createElement(nodeName, ownerDocument, data);
+    };
+
+    ownerDocument.createDocumentFragment = Function('h,f', 'return function(){' +
+      'var n=f.cloneNode(),c=n.createElement;' +
+      'h.shivMethods&&(' +
+        // unroll the `createElement` calls
+        getElements().join().replace(/[\w\-:]+/g, function(nodeName) {
+          data.createElem(nodeName);
+          data.frag.createElement(nodeName);
+          return 'c("' + nodeName + '")';
+        }) +
+      ');return n}'
+    )(html5, data.frag);
+  }
+
+  /*--------------------------------------------------------------------------*/
+
+  /**
+   * Shivs the given document.
+   * @memberOf html5
+   * @param {Document} ownerDocument The document to shiv.
+   * @returns {Document} The shived document.
+   */
+  function shivDocument(ownerDocument) {
+    if (!ownerDocument) {
+        ownerDocument = document;
+    }
+    var data = getExpandoData(ownerDocument);
+
+    if (html5.shivCSS && !supportsHtml5Styles && !data.hasCSS) {
+      data.hasCSS = !!addStyleSheet(ownerDocument,
+        // corrects block display not defined in IE6/7/8/9
+        'article,aside,dialog,figcaption,figure,footer,header,hgroup,main,nav,section{display:block}' +
+        // adds styling not present in IE6/7/8/9
+        'mark{background:#FF0;color:#000}' +
+        // hides non-rendered elements
+        'template{display:none}'
+      );
+    }
+    if (!supportsUnknownElements) {
+      shivMethods(ownerDocument, data);
+    }
+    return ownerDocument;
+  }
+
+  /*--------------------------------------------------------------------------*/
+
+  /**
+   * The `html5` object is exposed so that more elements can be shived and
+   * existing shiving can be detected on iframes.
+   * @type Object
+   * @example
+   *
+   * // options can be changed before the script is included
+   * html5 = { 'elements': 'mark section', 'shivCSS': false, 'shivMethods': false };
+   */
+  var html5 = {
+
+    /**
+     * An array or space separated string of node names of the elements to shiv.
+     * @memberOf html5
+     * @type Array|String
+     */
+    'elements': options.elements || 'abbr article aside audio bdi canvas data datalist details dialog figcaption figure footer header hgroup main mark meter nav output picture progress section summary template time video',
+
+    /**
+     * current version of html5shiv
+     */
+    'version': version,
+
+    /**
+     * A flag to indicate that the HTML5 style sheet should be inserted.
+     * @memberOf html5
+     * @type Boolean
+     */
+    'shivCSS': (options.shivCSS !== false),
+
+    /**
+     * Is equal to true if a browser supports creating unknown/HTML5 elements
+     * @memberOf html5
+     * @type boolean
+     */
+    'supportsUnknownElements': supportsUnknownElements,
+
+    /**
+     * A flag to indicate that the document's `createElement` and `createDocumentFragment`
+     * methods should be overwritten.
+     * @memberOf html5
+     * @type Boolean
+     */
+    'shivMethods': (options.shivMethods !== false),
+
+    /**
+     * A string to describe the type of `html5` object ("default" or "default print").
+     * @memberOf html5
+     * @type String
+     */
+    'type': 'default',
+
+    // shivs the document according to the specified `html5` object options
+    'shivDocument': shivDocument,
+
+    //creates a shived element
+    createElement: createElement,
+
+    //creates a shived documentFragment
+    createDocumentFragment: createDocumentFragment
+  };
+
+  /*--------------------------------------------------------------------------*/
+
+  // expose html5
+  window.html5 = html5;
+
+  // shiv the document
+  shivDocument(document);
+
+}(this, document));
+
+//     Underscore.js 1.6.0
 //     http://underscorejs.org
-//     (c) 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+//     (c) 2009-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
 //     Underscore may be freely distributed under the MIT license.
 
 (function() {
@@ -17,7 +3348,7 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
   // Baseline setup
   // --------------
 
-  // Establish the root object, `window` in the browser, or `global` on the server.
+  // Establish the root object, `window` in the browser, or `exports` on the server.
   var root = this;
 
   // Save the previous value of the `_` variable.
@@ -74,7 +3405,7 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
   }
 
   // Current version.
-  _.VERSION = '1.5.1';
+  _.VERSION = '1.6.0';
 
   // Collection Functions
   // --------------------
@@ -83,20 +3414,20 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
   // Handles objects with the built-in `forEach`, arrays, and raw objects.
   // Delegates to **ECMAScript 5**'s native `forEach` if available.
   var each = _.each = _.forEach = function(obj, iterator, context) {
-    if (obj == null) return;
+    if (obj == null) return obj;
     if (nativeForEach && obj.forEach === nativeForEach) {
       obj.forEach(iterator, context);
     } else if (obj.length === +obj.length) {
-      for (var i = 0, l = obj.length; i < l; i++) {
+      for (var i = 0, length = obj.length; i < length; i++) {
         if (iterator.call(context, obj[i], i, obj) === breaker) return;
       }
     } else {
-      for (var key in obj) {
-        if (_.has(obj, key)) {
-          if (iterator.call(context, obj[key], key, obj) === breaker) return;
-        }
+      var keys = _.keys(obj);
+      for (var i = 0, length = keys.length; i < length; i++) {
+        if (iterator.call(context, obj[keys[i]], keys[i], obj) === breaker) return;
       }
     }
+    return obj;
   };
 
   // Return the results of applying the iterator to each element.
@@ -162,10 +3493,10 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
   };
 
   // Return the first value which passes a truth test. Aliased as `detect`.
-  _.find = _.detect = function(obj, iterator, context) {
+  _.find = _.detect = function(obj, predicate, context) {
     var result;
     any(obj, function(value, index, list) {
-      if (iterator.call(context, value, index, list)) {
+      if (predicate.call(context, value, index, list)) {
         result = value;
         return true;
       }
@@ -176,33 +3507,33 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
   // Return all the elements that pass a truth test.
   // Delegates to **ECMAScript 5**'s native `filter` if available.
   // Aliased as `select`.
-  _.filter = _.select = function(obj, iterator, context) {
+  _.filter = _.select = function(obj, predicate, context) {
     var results = [];
     if (obj == null) return results;
-    if (nativeFilter && obj.filter === nativeFilter) return obj.filter(iterator, context);
+    if (nativeFilter && obj.filter === nativeFilter) return obj.filter(predicate, context);
     each(obj, function(value, index, list) {
-      if (iterator.call(context, value, index, list)) results.push(value);
+      if (predicate.call(context, value, index, list)) results.push(value);
     });
     return results;
   };
 
   // Return all the elements for which a truth test fails.
-  _.reject = function(obj, iterator, context) {
+  _.reject = function(obj, predicate, context) {
     return _.filter(obj, function(value, index, list) {
-      return !iterator.call(context, value, index, list);
+      return !predicate.call(context, value, index, list);
     }, context);
   };
 
   // Determine whether all of the elements match a truth test.
   // Delegates to **ECMAScript 5**'s native `every` if available.
   // Aliased as `all`.
-  _.every = _.all = function(obj, iterator, context) {
-    iterator || (iterator = _.identity);
+  _.every = _.all = function(obj, predicate, context) {
+    predicate || (predicate = _.identity);
     var result = true;
     if (obj == null) return result;
-    if (nativeEvery && obj.every === nativeEvery) return obj.every(iterator, context);
+    if (nativeEvery && obj.every === nativeEvery) return obj.every(predicate, context);
     each(obj, function(value, index, list) {
-      if (!(result = result && iterator.call(context, value, index, list))) return breaker;
+      if (!(result = result && predicate.call(context, value, index, list))) return breaker;
     });
     return !!result;
   };
@@ -210,13 +3541,13 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
   // Determine if at least one element in the object matches a truth test.
   // Delegates to **ECMAScript 5**'s native `some` if available.
   // Aliased as `any`.
-  var any = _.some = _.any = function(obj, iterator, context) {
-    iterator || (iterator = _.identity);
+  var any = _.some = _.any = function(obj, predicate, context) {
+    predicate || (predicate = _.identity);
     var result = false;
     if (obj == null) return result;
-    if (nativeSome && obj.some === nativeSome) return obj.some(iterator, context);
+    if (nativeSome && obj.some === nativeSome) return obj.some(predicate, context);
     each(obj, function(value, index, list) {
-      if (result || (result = iterator.call(context, value, index, list))) return breaker;
+      if (result || (result = predicate.call(context, value, index, list))) return breaker;
     });
     return !!result;
   };
@@ -242,25 +3573,19 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
 
   // Convenience version of a common use case of `map`: fetching a property.
   _.pluck = function(obj, key) {
-    return _.map(obj, function(value){ return value[key]; });
+    return _.map(obj, _.property(key));
   };
 
   // Convenience version of a common use case of `filter`: selecting only objects
   // containing specific `key:value` pairs.
-  _.where = function(obj, attrs, first) {
-    if (_.isEmpty(attrs)) return first ? void 0 : [];
-    return _[first ? 'find' : 'filter'](obj, function(value) {
-      for (var key in attrs) {
-        if (attrs[key] !== value[key]) return false;
-      }
-      return true;
-    });
+  _.where = function(obj, attrs) {
+    return _.filter(obj, _.matches(attrs));
   };
 
   // Convenience version of a common use case of `find`: getting the first object
   // containing specific `key:value` pairs.
   _.findWhere = function(obj, attrs) {
-    return _.where(obj, attrs, true);
+    return _.find(obj, _.matches(attrs));
   };
 
   // Return the maximum element or (element-based computation).
@@ -270,13 +3595,15 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     if (!iterator && _.isArray(obj) && obj[0] === +obj[0] && obj.length < 65535) {
       return Math.max.apply(Math, obj);
     }
-    if (!iterator && _.isEmpty(obj)) return -Infinity;
-    var result = {computed : -Infinity, value: -Infinity};
+    var result = -Infinity, lastComputed = -Infinity;
     each(obj, function(value, index, list) {
       var computed = iterator ? iterator.call(context, value, index, list) : value;
-      computed > result.computed && (result = {value : value, computed : computed});
+      if (computed > lastComputed) {
+        result = value;
+        lastComputed = computed;
+      }
     });
-    return result.value;
+    return result;
   };
 
   // Return the minimum element (or element-based computation).
@@ -284,16 +3611,19 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     if (!iterator && _.isArray(obj) && obj[0] === +obj[0] && obj.length < 65535) {
       return Math.min.apply(Math, obj);
     }
-    if (!iterator && _.isEmpty(obj)) return Infinity;
-    var result = {computed : Infinity, value: Infinity};
+    var result = Infinity, lastComputed = Infinity;
     each(obj, function(value, index, list) {
       var computed = iterator ? iterator.call(context, value, index, list) : value;
-      computed < result.computed && (result = {value : value, computed : computed});
+      if (computed < lastComputed) {
+        result = value;
+        lastComputed = computed;
+      }
     });
-    return result.value;
+    return result;
   };
 
-  // Shuffle an array.
+  // Shuffle an array, using the modern version of the
+  // [Fisher-Yates shuffle](http://en.wikipedia.org/wiki/Fisher–Yates_shuffle).
   _.shuffle = function(obj) {
     var rand;
     var index = 0;
@@ -306,19 +3636,32 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     return shuffled;
   };
 
+  // Sample **n** random values from a collection.
+  // If **n** is not specified, returns a single random element.
+  // The internal `guard` argument allows it to work with `map`.
+  _.sample = function(obj, n, guard) {
+    if (n == null || guard) {
+      if (obj.length !== +obj.length) obj = _.values(obj);
+      return obj[_.random(obj.length - 1)];
+    }
+    return _.shuffle(obj).slice(0, Math.max(0, n));
+  };
+
   // An internal function to generate lookup iterators.
   var lookupIterator = function(value) {
-    return _.isFunction(value) ? value : function(obj){ return obj[value]; };
+    if (value == null) return _.identity;
+    if (_.isFunction(value)) return value;
+    return _.property(value);
   };
 
   // Sort the object's values by a criterion produced by an iterator.
-  _.sortBy = function(obj, value, context) {
-    var iterator = lookupIterator(value);
+  _.sortBy = function(obj, iterator, context) {
+    iterator = lookupIterator(iterator);
     return _.pluck(_.map(obj, function(value, index, list) {
       return {
-        value : value,
-        index : index,
-        criteria : iterator.call(context, value, index, list)
+        value: value,
+        index: index,
+        criteria: iterator.call(context, value, index, list)
       };
     }).sort(function(left, right) {
       var a = left.criteria;
@@ -327,43 +3670,46 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
         if (a > b || a === void 0) return 1;
         if (a < b || b === void 0) return -1;
       }
-      return left.index < right.index ? -1 : 1;
+      return left.index - right.index;
     }), 'value');
   };
 
   // An internal function used for aggregate "group by" operations.
-  var group = function(obj, value, context, behavior) {
-    var result = {};
-    var iterator = lookupIterator(value == null ? _.identity : value);
-    each(obj, function(value, index) {
-      var key = iterator.call(context, value, index, obj);
-      behavior(result, key, value);
-    });
-    return result;
+  var group = function(behavior) {
+    return function(obj, iterator, context) {
+      var result = {};
+      iterator = lookupIterator(iterator);
+      each(obj, function(value, index) {
+        var key = iterator.call(context, value, index, obj);
+        behavior(result, key, value);
+      });
+      return result;
+    };
   };
 
   // Groups the object's values by a criterion. Pass either a string attribute
   // to group by, or a function that returns the criterion.
-  _.groupBy = function(obj, value, context) {
-    return group(obj, value, context, function(result, key, value) {
-      (_.has(result, key) ? result[key] : (result[key] = [])).push(value);
-    });
-  };
+  _.groupBy = group(function(result, key, value) {
+    _.has(result, key) ? result[key].push(value) : result[key] = [value];
+  });
+
+  // Indexes the object's values by a criterion, similar to `groupBy`, but for
+  // when you know that your index values will be unique.
+  _.indexBy = group(function(result, key, value) {
+    result[key] = value;
+  });
 
   // Counts instances of an object that group by a certain criterion. Pass
   // either a string attribute to count by, or a function that returns the
   // criterion.
-  _.countBy = function(obj, value, context) {
-    return group(obj, value, context, function(result, key) {
-      if (!_.has(result, key)) result[key] = 0;
-      result[key]++;
-    });
-  };
+  _.countBy = group(function(result, key) {
+    _.has(result, key) ? result[key]++ : result[key] = 1;
+  });
 
   // Use a comparator function to figure out the smallest index at which
   // an object should be inserted so as to maintain order. Uses binary search.
   _.sortedIndex = function(array, obj, iterator, context) {
-    iterator = iterator == null ? _.identity : lookupIterator(iterator);
+    iterator = lookupIterator(iterator);
     var value = iterator.call(context, obj);
     var low = 0, high = array.length;
     while (low < high) {
@@ -395,7 +3741,9 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
   // allows it to work with `_.map`.
   _.first = _.head = _.take = function(array, n, guard) {
     if (array == null) return void 0;
-    return (n != null) && !guard ? slice.call(array, 0, n) : array[0];
+    if ((n == null) || guard) return array[0];
+    if (n < 0) return [];
+    return slice.call(array, 0, n);
   };
 
   // Returns everything but the last entry of the array. Especially useful on
@@ -410,11 +3758,8 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
   // values in the array. The **guard** check allows it to work with `_.map`.
   _.last = function(array, n, guard) {
     if (array == null) return void 0;
-    if ((n != null) && !guard) {
-      return slice.call(array, Math.max(array.length - n, 0));
-    } else {
-      return array[array.length - 1];
-    }
+    if ((n == null) || guard) return array[array.length - 1];
+    return slice.call(array, Math.max(array.length - n, 0));
   };
 
   // Returns everything but the first entry of the array. Aliased as `tail` and `drop`.
@@ -445,7 +3790,7 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     return output;
   };
 
-  // Return a completely flattened version of an array.
+  // Flatten out an array, either recursively (by default), or just one level.
   _.flatten = function(array, shallow) {
     return flatten(array, shallow, []);
   };
@@ -453,6 +3798,16 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
   // Return a version of the array that does not contain the specified value(s).
   _.without = function(array) {
     return _.difference(array, slice.call(arguments, 1));
+  };
+
+  // Split an array into two arrays: one whose elements all satisfy the given
+  // predicate, and one whose elements all do not satisfy the predicate.
+  _.partition = function(array, predicate) {
+    var pass = [], fail = [];
+    each(array, function(elem) {
+      (predicate(elem) ? pass : fail).push(elem);
+    });
+    return [pass, fail];
   };
 
   // Produce a duplicate-free version of the array. If the array has already
@@ -488,7 +3843,7 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     var rest = slice.call(arguments, 1);
     return _.filter(_.uniq(array), function(item) {
       return _.every(rest, function(other) {
-        return _.indexOf(other, item) >= 0;
+        return _.contains(other, item);
       });
     });
   };
@@ -503,7 +3858,7 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
   // Zip together multiple lists into a single array -- elements that share
   // an index go together.
   _.zip = function() {
-    var length = _.max(_.pluck(arguments, "length").concat(0));
+    var length = _.max(_.pluck(arguments, 'length').concat(0));
     var results = new Array(length);
     for (var i = 0; i < length; i++) {
       results[i] = _.pluck(arguments, '' + i);
@@ -517,7 +3872,7 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
   _.object = function(list, values) {
     if (list == null) return {};
     var result = {};
-    for (var i = 0, l = list.length; i < l; i++) {
+    for (var i = 0, length = list.length; i < length; i++) {
       if (values) {
         result[list[i]] = values[i];
       } else {
@@ -535,17 +3890,17 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
   // for **isSorted** to use binary search.
   _.indexOf = function(array, item, isSorted) {
     if (array == null) return -1;
-    var i = 0, l = array.length;
+    var i = 0, length = array.length;
     if (isSorted) {
       if (typeof isSorted == 'number') {
-        i = (isSorted < 0 ? Math.max(0, l + isSorted) : isSorted);
+        i = (isSorted < 0 ? Math.max(0, length + isSorted) : isSorted);
       } else {
         i = _.sortedIndex(array, item);
         return array[i] === item ? i : -1;
       }
     }
     if (nativeIndexOf && array.indexOf === nativeIndexOf) return array.indexOf(item, isSorted);
-    for (; i < l; i++) if (array[i] === item) return i;
+    for (; i < length; i++) if (array[i] === item) return i;
     return -1;
   };
 
@@ -571,11 +3926,11 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     }
     step = arguments[2] || 1;
 
-    var len = Math.max(Math.ceil((stop - start) / step), 0);
+    var length = Math.max(Math.ceil((stop - start) / step), 0);
     var idx = 0;
-    var range = new Array(len);
+    var range = new Array(length);
 
-    while(idx < len) {
+    while(idx < length) {
       range[idx++] = start;
       start += step;
     }
@@ -609,19 +3964,27 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
   };
 
   // Partially apply a function by creating a version that has had some of its
-  // arguments pre-filled, without changing its dynamic `this` context.
+  // arguments pre-filled, without changing its dynamic `this` context. _ acts
+  // as a placeholder, allowing any combination of arguments to be pre-filled.
   _.partial = function(func) {
-    var args = slice.call(arguments, 1);
+    var boundArgs = slice.call(arguments, 1);
     return function() {
-      return func.apply(this, args.concat(slice.call(arguments)));
+      var position = 0;
+      var args = boundArgs.slice();
+      for (var i = 0, length = args.length; i < length; i++) {
+        if (args[i] === _) args[i] = arguments[position++];
+      }
+      while (position < arguments.length) args.push(arguments[position++]);
+      return func.apply(this, args);
     };
   };
 
-  // Bind all of an object's methods to that object. Useful for ensuring that
-  // all callbacks defined on an object belong to it.
+  // Bind a number of an object's methods to that object. Remaining arguments
+  // are the method names to be bound. Useful for ensuring that all callbacks
+  // defined on an object belong to it.
   _.bindAll = function(obj) {
     var funcs = slice.call(arguments, 1);
-    if (funcs.length === 0) throw new Error("bindAll must be passed function names");
+    if (funcs.length === 0) throw new Error('bindAll must be passed function names');
     each(funcs, function(f) { obj[f] = _.bind(obj[f], obj); });
     return obj;
   };
@@ -660,12 +4023,13 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     var previous = 0;
     options || (options = {});
     var later = function() {
-      previous = options.leading === false ? 0 : new Date;
+      previous = options.leading === false ? 0 : _.now();
       timeout = null;
       result = func.apply(context, args);
+      context = args = null;
     };
     return function() {
-      var now = new Date;
+      var now = _.now();
       if (!previous && options.leading === false) previous = now;
       var remaining = wait - (now - previous);
       context = this;
@@ -675,6 +4039,7 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
         timeout = null;
         previous = now;
         result = func.apply(context, args);
+        context = args = null;
       } else if (!timeout && options.trailing !== false) {
         timeout = setTimeout(later, remaining);
       }
@@ -687,18 +4052,34 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
   // N milliseconds. If `immediate` is passed, trigger the function on the
   // leading edge, instead of the trailing.
   _.debounce = function(func, wait, immediate) {
-    var result;
-    var timeout = null;
-    return function() {
-      var context = this, args = arguments;
-      var later = function() {
+    var timeout, args, context, timestamp, result;
+
+    var later = function() {
+      var last = _.now() - timestamp;
+      if (last < wait) {
+        timeout = setTimeout(later, wait - last);
+      } else {
         timeout = null;
-        if (!immediate) result = func.apply(context, args);
-      };
+        if (!immediate) {
+          result = func.apply(context, args);
+          context = args = null;
+        }
+      }
+    };
+
+    return function() {
+      context = this;
+      args = arguments;
+      timestamp = _.now();
       var callNow = immediate && !timeout;
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
-      if (callNow) result = func.apply(context, args);
+      if (!timeout) {
+        timeout = setTimeout(later, wait);
+      }
+      if (callNow) {
+        result = func.apply(context, args);
+        context = args = null;
+      }
+
       return result;
     };
   };
@@ -720,11 +4101,7 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
   // allowing you to adjust arguments, run code before and after, and
   // conditionally execute the original function.
   _.wrap = function(func, wrapper) {
-    return function() {
-      var args = [func];
-      push.apply(args, arguments);
-      return wrapper.apply(this, args);
-    };
+    return _.partial(wrapper, func);
   };
 
   // Returns a function that is the composition of a list of functions, each
@@ -754,8 +4131,9 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
 
   // Retrieve the names of an object's properties.
   // Delegates to **ECMAScript 5**'s native `Object.keys`
-  _.keys = nativeKeys || function(obj) {
-    if (obj !== Object(obj)) throw new TypeError('Invalid object');
+  _.keys = function(obj) {
+    if (!_.isObject(obj)) return [];
+    if (nativeKeys) return nativeKeys(obj);
     var keys = [];
     for (var key in obj) if (_.has(obj, key)) keys.push(key);
     return keys;
@@ -763,22 +4141,33 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
 
   // Retrieve the values of an object's properties.
   _.values = function(obj) {
-    var values = [];
-    for (var key in obj) if (_.has(obj, key)) values.push(obj[key]);
+    var keys = _.keys(obj);
+    var length = keys.length;
+    var values = new Array(length);
+    for (var i = 0; i < length; i++) {
+      values[i] = obj[keys[i]];
+    }
     return values;
   };
 
   // Convert an object into a list of `[key, value]` pairs.
   _.pairs = function(obj) {
-    var pairs = [];
-    for (var key in obj) if (_.has(obj, key)) pairs.push([key, obj[key]]);
+    var keys = _.keys(obj);
+    var length = keys.length;
+    var pairs = new Array(length);
+    for (var i = 0; i < length; i++) {
+      pairs[i] = [keys[i], obj[keys[i]]];
+    }
     return pairs;
   };
 
   // Invert the keys and values of an object. The values must be serializable.
   _.invert = function(obj) {
     var result = {};
-    for (var key in obj) if (_.has(obj, key)) result[obj[key]] = key;
+    var keys = _.keys(obj);
+    for (var i = 0, length = keys.length; i < length; i++) {
+      result[obj[keys[i]]] = keys[i];
+    }
     return result;
   };
 
@@ -899,7 +4288,8 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     // from different frames are.
     var aCtor = a.constructor, bCtor = b.constructor;
     if (aCtor !== bCtor && !(_.isFunction(aCtor) && (aCtor instanceof aCtor) &&
-                             _.isFunction(bCtor) && (bCtor instanceof bCtor))) {
+                             _.isFunction(bCtor) && (bCtor instanceof bCtor))
+                        && ('constructor' in a && 'constructor' in b)) {
       return false;
     }
     // Add the first object to the stack of traversed objects.
@@ -1039,6 +4429,30 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     return value;
   };
 
+  _.constant = function(value) {
+    return function () {
+      return value;
+    };
+  };
+
+  _.property = function(key) {
+    return function(obj) {
+      return obj[key];
+    };
+  };
+
+  // Returns a predicate for checking whether an object has a given set of `key:value` pairs.
+  _.matches = function(attrs) {
+    return function(obj) {
+      if (obj === attrs) return true; //avoid comparing an object to itself.
+      for (var key in attrs) {
+        if (attrs[key] !== obj[key])
+          return false;
+      }
+      return true;
+    }
+  };
+
   // Run a function **n** times.
   _.times = function(n, iterator, context) {
     var accum = Array(Math.max(0, n));
@@ -1055,6 +4469,9 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     return min + Math.floor(Math.random() * (max - min + 1));
   };
 
+  // A (possibly faster) way to get the current timestamp as an integer.
+  _.now = Date.now || function() { return new Date().getTime(); };
+
   // List of HTML entities for escaping.
   var entityMap = {
     escape: {
@@ -1062,8 +4479,7 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
       '<': '&lt;',
       '>': '&gt;',
       '"': '&quot;',
-      "'": '&#x27;',
-      '/': '&#x2F;'
+      "'": '&#x27;'
     }
   };
   entityMap.unescape = _.invert(entityMap.escape);
@@ -1094,7 +4510,7 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
 
   // Add your own custom functions to the Underscore object.
   _.mixin = function(obj) {
-    each(_.functions(obj), function(name){
+    each(_.functions(obj), function(name) {
       var func = _[name] = obj[name];
       _.prototype[name] = function() {
         var args = [this._wrapped];
@@ -1252,23 +4668,51 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
 
   });
 
+  // AMD registration happens at the end for compatibility with AMD loaders
+  // that may not enforce next-turn semantics on modules. Even though general
+  // practice for AMD registration is to be anonymous, underscore registers
+  // as a named module because, like jQuery, it is a base library that is
+  // popular enough to be bundled in a third party lib, but not be part of
+  // an AMD load request. Those cases could generate an error when an
+  // anonymous define() is called outside of a loader request.
+  if (typeof define === 'function' && define.amd) {
+    define('underscore', [], function() {
+      return _;
+    });
+  }
 }).call(this);
 
-//     Backbone.js 1.0.0
+//     Backbone.js 1.1.2
 
-//     (c) 2010-2013 Jeremy Ashkenas, DocumentCloud Inc.
+//     (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
 //     Backbone may be freely distributed under the MIT license.
 //     For all details and documentation:
 //     http://backbonejs.org
 
-(function(){
+(function(root, factory) {
+
+  // Set up Backbone appropriately for the environment. Start with AMD.
+  if (typeof define === 'function' && define.amd) {
+    define(['underscore', 'jquery', 'exports'], function(_, $, exports) {
+      // Export global even in AMD case in case this script is loaded with
+      // others that may still expect a global Backbone.
+      root.Backbone = factory(root, exports, _, $);
+    });
+
+  // Next for Node.js or CommonJS. jQuery may not be needed as a module.
+  } else if (typeof exports !== 'undefined') {
+    var _ = require('underscore');
+    factory(root, exports, _);
+
+  // Finally, as a browser global.
+  } else {
+    root.Backbone = factory(root, {}, root._, (root.jQuery || root.Zepto || root.ender || root.$));
+  }
+
+}(this, function(root, Backbone, _, $) {
 
   // Initial Setup
   // -------------
-
-  // Save a reference to the global object (`window` in the browser, `exports`
-  // on the server).
-  var root = this;
 
   // Save the previous value of the `Backbone` variable, so that it can be
   // restored later on, if `noConflict` is used.
@@ -1280,25 +4724,12 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
   var slice = array.slice;
   var splice = array.splice;
 
-  // The top-level namespace. All public Backbone classes and modules will
-  // be attached to this. Exported for both the browser and the server.
-  var Backbone;
-  if (typeof exports !== 'undefined') {
-    Backbone = exports;
-  } else {
-    Backbone = root.Backbone = {};
-  }
-
   // Current version of the library. Keep in sync with `package.json`.
-  Backbone.VERSION = '1.0.0';
-
-  // Require Underscore, if we're on the server, and it's not already present.
-  var _ = root._;
-  if (!_ && (typeof require !== 'undefined')) _ = require('underscore');
+  Backbone.VERSION = '1.1.2';
 
   // For Backbone's purposes, jQuery, Zepto, Ender, or My Library (kidding) owns
   // the `$` variable.
-  Backbone.$ = root.jQuery || root.Zepto || root.ender || root.$;
+  Backbone.$ = $;
 
   // Runs Backbone.js in *noConflict* mode, returning the `Backbone` variable
   // to its previous owner. Returns a reference to this Backbone object.
@@ -1308,7 +4739,7 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
   };
 
   // Turn on `emulateHTTP` to support legacy HTTP servers. Setting this option
-  // will fake `"PUT"` and `"DELETE"` requests via the `_method` parameter and
+  // will fake `"PATCH"`, `"PUT"` and `"DELETE"` requests via the `_method` parameter and
   // set a `X-Http-Method-Override` header.
   Backbone.emulateHTTP = false;
 
@@ -1364,10 +4795,9 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
       var retain, ev, events, names, i, l, j, k;
       if (!this._events || !eventsApi(this, 'off', name, [callback, context])) return this;
       if (!name && !callback && !context) {
-        this._events = {};
+        this._events = void 0;
         return this;
       }
-
       names = name ? [name] : _.keys(this._events);
       for (i = 0, l = names.length; i < l; i++) {
         name = names[i];
@@ -1407,14 +4837,15 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     // Tell this object to stop listening to either specific events ... or
     // to every object it's currently listening to.
     stopListening: function(obj, name, callback) {
-      var listeners = this._listeners;
-      if (!listeners) return this;
-      var deleteListener = !name && !callback;
-      if (typeof name === 'object') callback = this;
-      if (obj) (listeners = {})[obj._listenerId] = obj;
-      for (var id in listeners) {
-        listeners[id].off(name, callback, this);
-        if (deleteListener) delete this._listeners[id];
+      var listeningTo = this._listeningTo;
+      if (!listeningTo) return this;
+      var remove = !name && !callback;
+      if (!callback && typeof name === 'object') callback = this;
+      if (obj) (listeningTo = {})[obj._listenId] = obj;
+      for (var id in listeningTo) {
+        obj = listeningTo[id];
+        obj.off(name, callback, this);
+        if (remove || _.isEmpty(obj._events)) delete this._listeningTo[id];
       }
       return this;
     }
@@ -1460,7 +4891,7 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
       case 1: while (++i < l) (ev = events[i]).callback.call(ev.ctx, a1); return;
       case 2: while (++i < l) (ev = events[i]).callback.call(ev.ctx, a1, a2); return;
       case 3: while (++i < l) (ev = events[i]).callback.call(ev.ctx, a1, a2, a3); return;
-      default: while (++i < l) (ev = events[i]).callback.apply(ev.ctx, args);
+      default: while (++i < l) (ev = events[i]).callback.apply(ev.ctx, args); return;
     }
   };
 
@@ -1471,10 +4902,10 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
   // listening to.
   _.each(listenMethods, function(implementation, method) {
     Events[method] = function(obj, name, callback) {
-      var listeners = this._listeners || (this._listeners = {});
-      var id = obj._listenerId || (obj._listenerId = _.uniqueId('l'));
-      listeners[id] = obj;
-      if (typeof name === 'object') callback = this;
+      var listeningTo = this._listeningTo || (this._listeningTo = {});
+      var id = obj._listenId || (obj._listenId = _.uniqueId('l'));
+      listeningTo[id] = obj;
+      if (!callback && typeof name === 'object') callback = this;
       obj[implementation](name, callback, this);
       return this;
     };
@@ -1499,23 +4930,17 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
   // Create a new model with the specified attributes. A client id (`cid`)
   // is automatically generated and assigned for you.
   var Model = Backbone.Model = function(attributes, options) {
-    var defaults;
     var attrs = attributes || {};
     options || (options = {});
     this.cid = _.uniqueId('c');
     this.attributes = {};
-    _.extend(this, _.pick(options, modelOptions));
+    if (options.collection) this.collection = options.collection;
     if (options.parse) attrs = this.parse(attrs, options) || {};
-    if (defaults = _.result(this, 'defaults')) {
-      attrs = _.defaults({}, attrs, defaults);
-    }
+    attrs = _.defaults({}, attrs, _.result(this, 'defaults'));
     this.set(attrs, options);
     this.changed = {};
     this.initialize.apply(this, arguments);
   };
-
-  // A list of options to be attached directly to the model, if provided.
-  var modelOptions = ['url', 'urlRoot', 'collection'];
 
   // Attach all inheritable methods to the Model prototype.
   _.extend(Model.prototype, Events, {
@@ -1611,7 +5036,7 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
 
       // Trigger all relevant attribute changes.
       if (!silent) {
-        if (changes.length) this._pending = true;
+        if (changes.length) this._pending = options;
         for (var i = 0, l = changes.length; i < l; i++) {
           this.trigger('change:' + changes[i], this, current[changes[i]], options);
         }
@@ -1622,6 +5047,7 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
       if (changing) return this;
       if (!silent) {
         while (this._pending) {
+          options = this._pending;
           this._pending = false;
           this.trigger('change', this, options);
         }
@@ -1712,13 +5138,16 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
         (attrs = {})[key] = val;
       }
 
-      // If we're not waiting and attributes exist, save acts as `set(attr).save(null, opts)`.
-      if (attrs && (!options || !options.wait) && !this.set(attrs, options)) return false;
-
       options = _.extend({validate: true}, options);
 
-      // Do not persist invalid models.
-      if (!this._validate(attrs, options)) return false;
+      // If we're not waiting and attributes exist, save acts as
+      // `set(attr).save(null, opts)` with validation. Otherwise, check if
+      // the model will be valid when the attributes, if any, are set.
+      if (attrs && !options.wait) {
+        if (!this.set(attrs, options)) return false;
+      } else {
+        if (!this._validate(attrs, options)) return false;
+      }
 
       // Set temporary attributes if `{wait: true}`.
       if (attrs && options.wait) {
@@ -1786,9 +5215,12 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     // using Backbone's restful methods, override this to change the endpoint
     // that will be called.
     url: function() {
-      var base = _.result(this, 'urlRoot') || _.result(this.collection, 'url') || urlError();
+      var base =
+        _.result(this, 'urlRoot') ||
+        _.result(this.collection, 'url') ||
+        urlError();
       if (this.isNew()) return base;
-      return base + (base.charAt(base.length - 1) === '/' ? '' : '/') + encodeURIComponent(this.id);
+      return base.replace(/([^\/])$/, '$1/') + encodeURIComponent(this.id);
     },
 
     // **parse** converts a response into the hash of attributes to be `set` on
@@ -1804,7 +5236,7 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
 
     // A model is new if it has never been saved to the server, and lacks an id.
     isNew: function() {
-      return this.id == null;
+      return !this.has(this.idAttribute);
     },
 
     // Check if the model is currently in a valid state.
@@ -1819,7 +5251,7 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
       attrs = _.extend({}, this.attributes, attrs);
       var error = this.validationError = this.validate(attrs, options) || null;
       if (!error) return true;
-      this.trigger('invalid', this, error, _.extend(options || {}, {validationError: error}));
+      this.trigger('invalid', this, error, _.extend(options, {validationError: error}));
       return false;
     }
 
@@ -1852,7 +5284,6 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
   // its models in sort order, as they're added and removed.
   var Collection = Backbone.Collection = function(models, options) {
     options || (options = {});
-    if (options.url) this.url = options.url;
     if (options.model) this.model = options.model;
     if (options.comparator !== void 0) this.comparator = options.comparator;
     this._reset();
@@ -1862,7 +5293,7 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
 
   // Default options for `Collection#set`.
   var setOptions = {add: true, remove: true, merge: true};
-  var addOptions = {add: true, merge: false, remove: false};
+  var addOptions = {add: true, remove: false};
 
   // Define the Collection's inheritable methods.
   _.extend(Collection.prototype, Events, {
@@ -1888,16 +5319,17 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
 
     // Add a model, or list of models to the set.
     add: function(models, options) {
-      return this.set(models, _.defaults(options || {}, addOptions));
+      return this.set(models, _.extend({merge: false}, options, addOptions));
     },
 
     // Remove a model, or a list of models from the set.
     remove: function(models, options) {
-      models = _.isArray(models) ? models.slice() : [models];
+      var singular = !_.isArray(models);
+      models = singular ? [models] : _.clone(models);
       options || (options = {});
       var i, l, index, model;
       for (i = 0, l = models.length; i < l; i++) {
-        model = this.get(models[i]);
+        model = models[i] = this.get(models[i]);
         if (!model) continue;
         delete this._byId[model.id];
         delete this._byId[model.cid];
@@ -1908,9 +5340,9 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
           options.index = index;
           model.trigger('remove', model, this, options);
         }
-        this._removeReference(model);
+        this._removeReference(model, options);
       }
-      return this;
+      return singular ? models[0] : models;
     },
 
     // Update a collection by `set`-ing a new list of models, adding new ones,
@@ -1918,43 +5350,57 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     // already exist in the collection, as necessary. Similar to **Model#set**,
     // the core operation for updating the data contained by the collection.
     set: function(models, options) {
-      options = _.defaults(options || {}, setOptions);
+      options = _.defaults({}, options, setOptions);
       if (options.parse) models = this.parse(models, options);
-      if (!_.isArray(models)) models = models ? [models] : [];
-      var i, l, model, attrs, existing, sort;
+      var singular = !_.isArray(models);
+      models = singular ? (models ? [models] : []) : _.clone(models);
+      var i, l, id, model, attrs, existing, sort;
       var at = options.at;
+      var targetModel = this.model;
       var sortable = this.comparator && (at == null) && options.sort !== false;
       var sortAttr = _.isString(this.comparator) ? this.comparator : null;
       var toAdd = [], toRemove = [], modelMap = {};
+      var add = options.add, merge = options.merge, remove = options.remove;
+      var order = !sortable && add && remove ? [] : false;
 
       // Turn bare objects into model references, and prevent invalid models
       // from being added.
       for (i = 0, l = models.length; i < l; i++) {
-        if (!(model = this._prepareModel(models[i], options))) continue;
+        attrs = models[i] || {};
+        if (attrs instanceof Model) {
+          id = model = attrs;
+        } else {
+          id = attrs[targetModel.prototype.idAttribute || 'id'];
+        }
 
         // If a duplicate is found, prevent it from being added and
         // optionally merge it into the existing model.
-        if (existing = this.get(model)) {
-          if (options.remove) modelMap[existing.cid] = true;
-          if (options.merge) {
-            existing.set(model.attributes, options);
+        if (existing = this.get(id)) {
+          if (remove) modelMap[existing.cid] = true;
+          if (merge) {
+            attrs = attrs === model ? model.attributes : attrs;
+            if (options.parse) attrs = existing.parse(attrs, options);
+            existing.set(attrs, options);
             if (sortable && !sort && existing.hasChanged(sortAttr)) sort = true;
           }
+          models[i] = existing;
 
-        // This is a new model, push it to the `toAdd` list.
-        } else if (options.add) {
+        // If this is a new, valid model, push it to the `toAdd` list.
+        } else if (add) {
+          model = models[i] = this._prepareModel(attrs, options);
+          if (!model) continue;
           toAdd.push(model);
-
-          // Listen to added models' events, and index models for lookup by
-          // `id` and by `cid`.
-          model.on('all', this._onModelEvent, this);
-          this._byId[model.cid] = model;
-          if (model.id != null) this._byId[model.id] = model;
+          this._addReference(model, options);
         }
+
+        // Do not add multiple models with the same `id`.
+        model = existing || model;
+        if (order && (model.isNew() || !modelMap[model.id])) order.push(model);
+        modelMap[model.id] = true;
       }
 
       // Remove nonexistent models if appropriate.
-      if (options.remove) {
+      if (remove) {
         for (i = 0, l = this.length; i < l; ++i) {
           if (!modelMap[(model = this.models[i]).cid]) toRemove.push(model);
         }
@@ -1962,29 +5408,35 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
       }
 
       // See if sorting is needed, update `length` and splice in new models.
-      if (toAdd.length) {
+      if (toAdd.length || (order && order.length)) {
         if (sortable) sort = true;
         this.length += toAdd.length;
         if (at != null) {
-          splice.apply(this.models, [at, 0].concat(toAdd));
+          for (i = 0, l = toAdd.length; i < l; i++) {
+            this.models.splice(at + i, 0, toAdd[i]);
+          }
         } else {
-          push.apply(this.models, toAdd);
+          if (order) this.models.length = 0;
+          var orderedModels = order || toAdd;
+          for (i = 0, l = orderedModels.length; i < l; i++) {
+            this.models.push(orderedModels[i]);
+          }
         }
       }
 
       // Silently sort the collection if appropriate.
       if (sort) this.sort({silent: true});
 
-      if (options.silent) return this;
-
-      // Trigger `add` events.
-      for (i = 0, l = toAdd.length; i < l; i++) {
-        (model = toAdd[i]).trigger('add', model, this, options);
+      // Unless silenced, it's time to fire all appropriate add/sort events.
+      if (!options.silent) {
+        for (i = 0, l = toAdd.length; i < l; i++) {
+          (model = toAdd[i]).trigger('add', model, this, options);
+        }
+        if (sort || (order && order.length)) this.trigger('sort', this, options);
       }
 
-      // Trigger `sort` if the collection was sorted.
-      if (sort) this.trigger('sort', this, options);
-      return this;
+      // Return the added (or merged) model (or models).
+      return singular ? models[0] : models;
     },
 
     // When you have more items than you want to add or remove individually,
@@ -1994,20 +5446,18 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     reset: function(models, options) {
       options || (options = {});
       for (var i = 0, l = this.models.length; i < l; i++) {
-        this._removeReference(this.models[i]);
+        this._removeReference(this.models[i], options);
       }
       options.previousModels = this.models;
       this._reset();
-      this.add(models, _.extend({silent: true}, options));
+      models = this.add(models, _.extend({silent: true}, options));
       if (!options.silent) this.trigger('reset', this, options);
-      return this;
+      return models;
     },
 
     // Add a model to the end of the collection.
     push: function(model, options) {
-      model = this._prepareModel(model, options);
-      this.add(model, _.extend({at: this.length}, options));
-      return model;
+      return this.add(model, _.extend({at: this.length}, options));
     },
 
     // Remove a model from the end of the collection.
@@ -2019,9 +5469,7 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
 
     // Add a model to the beginning of the collection.
     unshift: function(model, options) {
-      model = this._prepareModel(model, options);
-      this.add(model, _.extend({at: 0}, options));
-      return model;
+      return this.add(model, _.extend({at: 0}, options));
     },
 
     // Remove a model from the beginning of the collection.
@@ -2032,14 +5480,14 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     },
 
     // Slice out a sub-array of models from the collection.
-    slice: function(begin, end) {
-      return this.models.slice(begin, end);
+    slice: function() {
+      return slice.apply(this.models, arguments);
     },
 
     // Get a model from the set by id.
     get: function(obj) {
       if (obj == null) return void 0;
-      return this._byId[obj.id != null ? obj.id : obj.cid || obj];
+      return this._byId[obj] || this._byId[obj.id] || this._byId[obj.cid];
     },
 
     // Get the model at the given index.
@@ -2083,16 +5531,6 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
       return this;
     },
 
-    // Figure out the smallest index at which a model should be inserted so as
-    // to maintain order.
-    sortedIndex: function(model, value, context) {
-      value || (value = this.comparator);
-      var iterator = _.isFunction(value) ? value : function(model) {
-        return model.get(value);
-      };
-      return _.sortedIndex(this.models, model, iterator, context);
-    },
-
     // Pluck an attribute from each model in the collection.
     pluck: function(attr) {
       return _.invoke(this.models, 'get', attr);
@@ -2125,7 +5563,7 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
       if (!options.wait) this.add(model, options);
       var collection = this;
       var success = options.success;
-      options.success = function(resp) {
+      options.success = function(model, resp) {
         if (options.wait) collection.add(model, options);
         if (success) success(model, resp, options);
       };
@@ -2155,22 +5593,25 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     // Prepare a hash of attributes (or other model) to be added to this
     // collection.
     _prepareModel: function(attrs, options) {
-      if (attrs instanceof Model) {
-        if (!attrs.collection) attrs.collection = this;
-        return attrs;
-      }
-      options || (options = {});
+      if (attrs instanceof Model) return attrs;
+      options = options ? _.clone(options) : {};
       options.collection = this;
       var model = new this.model(attrs, options);
-      if (!model._validate(attrs, options)) {
-        this.trigger('invalid', this, attrs, options);
-        return false;
-      }
-      return model;
+      if (!model.validationError) return model;
+      this.trigger('invalid', this, model.validationError, options);
+      return false;
+    },
+
+    // Internal method to create a model's ties to a collection.
+    _addReference: function(model, options) {
+      this._byId[model.cid] = model;
+      if (model.id != null) this._byId[model.id] = model;
+      if (!model.collection) model.collection = this;
+      model.on('all', this._onModelEvent, this);
     },
 
     // Internal method to sever a model's ties to a collection.
-    _removeReference: function(model) {
+    _removeReference: function(model, options) {
       if (this === model.collection) delete model.collection;
       model.off('all', this._onModelEvent, this);
     },
@@ -2198,8 +5639,8 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     'inject', 'reduceRight', 'foldr', 'find', 'detect', 'filter', 'select',
     'reject', 'every', 'all', 'some', 'any', 'include', 'contains', 'invoke',
     'max', 'min', 'toArray', 'size', 'first', 'head', 'take', 'initial', 'rest',
-    'tail', 'drop', 'last', 'without', 'indexOf', 'shuffle', 'lastIndexOf',
-    'isEmpty', 'chain'];
+    'tail', 'drop', 'last', 'without', 'difference', 'indexOf', 'shuffle',
+    'lastIndexOf', 'isEmpty', 'chain', 'sample'];
 
   // Mix in each Underscore method as a proxy to `Collection#models`.
   _.each(methods, function(method) {
@@ -2211,7 +5652,7 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
   });
 
   // Underscore methods that take a property name as an argument.
-  var attributeMethods = ['groupBy', 'countBy', 'sortBy'];
+  var attributeMethods = ['groupBy', 'countBy', 'sortBy', 'indexBy'];
 
   // Use attributes instead of properties.
   _.each(attributeMethods, function(method) {
@@ -2238,7 +5679,8 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
   // if an existing element is not provided...
   var View = Backbone.View = function(options) {
     this.cid = _.uniqueId('view');
-    this._configure(options || {});
+    options || (options = {});
+    _.extend(this, _.pick(options, viewOptions));
     this._ensureElement();
     this.initialize.apply(this, arguments);
     this.delegateEvents();
@@ -2257,7 +5699,7 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     tagName: 'div',
 
     // jQuery delegate for element lookup, scoped to DOM elements within the
-    // current view. This should be prefered to global lookups where possible.
+    // current view. This should be preferred to global lookups where possible.
     $: function(selector) {
       return this.$el.find(selector);
     },
@@ -2297,7 +5739,7 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     //
     //     {
     //       'mousedown .title':  'edit',
-    //       'click .button':     'save'
+    //       'click .button':     'save',
     //       'click .open':       function(e) { ... }
     //     }
     //
@@ -2333,16 +5775,6 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     undelegateEvents: function() {
       this.$el.off('.delegateEvents' + this.cid);
       return this;
-    },
-
-    // Performs the initial configuration of a View with a set of options.
-    // Keys with special meaning *(e.g. model, collection, id, className)* are
-    // attached directly to the view.  See `viewOptions` for an exhaustive
-    // list.
-    _configure: function(options) {
-      if (this.options) options = _.extend({}, _.result(this, 'options'), options);
-      _.extend(this, _.pick(options, viewOptions));
-      this.options = options;
     },
 
     // Ensure that the View has a DOM element to render into.
@@ -2430,8 +5862,7 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     // If we're sending a `PATCH` request, and we're in an old Internet Explorer
     // that still has ActiveX enabled by default, override jQuery to use that
     // for XHR instead. Remove this line when jQuery supports `PATCH` on IE8.
-    if (params.type === 'PATCH' && window.ActiveXObject &&
-          !(window.external && window.external.msActiveXFilteringEnabled)) {
+    if (params.type === 'PATCH' && noXhrPatch) {
       params.xhr = function() {
         return new ActiveXObject("Microsoft.XMLHTTP");
       };
@@ -2442,6 +5873,10 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     model.trigger('request', model, xhr, options);
     return xhr;
   };
+
+  var noXhrPatch =
+    typeof window !== 'undefined' && !!window.ActiveXObject &&
+      !(window.XMLHttpRequest && (new XMLHttpRequest).dispatchEvent);
 
   // Map from CRUD to HTTP for our default `Backbone.sync` implementation.
   var methodMap = {
@@ -2500,12 +5935,18 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
       var router = this;
       Backbone.history.route(route, function(fragment) {
         var args = router._extractParameters(route, fragment);
-        callback && callback.apply(router, args);
+        router.execute(callback, args);
         router.trigger.apply(router, ['route:' + name].concat(args));
         router.trigger('route', name, args);
         Backbone.history.trigger('route', router, name, args);
       });
       return this;
+    },
+
+    // Execute a route handler with the provided parameters.  This is an
+    // excellent place to do pre-route setup or post-route cleanup.
+    execute: function(callback, args) {
+      if (callback) callback.apply(this, args);
     },
 
     // Simple proxy to `Backbone.history` to save a fragment into the history.
@@ -2531,11 +5972,11 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     _routeToRegExp: function(route) {
       route = route.replace(escapeRegExp, '\\$&')
                    .replace(optionalParam, '(?:$1)?')
-                   .replace(namedParam, function(match, optional){
-                     return optional ? match : '([^\/]+)';
+                   .replace(namedParam, function(match, optional) {
+                     return optional ? match : '([^/?]+)';
                    })
-                   .replace(splatParam, '(.*?)');
-      return new RegExp('^' + route + '$');
+                   .replace(splatParam, '([^?]*?)');
+      return new RegExp('^' + route + '(?:\\?([\\s\\S]*))?$');
     },
 
     // Given a route, and a URL fragment that it matches, return the array of
@@ -2543,7 +5984,9 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     // treated as `null` to normalize cross-browser behavior.
     _extractParameters: function(route, fragment) {
       var params = route.exec(fragment).slice(1);
-      return _.map(params, function(param) {
+      return _.map(params, function(param, i) {
+        // Don't decode the search params.
+        if (i === params.length - 1) return param || null;
         return param ? decodeURIComponent(param) : null;
       });
     }
@@ -2581,6 +6024,9 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
   // Cached regex for removing a trailing slash.
   var trailingSlash = /\/$/;
 
+  // Cached regex for stripping urls of hash.
+  var pathStripper = /#.*$/;
+
   // Has the history handling already been started?
   History.started = false;
 
@@ -2590,6 +6036,11 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     // The default interval to poll for hash changes, if necessary, is
     // twenty times a second.
     interval: 50,
+
+    // Are we at the app root?
+    atRoot: function() {
+      return this.location.pathname.replace(/[^\/]$/, '$&/') === this.root;
+    },
 
     // Gets the true hash value. Cannot use location.hash directly due to bug
     // in Firefox where location.hash will always be decoded.
@@ -2603,9 +6054,9 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     getFragment: function(fragment, forcePushState) {
       if (fragment == null) {
         if (this._hasPushState || !this._wantsHashChange || forcePushState) {
-          fragment = this.location.pathname;
+          fragment = decodeURI(this.location.pathname + this.location.search);
           var root = this.root.replace(trailingSlash, '');
-          if (!fragment.indexOf(root)) fragment = fragment.substr(root.length);
+          if (!fragment.indexOf(root)) fragment = fragment.slice(root.length);
         } else {
           fragment = this.getHash();
         }
@@ -2621,7 +6072,7 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
 
       // Figure out the initial configuration. Do we need an iframe?
       // Is pushState desired ... is it available?
-      this.options          = _.extend({}, {root: '/'}, this.options, options);
+      this.options          = _.extend({root: '/'}, this.options, options);
       this.root             = this.options.root;
       this._wantsHashChange = this.options.hashChange !== false;
       this._wantsPushState  = !!this.options.pushState;
@@ -2634,7 +6085,8 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
       this.root = ('/' + this.root + '/').replace(rootStripper, '/');
 
       if (oldIE && this._wantsHashChange) {
-        this.iframe = Backbone.$('<iframe src="javascript:0" tabindex="-1" />').hide().appendTo('body')[0].contentWindow;
+        var frame = Backbone.$('<iframe src="javascript:0" tabindex="-1">');
+        this.iframe = frame.hide().appendTo('body')[0].contentWindow;
         this.navigate(fragment);
       }
 
@@ -2652,21 +6104,26 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
       // opened by a non-pushState browser.
       this.fragment = fragment;
       var loc = this.location;
-      var atRoot = loc.pathname.replace(/[^\/]$/, '$&/') === this.root;
 
-      // If we've started off with a route from a `pushState`-enabled browser,
-      // but we're currently in a browser that doesn't support it...
-      if (this._wantsHashChange && this._wantsPushState && !this._hasPushState && !atRoot) {
-        this.fragment = this.getFragment(null, true);
-        this.location.replace(this.root + this.location.search + '#' + this.fragment);
-        // Return immediately as browser will do redirect to new url
-        return true;
+      // Transition from hashChange to pushState or vice versa if both are
+      // requested.
+      if (this._wantsHashChange && this._wantsPushState) {
 
-      // Or if we've started out with a hash-based route, but we're currently
-      // in a browser where it could be `pushState`-based instead...
-      } else if (this._wantsPushState && this._hasPushState && atRoot && loc.hash) {
-        this.fragment = this.getHash().replace(routeStripper, '');
-        this.history.replaceState({}, document.title, this.root + this.fragment + loc.search);
+        // If we've started off with a route from a `pushState`-enabled
+        // browser, but we're currently in a browser that doesn't support it...
+        if (!this._hasPushState && !this.atRoot()) {
+          this.fragment = this.getFragment(null, true);
+          this.location.replace(this.root + '#' + this.fragment);
+          // Return immediately as browser will do redirect to new url
+          return true;
+
+        // Or if we've started out with a hash-based route, but we're currently
+        // in a browser where it could be `pushState`-based instead...
+        } else if (this._hasPushState && this.atRoot() && loc.hash) {
+          this.fragment = this.getHash().replace(routeStripper, '');
+          this.history.replaceState({}, document.title, this.root + this.fragment);
+        }
+
       }
 
       if (!this.options.silent) return this.loadUrl();
@@ -2676,7 +6133,7 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     // but possibly useful for unit testing Routers.
     stop: function() {
       Backbone.$(window).off('popstate', this.checkUrl).off('hashchange', this.checkUrl);
-      clearInterval(this._checkUrlInterval);
+      if (this._checkUrlInterval) clearInterval(this._checkUrlInterval);
       History.started = false;
     },
 
@@ -2695,21 +6152,20 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
       }
       if (current === this.fragment) return false;
       if (this.iframe) this.navigate(current);
-      this.loadUrl() || this.loadUrl(this.getHash());
+      this.loadUrl();
     },
 
     // Attempt to load the current URL fragment. If a route succeeds with a
     // match, returns `true`. If no defined routes matches the fragment,
     // returns `false`.
-    loadUrl: function(fragmentOverride) {
-      var fragment = this.fragment = this.getFragment(fragmentOverride);
-      var matched = _.any(this.handlers, function(handler) {
+    loadUrl: function(fragment) {
+      fragment = this.fragment = this.getFragment(fragment);
+      return _.any(this.handlers, function(handler) {
         if (handler.route.test(fragment)) {
           handler.callback(fragment);
           return true;
         }
       });
-      return matched;
     },
 
     // Save a fragment into the hash history, or replace the URL state if the
@@ -2721,11 +6177,18 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     // you wish to modify the current URL without adding an entry to the history.
     navigate: function(fragment, options) {
       if (!History.started) return false;
-      if (!options || options === true) options = {trigger: options};
-      fragment = this.getFragment(fragment || '');
+      if (!options || options === true) options = {trigger: !!options};
+
+      var url = this.root + (fragment = this.getFragment(fragment || ''));
+
+      // Strip the hash for matching.
+      fragment = fragment.replace(pathStripper, '');
+
       if (this.fragment === fragment) return;
       this.fragment = fragment;
-      var url = this.root + fragment;
+
+      // Don't include a trailing slash on the root.
+      if (fragment === '' && url !== '/') url = url.slice(0, -1);
 
       // If pushState is available, we use it to set the fragment as a real URL.
       if (this._hasPushState) {
@@ -2748,7 +6211,7 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
       } else {
         return this.location.assign(url);
       }
-      if (options.trigger) this.loadUrl(fragment);
+      if (options.trigger) return this.loadUrl(fragment);
     },
 
     // Update the hash location, either replacing the current entry, or adding
@@ -2816,7 +6279,7 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
   };
 
   // Wrap an optional error callback with a fallback error event.
-  var wrapError = function (model, options) {
+  var wrapError = function(model, options) {
     var error = options.error;
     options.error = function(resp) {
       if (error) error(model, resp, options);
@@ -2824,17 +6287,18 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
     };
   };
 
-}).call(this);
+  return Backbone;
+
+}));
 
 // MarionetteJS (Backbone.Marionette)
 // ----------------------------------
-// v1.1.0
+// v1.8.3
 //
-// Copyright (c)2013 Derick Bailey, Muted Solutions, LLC.
+// Copyright (c)2014 Derick Bailey, Muted Solutions, LLC.
 // Distributed under MIT license
 //
 // http://marionettejs.com
-
 
 
 /*!
@@ -2845,14 +6309,15 @@ if(g)return a.createDocumentFragment();for(var b=b||i(a),c=b.frag.cloneNode(),d=
  * https://github.com/marionettejs/backbone.wreqr/
  */
 
+
 // Backbone.BabySitter
 // -------------------
-// v0.0.6
+// v0.1.0
 //
-// Copyright (c)2013 Derick Bailey, Muted Solutions, LLC.
+// Copyright (c)2014 Derick Bailey, Muted Solutions, LLC.
 // Distributed under MIT license
 //
-// http://github.com/babysitterjs/backbone.babysitter
+// http://github.com/marionettejs/backbone.babysitter
 
 // Backbone.ChildViewContainer
 // ---------------------------
@@ -2900,6 +6365,7 @@ Backbone.ChildViewContainer = (function(Backbone, _){
       }
 
       this._updateLength();
+      return this;
     },
 
     // Find a view by the model that was attached to
@@ -2928,7 +6394,7 @@ Backbone.ChildViewContainer = (function(Backbone, _){
       return _.values(this._views)[index];
     },
 
-    // retrieve a view by it's `cid` directly
+    // retrieve a view by its `cid` directly
     findByCid: function(cid){
       return this._views[cid];
     },
@@ -2955,6 +6421,7 @@ Backbone.ChildViewContainer = (function(Backbone, _){
 
       // update the length
       this._updateLength();
+      return this;
     },
 
     // Call a method on every view in the container,
@@ -3005,9 +6472,9 @@ Backbone.ChildViewContainer = (function(Backbone, _){
 
 // Backbone.Wreqr (Backbone.Marionette)
 // ----------------------------------
-// v0.2.0
+// v1.1.0
 //
-// Copyright (c)2013 Derick Bailey, Muted Solutions, LLC.
+// Copyright (c)2014 Derick Bailey, Muted Solutions, LLC.
 // Distributed under MIT license
 //
 // http://github.com/marionettejs/backbone.wreqr
@@ -3082,7 +6549,7 @@ Wreqr.Handlers = (function(Backbone, _){
       var config = this._wreqrHandlers[name];
 
       if (!config){
-        throw new Error("Handler not found for '" + name + "'");
+        return;
       }
 
       return function(){
@@ -3241,8 +6708,9 @@ Wreqr.RequestResponse = (function(Wreqr){
     request: function(){
       var name = arguments[0];
       var args = Array.prototype.slice.call(arguments, 1);
-
-      return this.getHandler(name).apply(this, args);
+      if (this.hasHandler(name)) {
+        return this.getHandler(name).apply(this, args);
+      }
     }
   });
 
@@ -3266,6 +6734,154 @@ Wreqr.EventAggregator = (function(Backbone, _){
   return EA;
 })(Backbone, _);
 
+  // Wreqr.Channel
+// --------------
+//
+// An object that wraps the three messaging systems:
+// EventAggregator, RequestResponse, Commands
+Wreqr.Channel = (function(Wreqr){
+  "use strict";
+
+  var Channel = function(channelName) {
+    this.vent        = new Backbone.Wreqr.EventAggregator();
+    this.reqres      = new Backbone.Wreqr.RequestResponse();
+    this.commands    = new Backbone.Wreqr.Commands();
+    this.channelName = channelName;
+  };
+
+  _.extend(Channel.prototype, {
+
+    // Remove all handlers from the messaging systems of this channel
+    reset: function() {
+      this.vent.off();
+      this.vent.stopListening();
+      this.reqres.removeAllHandlers();
+      this.commands.removeAllHandlers();
+      return this;
+    },
+
+    // Connect a hash of events; one for each messaging system
+    connectEvents: function(hash, context) {
+      this._connect('vent', hash, context);
+      return this;
+    },
+
+    connectCommands: function(hash, context) {
+      this._connect('commands', hash, context);
+      return this;
+    },
+
+    connectRequests: function(hash, context) {
+      this._connect('reqres', hash, context);
+      return this;
+    },
+
+    // Attach the handlers to a given message system `type`
+    _connect: function(type, hash, context) {
+      if (!hash) {
+        return;
+      }
+
+      context = context || this;
+      var method = (type === 'vent') ? 'on' : 'setHandler';
+
+      _.each(hash, function(fn, eventName) {
+        this[type][method](eventName, _.bind(fn, context));
+      }, this);
+    }
+  });
+
+
+  return Channel;
+})(Wreqr);
+
+  // Wreqr.Radio
+// --------------
+//
+// An object that lets you communicate with many channels.
+Wreqr.radio = (function(Wreqr){
+  "use strict";
+
+  var Radio = function() {
+    this._channels = {};
+    this.vent = {};
+    this.commands = {};
+    this.reqres = {};
+    this._proxyMethods();
+  };
+
+  _.extend(Radio.prototype, {
+
+    channel: function(channelName) {
+      if (!channelName) {
+        throw new Error('Channel must receive a name');
+      }
+
+      return this._getChannel( channelName );
+    },
+
+    _getChannel: function(channelName) {
+      var channel = this._channels[channelName];
+
+      if(!channel) {
+        channel = new Wreqr.Channel(channelName);
+        this._channels[channelName] = channel;
+      }
+
+      return channel;
+    },
+
+    _proxyMethods: function() {
+      _.each(['vent', 'commands', 'reqres'], function(system) {
+        _.each( messageSystems[system], function(method) {
+          this[system][method] = proxyMethod(this, system, method);
+        }, this);
+      }, this);
+    }
+  });
+
+
+  var messageSystems = {
+    vent: [
+      'on',
+      'off',
+      'trigger',
+      'once',
+      'stopListening',
+      'listenTo',
+      'listenToOnce'
+    ],
+
+    commands: [
+      'execute',
+      'setHandler',
+      'setHandlers',
+      'removeHandler',
+      'removeAllHandlers'
+    ],
+
+    reqres: [
+      'request',
+      'setHandler',
+      'setHandlers',
+      'removeHandler',
+      'removeAllHandlers'
+    ]
+  };
+
+  var proxyMethod = function(radio, system, method) {
+    return function(channelName) {
+      var messageSystem = radio._getChannel(channelName)[system];
+      var args = Array.prototype.slice.call(arguments, 1);
+
+      messageSystem[method].apply(messageSystem, args);
+    };
+  };
+
+  return new Radio();
+
+})(Wreqr);
+
 
   return Wreqr;
 })(Backbone, Backbone.Marionette, _);
@@ -3284,10 +6900,7 @@ var Marionette = (function(global, Backbone, _){
 // -------
 
 // For slicing `arguments` in functions
-var protoSlice = Array.prototype.slice;
-function slice(args) {
-  return protoSlice.call(args);
-}
+var slice = Array.prototype.slice;
 
 function throwError(message, name) {
   var error = new Error(message);
@@ -3319,16 +6932,77 @@ Marionette.getOption = function(target, optionName){
   return value;
 };
 
+// Marionette.normalizeMethods
+// ----------------------
+
+// Pass in a mapping of events => functions or function names
+// and return a mapping of events => functions
+Marionette.normalizeMethods = function(hash) {
+  var normalizedHash = {}, method;
+  _.each(hash, function(fn, name) {
+    method = fn;
+    if (!_.isFunction(method)) {
+      method = this[method];
+    }
+    if (!method) {
+      return;
+    }
+    normalizedHash[name] = method;
+  }, this);
+  return normalizedHash;
+};
+
+
+// allows for the use of the @ui. syntax within
+// a given key for triggers and events
+// swaps the @ui with the associated selector
+Marionette.normalizeUIKeys = function(hash, ui) {
+  if (typeof(hash) === "undefined") {
+    return;
+  }
+
+  _.each(_.keys(hash), function(v) {
+    var pattern = /@ui.[a-zA-Z_$0-9]*/g;
+    if (v.match(pattern)) {
+      hash[v.replace(pattern, function(r) {
+        return ui[r.slice(4)];
+      })] = hash[v];
+      delete hash[v];
+    }
+  });
+
+  return hash;
+};
+
+// Mix in methods from Underscore, for iteration, and other
+// collection related features.
+// Borrowing this code from Backbone.Collection:
+// http://backbonejs.org/docs/backbone.html#section-106
+Marionette.actAsCollection = function(object, listProperty) {
+  var methods = ['forEach', 'each', 'map', 'find', 'detect', 'filter',
+    'select', 'reject', 'every', 'all', 'some', 'any', 'include',
+    'contains', 'invoke', 'toArray', 'first', 'initial', 'rest',
+    'last', 'without', 'isEmpty', 'pluck'];
+
+  _.each(methods, function(method) {
+    object[method] = function() {
+      var list = _.values(_.result(this, listProperty));
+      var args = [list].concat(_.toArray(arguments));
+      return _[method].apply(_, args);
+    };
+  });
+};
+
 // Trigger an event and/or a corresponding method name. Examples:
 //
 // `this.triggerMethod("foo")` will trigger the "foo" event and
 // call the "onFoo" method.
 //
-// `this.triggerMethod("foo:bar") will trigger the "foo:bar" event and
+// `this.triggerMethod("foo:bar")` will trigger the "foo:bar" event and
 // call the "onFooBar" method.
 Marionette.triggerMethod = (function(){
 
-  // split the event name on the :
+  // split the event name on the ":"
   var splitter = /(^|:)(\w)/gi;
 
   // take the event section ("section1:section2:section3")
@@ -3337,7 +7011,7 @@ Marionette.triggerMethod = (function(){
     return eventName.toUpperCase();
   }
 
-  // actual triggerMethod name
+  // actual triggerMethod implementation
   var triggerMethod = function(event) {
     // get the method name from the event name
     var methodName = 'on' + event.replace(splitter, getEventName);
@@ -3365,7 +7039,7 @@ Marionette.triggerMethod = (function(){
 // in the DOM, trigger a "dom:refresh" event every time it is
 // re-rendered.
 
-Marionette.MonitorDOMRefresh = (function(){
+Marionette.MonitorDOMRefresh = (function(documentElement){
   // track when the view has been shown in the DOM,
   // using a Marionette.Region (or by other means of triggering "show")
   function handleShow(view){
@@ -3381,11 +7055,15 @@ Marionette.MonitorDOMRefresh = (function(){
 
   // Trigger the "dom:refresh" event and corresponding "onDomRefresh" method
   function triggerDOMRefresh(view){
-    if (view._isShown && view._isRendered){
+    if (view._isShown && view._isRendered && isInDOM(view)){
       if (_.isFunction(view.triggerMethod)){
         view.triggerMethod("dom:refresh");
       }
     }
+  }
+
+  function isInDOM(view) {
+    return documentElement.contains(view.el);
   }
 
   // Export public API
@@ -3398,14 +7076,14 @@ Marionette.MonitorDOMRefresh = (function(){
       handleRender(view);
     });
   };
-})();
+})(document.documentElement);
 
 
 // Marionette.bindEntityEvents & unbindEntityEvents
 // ---------------------------
 //
-// These methods are used to bind/unbind a backbone "entity" (collection/model) 
-// to methods on a target object. 
+// These methods are used to bind/unbind a backbone "entity" (collection/model)
+// to methods on a target object.
 //
 // The first parameter, `target`, must have a `listenTo` method from the
 // EventBinder object.
@@ -3415,7 +7093,7 @@ Marionette.MonitorDOMRefresh = (function(){
 //
 // The third parameter is a hash of { "event:name": "eventHandler" }
 // configuration. Multiple handlers can be separated by a space. A
-// function can be supplied instead of a string handler name. 
+// function can be supplied instead of a string handler name.
 
 (function(Marionette){
   "use strict";
@@ -3425,20 +7103,20 @@ Marionette.MonitorDOMRefresh = (function(){
   function bindFromStrings(target, entity, evt, methods){
     var methodNames = methods.split(/\s+/);
 
-    _.each(methodNames,function(methodName) {
+    _.each(methodNames, function(methodName) {
 
       var method = target[methodName];
       if(!method) {
         throwError("Method '"+ methodName +"' was configured as an event handler, but does not exist.");
       }
 
-      target.listenTo(entity, evt, method, target);
+      target.listenTo(entity, evt, method);
     });
   }
 
   // Bind the event to a supplied callback function
   function bindToFunction(target, entity, evt, method){
-      target.listenTo(entity, evt, method, target);
+      target.listenTo(entity, evt, method);
   }
 
   // Bind the event to handlers specified as a string of
@@ -3446,18 +7124,18 @@ Marionette.MonitorDOMRefresh = (function(){
   function unbindFromStrings(target, entity, evt, methods){
     var methodNames = methods.split(/\s+/);
 
-    _.each(methodNames,function(methodName) {
+    _.each(methodNames, function(methodName) {
       var method = target[methodName];
-      target.stopListening(entity, evt, method, target);
+      target.stopListening(entity, evt, method);
     });
   }
 
   // Bind the event to a supplied callback function
   function unbindToFunction(target, entity, evt, method){
-      target.stopListening(entity, evt, method, target);
+      target.stopListening(entity, evt, method);
   }
 
-  
+
   // generic looping function
   function iterateEvents(target, entity, bindings, functionCallback, stringCallback){
     if (!entity || !bindings) { return; }
@@ -3470,7 +7148,7 @@ Marionette.MonitorDOMRefresh = (function(){
     // iterate the bindings and bind them
     _.each(bindings, function(methods, evt){
 
-      // allow for a function as the handler, 
+      // allow for a function as the handler,
       // or a list of event names as a string
       if (_.isFunction(methods)){
         functionCallback(target, entity, evt, methods);
@@ -3480,7 +7158,7 @@ Marionette.MonitorDOMRefresh = (function(){
 
     });
   }
- 
+
   // Export Public API
   Marionette.bindEntityEvents = function(target, entity, bindings){
     iterateEvents(target, entity, bindings, bindToFunction, bindFromStrings);
@@ -3507,7 +7185,7 @@ Marionette.Callbacks = function(){
 _.extend(Marionette.Callbacks.prototype, {
 
   // Add a callback to be executed. Callbacks added here are
-  // guaranteed to execute, even if they are added after the 
+  // guaranteed to execute, even if they are added after the
   // `run` method is called.
   add: function(callback, contextOverride){
     this._callbacks.push({cb: callback, ctx: contextOverride});
@@ -3518,8 +7196,8 @@ _.extend(Marionette.Callbacks.prototype, {
     });
   },
 
-  // Run all registered callbacks with the context specified. 
-  // Additional callbacks can be added after this has been run 
+  // Run all registered callbacks with the context specified.
+  // Additional callbacks can be added after this has been run
   // and they will still be executed.
   run: function(options, context){
     this._deferred.resolve(context, options);
@@ -3531,13 +7209,12 @@ _.extend(Marionette.Callbacks.prototype, {
     var callbacks = this._callbacks;
     this._deferred = Marionette.$.Deferred();
     this._callbacks = [];
-    
+
     _.each(callbacks, function(cb){
       this.add(cb.cb, cb.ctx);
     }, this);
   }
 });
-
 
 // Marionette Controller
 // ---------------------
@@ -3563,12 +7240,13 @@ Marionette.Controller.extend = Marionette.extend;
 _.extend(Marionette.Controller.prototype, Backbone.Events, {
   close: function(){
     this.stopListening();
-    this.triggerMethod("close");
-    this.unbind();
+    var args = Array.prototype.slice.call(arguments);
+    this.triggerMethod.apply(this, ["close"].concat(args));
+    this.off();
   }
 });
 
-// Region 
+// Region
 // ------
 //
 // Manage the visual regions of your composite application. See
@@ -3576,13 +7254,10 @@ _.extend(Marionette.Controller.prototype, Backbone.Events, {
 
 Marionette.Region = function(options){
   this.options = options || {};
-
   this.el = Marionette.getOption(this, "el");
 
   if (!this.el){
-    var err = new Error("An 'el' must be specified for a region.");
-    err.name = "NoElError";
-    throw err;
+    throwError("An 'el' must be specified for a region.", "NoElError");
   }
 
   if (this.initialize){
@@ -3612,30 +7287,30 @@ _.extend(Marionette.Region, {
   // ```
   //
   buildRegion: function(regionConfig, defaultRegionType){
-
-    var regionIsString = (typeof regionConfig === "string");
-    var regionSelectorIsString = (typeof regionConfig.selector === "string");
-    var regionTypeIsUndefined = (typeof regionConfig.regionType === "undefined");
-    var regionIsType = (typeof regionConfig === "function");
+    var regionIsString = _.isString(regionConfig);
+    var regionSelectorIsString = _.isString(regionConfig.selector);
+    var regionTypeIsUndefined = _.isUndefined(regionConfig.regionType);
+    var regionIsType = _.isFunction(regionConfig);
 
     if (!regionIsType && !regionIsString && !regionSelectorIsString) {
-      throw new Error("Region must be specified as a Region type, a selector string or an object with selector property");
+      throwError("Region must be specified as a Region type, a selector string or an object with selector property");
     }
 
     var selector, RegionType;
-   
+
     // get the selector for the region
-    
+
     if (regionIsString) {
       selector = regionConfig;
-    } 
+    }
 
     if (regionConfig.selector) {
       selector = regionConfig.selector;
+      delete regionConfig.selector;
     }
 
     // get the type for the region
-    
+
     if (regionIsType){
       RegionType = regionConfig;
     }
@@ -3646,12 +7321,17 @@ _.extend(Marionette.Region, {
 
     if (regionConfig.regionType) {
       RegionType = regionConfig.regionType;
+      delete regionConfig.regionType;
     }
-    
+
+    if (regionIsString || regionIsType) {
+      regionConfig = {};
+    }
+
+    regionConfig.el = selector;
+
     // build the region instance
-    var region = new RegionType({
-      el: selector
-    });
+    var region = new RegionType(regionConfig);
 
     // override the `getEl` function if we have a parentEl
     // this must be overridden to ensure the selector is found
@@ -3660,7 +7340,6 @@ _.extend(Marionette.Region, {
     // literal to build the region, the element will not be
     // guaranteed to be in the DOM already, and will cause problems
     if (regionConfig.parentEl){
-
       region.getEl = function(selector) {
         var parentEl = regionConfig.parentEl;
         if (_.isFunction(parentEl)){
@@ -3685,24 +7364,30 @@ _.extend(Marionette.Region.prototype, Backbone.Events, {
   // directly from the `el` attribute. Also calls an optional
   // `onShow` and `close` method on your view, just after showing
   // or just before closing the view, respectively.
-  show: function(view){
-
+  // The `preventClose` option can be used to prevent a view from being destroyed on show.
+  show: function(view, options){
     this.ensureEl();
 
+    var showOptions = options || {};
     var isViewClosed = view.isClosed || _.isUndefined(view.$el);
-
     var isDifferentView = view !== this.currentView;
+    var preventClose =  !!showOptions.preventClose;
 
-    if (isDifferentView) {
+    // only close the view if we don't want to preventClose and the view is different
+    var _shouldCloseView = !preventClose && isDifferentView;
+
+    if (_shouldCloseView) {
       this.close();
     }
 
     view.render();
+    Marionette.triggerMethod.call(this, "before:show", view);
+    Marionette.triggerMethod.call(view, "before:show");
 
     if (isDifferentView || isViewClosed) {
       this.open(view);
     }
-    
+
     this.currentView = view;
 
     Marionette.triggerMethod.call(this, "show", view);
@@ -3737,13 +7422,13 @@ _.extend(Marionette.Region.prototype, Backbone.Events, {
     if (view.close) { view.close(); }
     else if (view.remove) { view.remove(); }
 
-    Marionette.triggerMethod.call(this, "close");
+    Marionette.triggerMethod.call(this, "close", view);
 
     delete this.currentView;
   },
 
-  // Attach an existing view to the region. This 
-  // will not call `render` or `onShow` for the new view, 
+  // Attach an existing view to the region. This
+  // will not call `render` or `onShow` for the new view,
   // and will not replace the current HTML for the `el`
   // of the region.
   attachView: function(view){
@@ -3782,7 +7467,7 @@ Marionette.RegionManager = (function(Marionette){
       var regions = {};
 
       _.each(regionDefinitions, function(definition, name){
-        if (typeof definition === "string"){
+        if (_.isString(definition)){
           definition = { selector: definition };
         }
 
@@ -3850,8 +7535,7 @@ Marionette.RegionManager = (function(Marionette){
     // manager entirely
     close: function(){
       this.removeRegions();
-      var args = Array.prototype.slice.call(arguments);
-      Marionette.Controller.prototype.close.apply(this, args);
+      Marionette.Controller.prototype.close.apply(this, arguments);
     },
 
     // internal method to store regions
@@ -3863,6 +7547,7 @@ Marionette.RegionManager = (function(Marionette){
     // internal method to remove a region
     _remove: function(name, region){
       region.close();
+      region.stopListening();
       delete this._regions[name];
       this._setLength();
       this.triggerMethod("region:remove", name, region);
@@ -3875,23 +7560,7 @@ Marionette.RegionManager = (function(Marionette){
 
   });
 
-  // Borrowing this code from Backbone.Collection:
-  // http://backbonejs.org/docs/backbone.html#section-106
-  //
-  // Mix in methods from Underscore, for iteration, and other
-  // collection related features.
-  var methods = ['forEach', 'each', 'map', 'find', 'detect', 'filter', 
-    'select', 'reject', 'every', 'all', 'some', 'any', 'include', 
-    'contains', 'invoke', 'toArray', 'first', 'initial', 'rest', 
-    'last', 'without', 'isEmpty', 'pluck'];
-
-  _.each(methods, function(method) {
-    RegionManager.prototype[method] = function() {
-      var regions = _.values(this._regions);
-      var args = [regions].concat(_.toArray(arguments));
-      return _[method].apply(_, args);
-    };
-  });
+  Marionette.actAsCollection(RegionManager.prototype, '_regions');
 
   return RegionManager;
 })(Marionette);
@@ -3907,7 +7576,7 @@ Marionette.TemplateCache = function(templateId){
 };
 
 // TemplateCache object-level methods. Manage the template
-// caches from these method calls instead of creating 
+// caches from these method calls instead of creating
 // your own TemplateCache instances
 _.extend(Marionette.TemplateCache, {
   templateCaches: {},
@@ -3930,12 +7599,12 @@ _.extend(Marionette.TemplateCache, {
   // are specified, clears all templates:
   // `clear()`
   //
-  // If arguments are specified, clears each of the 
+  // If arguments are specified, clears each of the
   // specified templates from the cache:
   // `clear("#t1", "#t2", "...")`
   clear: function(){
     var i;
-    var args = slice(arguments);
+    var args = slice.call(arguments);
     var length = args.length;
 
     if (length > 0){
@@ -3970,7 +7639,7 @@ _.extend(Marionette.TemplateCache.prototype, {
   // Load a template from the DOM, by default. Override
   // this method to provide your own template retrieval
   // For asynchronous loading with AMD/RequireJS, consider
-  // using a template-loader plugin as described here: 
+  // using a template-loader plugin as described here:
   // https://github.com/marionettejs/backbone.marionette/wiki/Using-marionette-with-requirejs
   loadTemplate: function(templateId){
     var template = Marionette.$(templateId).html();
@@ -3991,7 +7660,6 @@ _.extend(Marionette.TemplateCache.prototype, {
   }
 });
 
-
 // Renderer
 // --------
 
@@ -4006,9 +7674,7 @@ Marionette.Renderer = {
   render: function(template, data){
 
     if (!template) {
-      var error = new Error("Cannot render the template since it's false, null or undefined.");
-      error.name = "TemplateNotFoundError";
-      throw error;
+      throwError("Cannot render the template since it's false, null or undefined.", "TemplateNotFoundError");
     }
 
     var templateFunc;
@@ -4023,26 +7689,41 @@ Marionette.Renderer = {
 };
 
 
-
 // Marionette.View
 // ---------------
 
 // The core view type that other Marionette views extend from.
 Marionette.View = Backbone.View.extend({
 
-  constructor: function(){
+  constructor: function(options){
     _.bindAll(this, "render");
 
-    var args = Array.prototype.slice.apply(arguments);
-    Backbone.View.prototype.constructor.apply(this, args);
+    // this exposes view options to the view initializer
+    // this is a backfill since backbone removed the assignment
+    // of this.options
+    // at some point however this may be removed
+    this.options = _.extend({}, _.result(this, 'options'), _.isFunction(options) ? options.call(this) : options);
+
+    // parses out the @ui DSL for events
+    this.events = this.normalizeUIKeys(_.result(this, 'events'));
+
+    if (_.isObject(this.behaviors)) {
+      new Marionette.Behaviors(this);
+    }
+
+    Backbone.View.prototype.constructor.apply(this, arguments);
 
     Marionette.MonitorDOMRefresh(this);
-    this.listenTo(this, "show", this.onShowCalled, this);
+    this.listenTo(this, "show", this.onShowCalled);
   },
 
   // import the "triggerMethod" to trigger events with corresponding
-  // methods if the method exists 
+  // methods if the method exists
   triggerMethod: Marionette.triggerMethod,
+
+  // Imports the "normalizeMethods" to transform hashes of
+  // events=>function references/names to a hash of events=>function references
+  normalizeMethods: Marionette.normalizeMethods,
 
   // Get the template for this view
   // instance. You can set a `template` attribute in the view
@@ -4066,6 +7747,12 @@ Marionette.View = Backbone.View.extend({
     return _.extend(target, templateHelpers);
   },
 
+
+  normalizeUIKeys: function(hash) {
+    var ui = _.result(this, 'ui');
+    return Marionette.normalizeUIKeys(hash, ui);
+  },
+
   // Configure `triggers` to forward DOM events to view
   // events. `triggers: {"click .foo": "do:foo"}`
   configureTriggers: function(){
@@ -4074,18 +7761,29 @@ Marionette.View = Backbone.View.extend({
     var triggerEvents = {};
 
     // Allow `triggers` to be configured as a function
-    var triggers = _.result(this, "triggers");
+    var triggers = this.normalizeUIKeys(_.result(this, "triggers"));
 
     // Configure the triggers, prevent default
     // action and stop propagation of DOM events
     _.each(triggers, function(value, key){
 
+      var hasOptions = _.isObject(value);
+      var eventName = hasOptions ? value.event : value;
+
       // build the event handler function for the DOM event
       triggerEvents[key] = function(e){
 
         // stop the event in its tracks
-        if (e && e.preventDefault){ e.preventDefault(); }
-        if (e && e.stopPropagation){ e.stopPropagation(); }
+        if (e) {
+          var prevent = e.preventDefault;
+          var stop = e.stopPropagation;
+
+          var shouldPrevent = hasOptions ? value.preventDefault : prevent;
+          var shouldStop = hasOptions ? value.stopPropagation : stop;
+
+          if (shouldPrevent && prevent) { prevent.apply(e); }
+          if (shouldStop && stop) { stop.apply(e); }
+        }
 
         // build the args for the event
         var args = {
@@ -4095,7 +7793,7 @@ Marionette.View = Backbone.View.extend({
         };
 
         // trigger the event
-        this.triggerMethod(value, args);
+        this.triggerMethod(eventName, args);
       };
 
     }, this);
@@ -4103,7 +7801,7 @@ Marionette.View = Backbone.View.extend({
     return triggerEvents;
   },
 
-  // Overriding Backbone.View's delegateEvents to handle 
+  // Overriding Backbone.View's delegateEvents to handle
   // the `triggers`, `modelEvents`, and `collectionEvents` configuration
   delegateEvents: function(events){
     this._delegateDOMEvents(events);
@@ -4117,8 +7815,13 @@ Marionette.View = Backbone.View.extend({
     if (_.isFunction(events)){ events = events.call(this); }
 
     var combinedEvents = {};
+
+    // look up if this view has behavior events
+    var behaviorEvents = _.result(this, 'behaviorEvents') || {};
     var triggers = this.configureTriggers();
-    _.extend(combinedEvents, events, triggers);
+
+    // behavior events will be overriden by view events and or triggers
+    _.extend(combinedEvents, behaviorEvents, events, triggers);
 
     Backbone.View.prototype.delegateEvents.call(this, combinedEvents);
   },
@@ -4143,9 +7846,11 @@ Marionette.View = Backbone.View.extend({
   close: function(){
     if (this.isClosed) { return; }
 
+    var args = Array.prototype.slice.call(arguments);
+
     // allow the close to be stopped by returning `false`
     // from the `onBeforeClose` method
-    var shouldClose = this.triggerMethod("before:close");
+    var shouldClose = this.triggerMethod.apply(this, ["before:close"].concat(args));
     if (shouldClose === false){
       return;
     }
@@ -4154,7 +7859,7 @@ Marionette.View = Backbone.View.extend({
     // prevent infinite loops within "close" event handlers
     // that are trying to close other views
     this.isClosed = true;
-    this.triggerMethod("close");
+    this.triggerMethod.apply(this, ["close"].concat(args));
 
     // unbind UI elements
     this.unbindUIElements();
@@ -4209,11 +7914,11 @@ Marionette.View = Backbone.View.extend({
 // with underscore.js templates, serializing the view's model or collection,
 // and calling several methods on extended views, such as `onRender`.
 Marionette.ItemView = Marionette.View.extend({
-  
-  // Setting up the inheritance chain which allows changes to 
+
+  // Setting up the inheritance chain which allows changes to
   // Marionette.View.prototype.constructor which allows overriding
   constructor: function(){
-    Marionette.View.prototype.constructor.apply(this, slice(arguments));
+    Marionette.View.prototype.constructor.apply(this, arguments);
   },
 
   // Serialize the model or collection for the view. If a model is
@@ -4268,7 +7973,7 @@ Marionette.ItemView = Marionette.View.extend({
 
     this.triggerMethod('item:before:close');
 
-    Marionette.View.prototype.close.apply(this, slice(arguments));
+    Marionette.View.prototype.close.apply(this, arguments);
 
     this.triggerMethod('item:closed');
   }
@@ -4288,19 +7993,48 @@ Marionette.CollectionView = Marionette.View.extend({
   constructor: function(options){
     this._initChildViewStorage();
 
-    Marionette.View.prototype.constructor.apply(this, slice(arguments));
+    Marionette.View.prototype.constructor.apply(this, arguments);
 
     this._initialEvents();
+    this.initRenderBuffer();
+  },
+
+  // Instead of inserting elements one by one into the page,
+  // it's much more performant to insert elements into a document
+  // fragment and then insert that document fragment into the page
+  initRenderBuffer: function() {
+    this.elBuffer = document.createDocumentFragment();
+    this._bufferedChildren = [];
+  },
+
+  startBuffering: function() {
+    this.initRenderBuffer();
+    this.isBuffering = true;
+  },
+
+  endBuffering: function() {
+    this.isBuffering = false;
+    this.appendBuffer(this, this.elBuffer);
+    this._triggerShowBufferedChildren();
+    this.initRenderBuffer();
+  },
+
+  _triggerShowBufferedChildren: function () {
+    if (this._isShown) {
+      _.each(this._bufferedChildren, function (child) {
+        Marionette.triggerMethod.call(child, "show");
+      });
+      this._bufferedChildren = [];
+    }
   },
 
   // Configured the initial events that the collection view
-  // binds to. Override this method to prevent the initial
-  // events, or to add your own initial events.
+  // binds to.
   _initialEvents: function(){
     if (this.collection){
-      this.listenTo(this.collection, "add", this.addChildView, this);
-      this.listenTo(this.collection, "remove", this.removeItemView, this);
-      this.listenTo(this.collection, "reset", this.render, this);
+      this.listenTo(this.collection, "add", this.addChildView);
+      this.listenTo(this.collection, "remove", this.removeItemView);
+      this.listenTo(this.collection, "reset", this.render);
     }
   },
 
@@ -4349,14 +8083,18 @@ Marionette.CollectionView = Marionette.View.extend({
   // more control over events being triggered, around the rendering
   // process
   _renderChildren: function(){
+    this.startBuffering();
+
     this.closeEmptyView();
     this.closeChildren();
 
-    if (this.collection && this.collection.length > 0) {
+    if (!this.isEmpty(this.collection)) {
       this.showCollection();
     } else {
       this.showEmptyView();
     }
+
+    this.endBuffering();
   },
 
   // Internal method to loop through each item in the
@@ -4373,7 +8111,7 @@ Marionette.CollectionView = Marionette.View.extend({
   // a collection of item views, when the collection is
   // empty
   showEmptyView: function(){
-    var EmptyView = Marionette.getOption(this, "emptyView");
+    var EmptyView = this.getEmptyView();
 
     if (EmptyView && !this._showingEmptyView){
       this._showingEmptyView = true;
@@ -4390,6 +8128,11 @@ Marionette.CollectionView = Marionette.View.extend({
       this.closeChildren();
       delete this._showingEmptyView;
     }
+  },
+
+  // Retrieve the empty view type
+  getEmptyView: function(){
+    return Marionette.getOption(this, "emptyView");
   },
 
   // Retrieve the itemView type, either from `this.options.itemView`
@@ -4414,9 +8157,9 @@ Marionette.CollectionView = Marionette.View.extend({
       itemViewOptions = itemViewOptions.call(this, item, index);
     }
 
-    // build the view 
+    // build the view
     var view = this.buildItemView(item, ItemView, itemViewOptions);
-    
+
     // set up the child view event forwarding
     this.addChildViewEventForwarding(view);
 
@@ -4432,12 +8175,14 @@ Marionette.CollectionView = Marionette.View.extend({
 
     // call the "show" method if the collection view
     // has already been shown
-    if (this._isShown){
+    if (this._isShown && !this.isBuffering){
       Marionette.triggerMethod.call(view, "show");
     }
 
     // this view was added
     this.triggerMethod("after:item:added", view);
+
+    return view;
   },
 
   // Set up the child view event forwarding. Uses an "itemview:"
@@ -4448,12 +8193,29 @@ Marionette.CollectionView = Marionette.View.extend({
     // Forward all child item view events through the parent,
     // prepending "itemview:" to the event name
     this.listenTo(view, "all", function(){
-      var args = slice(arguments);
-      args[0] = prefix + ":" + args[0];
+      var args = slice.call(arguments);
+      var rootEvent = args[0];
+      var itemEvents = this.normalizeMethods(this.getItemEvents());
+
+      args[0] = prefix + ":" + rootEvent;
       args.splice(1, 0, view);
+
+      // call collectionView itemEvent if defined
+      if (typeof itemEvents !== "undefined" && _.isFunction(itemEvents[rootEvent])) {
+        itemEvents[rootEvent].apply(this, args);
+      }
 
       Marionette.triggerMethod.apply(this, args);
     }, this);
+  },
+
+  // returns the value of itemEvents depending on if a function
+  getItemEvents: function() {
+    if (_.isFunction(this.itemEvents)) {
+      return this.itemEvents.call(this);
+    }
+
+    return this.itemEvents;
   },
 
   // render the item view
@@ -4481,32 +8243,51 @@ Marionette.CollectionView = Marionette.View.extend({
     // shut down the child view properly,
     // including events that the collection has from it
     if (view){
-      this.stopListening(view);
-
       // call 'close' or 'remove', depending on which is found
       if (view.close) { view.close(); }
       else if (view.remove) { view.remove(); }
 
+      this.stopListening(view);
       this.children.remove(view);
     }
 
     this.triggerMethod("item:removed", view);
   },
 
-  // helper to show the empty view if the collection is empty
-  checkEmpty: function() {
-    // check if we're empty now, and if we are, show the
-    // empty view
-    if (!this.collection || this.collection.length === 0){
+  // helper to check if the collection is empty
+  isEmpty: function(collection){
+    // check if we're empty now
+    return !this.collection || this.collection.length === 0;
+  },
+
+  // If empty, show the empty view
+  checkEmpty: function (){
+    if (this.isEmpty(this.collection)){
       this.showEmptyView();
     }
   },
 
+  // You might need to override this if you've overridden appendHtml
+  appendBuffer: function(collectionView, buffer) {
+    collectionView.$el.append(buffer);
+  },
+
   // Append the HTML to the collection's `el`.
   // Override this method to do something other
-  // then `.append`.
+  // than `.append`.
   appendHtml: function(collectionView, itemView, index){
-    collectionView.$el.append(itemView.el);
+    if (collectionView.isBuffering) {
+      // buffering happens on reset events and initial renders
+      // in order to reduce the number of inserts into the
+      // document, which are expensive.
+      collectionView.elBuffer.appendChild(itemView.el);
+      collectionView._bufferedChildren.push(itemView);
+    }
+    else {
+      // If we've already rendered the main collection, just
+      // append the new items directly into the element.
+      collectionView.$el.append(itemView.el);
+    }
   },
 
   // Internal method to set up the `children` object for
@@ -4524,7 +8305,7 @@ Marionette.CollectionView = Marionette.View.extend({
     this.closeChildren();
     this.triggerMethod("collection:closed");
 
-    Marionette.View.prototype.close.apply(this, slice(arguments));
+    Marionette.View.prototype.close.apply(this, arguments);
   },
 
   // Close the child views that this collection view
@@ -4537,7 +8318,6 @@ Marionette.CollectionView = Marionette.View.extend({
   }
 });
 
-
 // Composite View
 // --------------
 
@@ -4549,18 +8329,24 @@ Marionette.CompositeView = Marionette.CollectionView.extend({
   // Setting up the inheritance chain which allows changes to
   // Marionette.CollectionView.prototype.constructor which allows overriding
   constructor: function(){
-    Marionette.CollectionView.prototype.constructor.apply(this, slice(arguments));
+    Marionette.CollectionView.prototype.constructor.apply(this, arguments);
   },
 
   // Configured the initial events that the composite view
   // binds to. Override this method to prevent the initial
   // events, or to add your own initial events.
   _initialEvents: function(){
-    if (this.collection){
-      this.listenTo(this.collection, "add", this.addChildView, this);
-      this.listenTo(this.collection, "remove", this.removeItemView, this);
-      this.listenTo(this.collection, "reset", this._renderChildren, this);
-    }
+
+    // Bind only after composite view is rendered to avoid adding child views
+    // to nonexistent itemViewContainer
+    this.once('render', function () {
+      if (this.collection){
+        this.listenTo(this.collection, "add", this.addChildView);
+        this.listenTo(this.collection, "remove", this.removeItemView);
+        this.listenTo(this.collection, "reset", this._renderChildren);
+      }
+    });
+
   },
 
   // Retrieve the `itemView` to be used when rendering each of
@@ -4616,6 +8402,7 @@ Marionette.CompositeView = Marionette.CollectionView.extend({
 
   _renderChildren: function(){
     if (this.isRendered){
+      this.triggerMethod("composite:collection:before:render");
       Marionette.CollectionView.prototype._renderChildren.call(this);
       this.triggerMethod("composite:collection:rendered");
     }
@@ -4633,13 +8420,28 @@ Marionette.CompositeView = Marionette.CollectionView.extend({
     return Marionette.Renderer.render(template, data);
   },
 
+
+  // You might need to override this if you've overridden appendHtml
+  appendBuffer: function(compositeView, buffer) {
+    var $container = this.getItemViewContainer(compositeView);
+    $container.append(buffer);
+  },
+
   // Appends the `el` of itemView instances to the specified
   // `itemViewContainer` (a jQuery selector). Override this method to
   // provide custom logic of how the child item view instances have their
   // HTML appended to the composite view instance.
-  appendHtml: function(cv, iv, index){
-    var $container = this.getItemViewContainer(cv);
-    $container.append(iv.el);
+  appendHtml: function(compositeView, itemView, index){
+    if (compositeView.isBuffering) {
+      compositeView.elBuffer.appendChild(itemView.el);
+      compositeView._bufferedChildren.push(itemView);
+    }
+    else {
+      // If we've already rendered the main collection, just
+      // append the new items directly into the element.
+      var $container = this.getItemViewContainer(compositeView);
+      $container.append(itemView.el);
+    }
   },
 
   // Internal method to ensure an `$itemViewContainer` exists, for the
@@ -4653,8 +8455,14 @@ Marionette.CompositeView = Marionette.CollectionView.extend({
     var itemViewContainer = Marionette.getOption(containerView, "itemViewContainer");
     if (itemViewContainer){
 
-      var selector = _.isFunction(itemViewContainer) ? itemViewContainer() : itemViewContainer;
-      container = containerView.$(selector);
+      var selector = _.isFunction(itemViewContainer) ? itemViewContainer.call(containerView) : itemViewContainer;
+
+      if (selector.charAt(0) === "@" && containerView.ui) {
+        container = containerView.ui[selector.substr(4)];
+      } else {
+        container = containerView.$(selector);
+      }
+
       if (container.length <= 0) {
         throwError("The specified `itemViewContainer` was not found: " + containerView.itemViewContainer, "ItemViewContainerMissingError");
       }
@@ -4675,7 +8483,6 @@ Marionette.CompositeView = Marionette.CollectionView.extend({
   }
 });
 
-
 // Layout
 // ------
 
@@ -4687,7 +8494,7 @@ Marionette.CompositeView = Marionette.CollectionView.extend({
 // Used for composite view management and sub-application areas.
 Marionette.Layout = Marionette.ItemView.extend({
   regionType: Marionette.Region,
-  
+
   // Ensure the regions are available when the `initialize` method
   // is called.
   constructor: function (options) {
@@ -4695,7 +8502,7 @@ Marionette.Layout = Marionette.ItemView.extend({
 
     this._firstRender = true;
     this._initializeRegions(options);
-    
+
     Marionette.ItemView.prototype.constructor.call(this, options);
   },
 
@@ -4706,7 +8513,7 @@ Marionette.Layout = Marionette.ItemView.extend({
   render: function(){
 
     if (this.isClosed){
-      // a previously closed layout means we need to 
+      // a previously closed layout means we need to
       // completely re-initialize the regions
       this._initializeRegions();
     }
@@ -4715,23 +8522,19 @@ Marionette.Layout = Marionette.ItemView.extend({
       // reset the regions
       this._firstRender = false;
     } else if (!this.isClosed){
-      // If this is not the first render call, then we need to 
+      // If this is not the first render call, then we need to
       // re-initializing the `el` for each region
       this._reInitializeRegions();
     }
 
-    var args = Array.prototype.slice.apply(arguments);
-    var result = Marionette.ItemView.prototype.render.apply(this, args);
-
-    return result;
+    return Marionette.ItemView.prototype.render.apply(this, arguments);
   },
 
   // Handle closing regions, and then close the view itself.
   close: function () {
     if (this.isClosed){ return; }
     this.regionManager.close();
-    var args = Array.prototype.slice.apply(arguments);
-    Marionette.ItemView.prototype.close.apply(this, args);
+    Marionette.ItemView.prototype.close.apply(this, arguments);
   },
 
   // Add a single region, by name, to the layout
@@ -4753,6 +8556,13 @@ Marionette.Layout = Marionette.ItemView.extend({
     return this.regionManager.removeRegion(name);
   },
 
+  // Provides alternative access to regions
+  // Accepts the region name
+  // getRegion('main')
+  getRegion: function(region) {
+    return this.regionManager.get(region);
+  },
+
   // internal method to build regions
   _buildRegions: function(regions){
     var that = this;
@@ -4766,7 +8576,7 @@ Marionette.Layout = Marionette.ItemView.extend({
   },
 
   // Internal method to initialize the regions that have been defined in a
-  // `regions` attribute on this layout. 
+  // `regions` attribute on this layout.
   _initializeRegions: function (options) {
     var regions;
     this._initRegionManager();
@@ -4807,6 +8617,265 @@ Marionette.Layout = Marionette.ItemView.extend({
 });
 
 
+// Behavior
+// -----------
+
+// A Behavior is an isolated set of DOM /
+// user interactions that can be mixed into any View.
+// Behaviors allow you to blackbox View specific interactions
+// into portable logical chunks, keeping your views simple and your code DRY.
+
+Marionette.Behavior = (function(_, Backbone){
+  function Behavior(options, view){
+    // Setup reference to the view.
+    // this comes in handle when a behavior
+    // wants to directly talk up the chain
+    // to the view.
+    this.view = view;
+    this.defaults = _.result(this, "defaults") || {};
+    this.options  = _.extend({}, this.defaults, options);
+
+    // proxy behavior $ method to the view
+    // this is useful for doing jquery DOM lookups
+    // scoped to behaviors view.
+    this.$ = function() {
+      return this.view.$.apply(this.view, arguments);
+    };
+
+    // Call the initialize method passing
+    // the arguments from the instance constructor
+    this.initialize.apply(this, arguments);
+  }
+
+  _.extend(Behavior.prototype, Backbone.Events, {
+    initialize: function(){},
+
+    // stopListening to behavior `onListen` events.
+    close: function() {
+      this.stopListening();
+    },
+
+    // Setup class level proxy for triggerMethod.
+    triggerMethod: Marionette.triggerMethod
+  });
+
+  // Borrow Backbones extend implementation
+  // this allows us to setup a proper
+  // inheritence pattern that follow in suite
+  // with the rest of Marionette views.
+  Behavior.extend = Marionette.extend;
+
+  return Behavior;
+})(_, Backbone);
+
+// Marionette.Behaviors
+// --------
+
+// Behaviors is a utility class that takes care of
+// glueing your behavior instances to their given View.
+// The most important part of this class is that you
+// **MUST** override the class level behaviorsLookup
+// method for things to work properly.
+
+Marionette.Behaviors = (function(Marionette, _) {
+
+  function Behaviors(view) {
+    // Behaviors defined on a view can be a flat object literal
+    // or it can be a function that returns an object.
+    this.behaviors = Behaviors.parseBehaviors(view, _.result(view, 'behaviors'));
+
+    // Wraps several of the view's methods
+    // calling the methods first on each behavior
+    // and then eventually calling the method on the view.
+    Behaviors.wrap(view, this.behaviors, [
+      'bindUIElements', 'unbindUIElements',
+      'delegateEvents', 'undelegateEvents',
+      'onShow', 'onClose',
+      'behaviorEvents', 'triggerMethod',
+      'setElement', 'close'
+    ]);
+  }
+
+  var methods = {
+    setElement: function(setElement, behaviors) {
+      setElement.apply(this, _.tail(arguments, 2));
+
+      // proxy behavior $el to the view's $el.
+      // This is needed because a view's $el proxy
+      // is not set until after setElement is called.
+      _.each(behaviors, function(b) {
+        b.$el = this.$el;
+      }, this);
+    },
+
+    close: function(close, behaviors) {
+      var args = _.tail(arguments, 2);
+      close.apply(this, args);
+
+      // Call close on each behavior after
+      // closing down the view.
+      // This unbinds event listeners
+      // that behaviors have registerd for.
+      _.invoke(behaviors, 'close', args);
+    },
+
+    onShow: function(onShow, behaviors) {
+      var args = _.tail(arguments, 2);
+
+      _.each(behaviors, function(b) {
+        Marionette.triggerMethod.apply(b, ["show"].concat(args));
+      });
+
+      if (_.isFunction(onShow)) {
+        onShow.apply(this, args);
+      }
+    },
+
+    onClose: function(onClose, behaviors){
+      var args = _.tail(arguments, 2);
+
+      _.each(behaviors, function(b) {
+        Marionette.triggerMethod.apply(b, ["close"].concat(args));
+      });
+
+      if (_.isFunction(onClose)) {
+        onClose.apply(this, args);
+      }
+    },
+
+    bindUIElements: function(bindUIElements, behaviors) {
+      bindUIElements.apply(this);
+      _.invoke(behaviors, bindUIElements);
+    },
+
+    unbindUIElements: function(unbindUIElements, behaviors) {
+      unbindUIElements.apply(this);
+      _.invoke(behaviors, unbindUIElements);
+    },
+
+    triggerMethod: function(triggerMethod, behaviors) {
+      var args = _.tail(arguments, 2);
+      triggerMethod.apply(this, args);
+
+      _.each(behaviors, function(b) {
+        triggerMethod.apply(b, args);
+      });
+    },
+
+    delegateEvents: function(delegateEvents, behaviors) {
+      var args = _.tail(arguments, 2);
+      delegateEvents.apply(this, args);
+
+      _.each(behaviors, function(b){
+        Marionette.bindEntityEvents(b, this.model, Marionette.getOption(b, "modelEvents"));
+        Marionette.bindEntityEvents(b, this.collection, Marionette.getOption(b, "collectionEvents"));
+      }, this);
+    },
+
+    undelegateEvents: function(undelegateEvents, behaviors) {
+      var args = _.tail(arguments, 2);
+      undelegateEvents.apply(this, args);
+
+      _.each(behaviors, function(b) {
+        Marionette.unbindEntityEvents(b, this.model, Marionette.getOption(b, "modelEvents"));
+        Marionette.unbindEntityEvents(b, this.collection, Marionette.getOption(b, "collectionEvents"));
+      }, this);
+    },
+
+    behaviorEvents: function(behaviorEvents, behaviors) {
+      var _behaviorsEvents = {};
+      var viewUI = _.result(this, 'ui');
+
+      _.each(behaviors, function(b, i) {
+        var _events = {};
+        var behaviorEvents = _.result(b, 'events') || {};
+        var behaviorUI = _.result(b, 'ui');
+
+        // Construct an internal UI hash first using
+        // the views UI hash and then the behaviors UI hash.
+        // This allows the user to use UI hash elements
+        // defined in the parent view as well as those
+        // defined in the given behavior.
+        var ui = _.extend({}, viewUI, behaviorUI);
+
+        // Normalize behavior events hash to allow
+        // a user to use the @ui. syntax.
+        behaviorEvents = Marionette.normalizeUIKeys(behaviorEvents, ui);
+
+        _.each(_.keys(behaviorEvents), function(key) {
+          // append white-space at the end of each key to prevent behavior key collisions
+          // this is relying on the fact backbone events considers "click .foo" the same  "click .foo "
+          // starts with an array of two so the first behavior has one space
+
+          // +2 is uses becauce new Array(1) or 0 is "" and not " "
+          var whitespace = (new Array(i+2)).join(" ");
+          var eventKey   = key + whitespace;
+          var handler    = _.isFunction(behaviorEvents[key]) ? behaviorEvents[key] : b[behaviorEvents[key]];
+
+          _events[eventKey] = _.bind(handler, b);
+        });
+
+        _behaviorsEvents = _.extend(_behaviorsEvents, _events);
+      });
+
+      return _behaviorsEvents;
+    }
+  };
+
+  _.extend(Behaviors, {
+
+    // placeholder method to be extended by the user
+    // should define the object that stores the behaviors
+    // i.e.
+    //
+    // Marionette.Behaviors.behaviorsLookup: function() {
+    //   return App.Behaviors
+    // }
+    behaviorsLookup: function() {
+      throw new Error("You must define where your behaviors are stored. See https://github.com/marionettejs/backbone.marionette/blob/master/docs/marionette.behaviors.md#behaviorslookup");
+    },
+
+    // Takes care of getting the behavior class
+    // given options and a key.
+    // If a user passes in options.behaviorClass
+    // default to using that. Otherwise delegate
+    // the lookup to the users behaviorsLookup implementation.
+    getBehaviorClass: function(options, key) {
+      if (options.behaviorClass) {
+        return options.behaviorClass;
+      }
+
+      // Get behavior class can be either a flat object or a method
+      return _.isFunction(Behaviors.behaviorsLookup) ? Behaviors.behaviorsLookup.apply(this, arguments)[key] : Behaviors.behaviorsLookup[key];
+    },
+
+    // Maps over a view's behaviors. Performing
+    // a lookup on each behavior and the instantiating
+    // said behavior passing its options and view.
+    parseBehaviors: function(view, behaviors){
+      return _.map(behaviors, function(options, key){
+        var BehaviorClass = Behaviors.getBehaviorClass(options, key);
+        return new BehaviorClass(options, view);
+      });
+    },
+
+    // wrap view internal methods so that they delegate to behaviors.
+    // For example, onClose should trigger close on all of the behaviors and then close itself.
+    // i.e.
+    //
+    // view.delegateEvents = _.partial(methods.delegateEvents, view.delegateEvents, behaviors);
+    wrap: function(view, behaviors, methodNames) {
+      _.each(methodNames, function(methodName) {
+        view[methodName] = _.partial(methods[methodName], view[methodName], behaviors);
+      });
+    }
+  });
+
+  return Behaviors;
+
+})(Marionette, _);
+
+
 // AppRouter
 // ---------
 
@@ -4817,7 +8886,7 @@ Marionette.Layout = Marionette.ItemView.extend({
 //
 // Configure an AppRouter with `appRoutes`.
 //
-// App routers can only take one `controller` object. 
+// App routers can only take one `controller` object.
 // It is recommended that you divide your controller
 // objects in to smaller pieces of related functionality
 // and have multiple routers / controllers, instead of
@@ -4828,13 +8897,14 @@ Marionette.Layout = Marionette.ItemView.extend({
 Marionette.AppRouter = Backbone.Router.extend({
 
   constructor: function(options){
-    Backbone.Router.prototype.constructor.apply(this, slice(arguments));
-	
+    Backbone.Router.prototype.constructor.apply(this, arguments);
+
     this.options = options || {};
 
     var appRoutes = Marionette.getOption(this, "appRoutes");
     var controller = this._getController();
     this.processAppRoutes(controller, appRoutes);
+    this.on("route", this._processOnRoute, this);
   },
 
   // Similar to route method on a Backbone Router but
@@ -4842,6 +8912,18 @@ Marionette.AppRouter = Backbone.Router.extend({
   appRoute: function(route, methodName) {
     var controller = this._getController();
     this._addAppRoute(controller, route, methodName);
+  },
+
+  // process the route event and trigger the onRoute
+  // method call, if it exists
+  _processOnRoute: function(routeName, routeArgs){
+    // find the path that matched
+    var routePath = _.invert(this.appRoutes)[routeName];
+
+    // make sure an onRoute is there, and call it
+    if (_.isFunction(this.onRoute)){
+      this.onRoute(routeName, routePath, routeArgs);
+    }
   },
 
   // Internal method to process the `appRoutes` for the
@@ -4865,13 +8947,12 @@ Marionette.AppRouter = Backbone.Router.extend({
     var method = controller[methodName];
 
     if (!method) {
-      throw new Error("Method '" + methodName + "' was not found on the controller");
+      throwError("Method '" + methodName + "' was not found on the controller");
     }
 
     this.route(route, methodName, _.bind(method, controller));
   }
 });
-
 
 // Application
 // -----------
@@ -4895,14 +8976,12 @@ Marionette.Application = function(options){
 _.extend(Marionette.Application.prototype, Backbone.Events, {
   // Command execution, facilitated by Backbone.Wreqr.Commands
   execute: function(){
-    var args = Array.prototype.slice.apply(arguments);
-    this.commands.execute.apply(this.commands, args);
+    this.commands.execute.apply(this.commands, arguments);
   },
 
   // Request/response, facilitated by Backbone.Wreqr.RequestResponse
   request: function(){
-    var args = Array.prototype.slice.apply(arguments);
-    return this.reqres.request.apply(this.reqres, args);
+    return this.reqres.request.apply(this.reqres, arguments);
   },
 
   // Add an initializer that is either run at when the `start`
@@ -4923,7 +9002,7 @@ _.extend(Marionette.Application.prototype, Backbone.Events, {
     this.triggerMethod("start", options);
   },
 
-  // Add regions to your app. 
+  // Add regions to your app.
   // Accepts a hash of named strings or Region objects
   // addRegions({something: "#someRegion"})
   // addRegions({something: Region.extend({el: "#someRegion"}) });
@@ -4942,7 +9021,7 @@ _.extend(Marionette.Application.prototype, Backbone.Events, {
   removeRegion: function(region) {
     this._regionManager.removeRegion(region);
   },
-  
+
   // Provides alternative access to regions
   // Accepts the region name
   // getRegion('main')
@@ -4952,13 +9031,17 @@ _.extend(Marionette.Application.prototype, Backbone.Events, {
 
   // Create a module, attached to the application
   module: function(moduleNames, moduleDefinition){
+
+    // Overwrite the module class if the user specifies one
+    var ModuleClass = Marionette.Module.getClass(moduleDefinition);
+
     // slice the args, and add this application object as the
     // first argument of the array
-    var args = slice(arguments);
+    var args = slice.call(arguments);
     args.unshift(this);
 
     // see the Marionette.Module object for more information
-    return Marionette.Module.create.apply(Marionette.Module, args);
+    return ModuleClass.create.apply(ModuleClass, args);
   },
 
   // Internal method to set up the region manager
@@ -4983,24 +9066,42 @@ Marionette.Application.extend = Marionette.extend;
 
 // A simple module system, used to create privacy and encapsulation in
 // Marionette applications
-Marionette.Module = function(moduleName, app){
+Marionette.Module = function(moduleName, app, options){
   this.moduleName = moduleName;
+  this.options = _.extend({}, this.options, options);
+  // Allow for a user to overide the initialize
+  // for a given module instance.
+  this.initialize = options.initialize || this.initialize;
 
-  // store sub-modules
+  // Set up an internal store for sub-modules.
   this.submodules = {};
 
   this._setupInitializersAndFinalizers();
 
-  // store the configuration for this module
+  // Set an internal reference to the app
+  // within a module.
   this.app = app;
+
+  // By default modules start with their parents.
   this.startWithParent = true;
 
+  // Setup a proxy to the trigger method implementation.
   this.triggerMethod = Marionette.triggerMethod;
+
+  if (_.isFunction(this.initialize)){
+    this.initialize(this.options, moduleName, app);
+  }
 };
+
+Marionette.Module.extend = Marionette.extend;
 
 // Extend the Module prototype with events / listenTo, so that the module
 // can be used as an event aggregator or pub/sub.
 _.extend(Marionette.Module.prototype, Backbone.Events, {
+
+  // Initialize is an empty function by default. Override it with your own
+  // initialization logic when extending Marionette.Module.
+  initialize: function(){},
 
   // Initializer for a specific module. Initializers are run when the
   // module's `start` method is called.
@@ -5069,6 +9170,7 @@ _.extend(Marionette.Module.prototype, Backbone.Events, {
   // Internal method: run the module definition function with the correct
   // arguments
   _runModuleDefinition: function(definition, customArgs){
+    // If there is no definition short circut the method.
     if (!definition){ return; }
 
     // build the correct list of arguments for the module definition
@@ -5102,10 +9204,12 @@ _.extend(Marionette.Module, {
 
     // get the custom args passed in after the module definition and
     // get rid of the module name and definition function
-    var customArgs = slice(arguments);
+    var customArgs = slice.call(arguments);
     customArgs.splice(0, 3);
 
-    // split the module names and get the length
+    // Split the module names and get the number of submodules.
+    // i.e. an example module name of `Doge.Wow.Amaze` would
+    // then have the potential for 3 module definitions.
     moduleNames = moduleNames.split(".");
     var length = moduleNames.length;
 
@@ -5116,7 +9220,7 @@ _.extend(Marionette.Module, {
     // Loop through all the parts of the module definition
     _.each(moduleNames, function(moduleName, i){
       var parentModule = module;
-      module = this._getModule(parentModule, moduleName, app);
+      module = this._getModule(parentModule, moduleName, app, moduleDefinition);
       this._addModuleDefinition(parentModule, module, moduleDefinitions[i], customArgs);
     }, this);
 
@@ -5125,12 +9229,15 @@ _.extend(Marionette.Module, {
   },
 
   _getModule: function(parentModule, moduleName, app, def, args){
+    var options = _.extend({}, def);
+    var ModuleClass = this.getClass(def);
+
     // Get an existing module of this name if we have one
     var module = parentModule[moduleName];
 
     if (!module){
       // Create a new module if we don't have one
-      module = new Marionette.Module(moduleName, app);
+      module = new ModuleClass(moduleName, app, options);
       parentModule[moduleName] = module;
       // store the module on the parent
       parentModule.submodules[moduleName] = module;
@@ -5139,62 +9246,96 @@ _.extend(Marionette.Module, {
     return module;
   },
 
-  _addModuleDefinition: function(parentModule, module, def, args){
-    var fn; 
-    var startWithParent;
+  // ## Module Classes
+  //
+  // Module classes can be used as an alternative to the define pattern.
+  // The extend function of a Module is identical to the extend functions
+  // on other Backbone and Marionette classes.
+  // This allows module lifecyle events like `onStart` and `onStop` to be called directly.
+  getClass: function(moduleDefinition) {
+    var ModuleClass = Marionette.Module;
 
-    if (_.isFunction(def)){
-      // if a function is supplied for the module definition
-      fn = def;
-      startWithParent = true;
-
-    } else if (_.isObject(def)){
-      // if an object is supplied
-      fn = def.define;
-      startWithParent = def.startWithParent;
-      
-    } else {
-      // if nothing is supplied
-      startWithParent = true;
+    if (!moduleDefinition) {
+      return ModuleClass;
     }
 
-    // add module definition if needed
+    // If all of the module's functionality is defined inside its class,
+    // then the class can be passed in directly. `MyApp.module("Foo", FooModule)`.
+    if (moduleDefinition.prototype instanceof ModuleClass) {
+      return moduleDefinition;
+    }
+
+    return moduleDefinition.moduleClass || ModuleClass;
+  },
+
+  // Add the module definition and add a startWithParent initializer function.
+  // This is complicated because module definitions are heavily overloaded
+  // and support an anonymous function, module class, or options object
+  _addModuleDefinition: function(parentModule, module, def, args){
+    var fn = this._getDefine(def);
+    var startWithParent = this._getStartWithParent(def, module);
+
     if (fn){
       module.addDefinition(fn, args);
     }
 
-    // `and` the two together, ensuring a single `false` will prevent it
-    // from starting with the parent
-    module.startWithParent = module.startWithParent && startWithParent;
+    this._addStartWithParent(parentModule, module, startWithParent);
+  },
 
-    // setup auto-start if needed
-    if (module.startWithParent && !module.startWithParentIsConfigured){
+  _getStartWithParent: function(def, module) {
+    var swp;
 
-      // only configure this once
-      module.startWithParentIsConfigured = true;
-
-      // add the module initializer config
-      parentModule.addInitializer(function(options){
-        if (module.startWithParent){
-          module.start(options);
-        }
-      });
-
+    if (_.isFunction(def) && (def.prototype instanceof Marionette.Module)) {
+      swp = module.constructor.prototype.startWithParent;
+      return _.isUndefined(swp) ? true : swp;
     }
 
+    if (_.isObject(def)){
+      swp = def.startWithParent;
+      return _.isUndefined(swp) ? true : swp;
+    }
+
+    return true;
+  },
+
+  _getDefine: function(def) {
+    if (_.isFunction(def) && !(def.prototype instanceof Marionette.Module)) {
+      return def;
+    }
+
+    if (_.isObject(def)){
+      return def.define;
+    }
+
+    return null;
+  },
+
+  _addStartWithParent: function(parentModule, module, startWithParent) {
+    module.startWithParent = module.startWithParent && startWithParent;
+
+    if (!module.startWithParent || !!module.startWithParentIsConfigured){
+      return;
+    }
+
+    module.startWithParentIsConfigured = true;
+
+    parentModule.addInitializer(function(options){
+      if (module.startWithParent){
+        module.start(options);
+      }
+    });
   }
 });
-
 
 
   return Marionette;
 })(this, Backbone, _);
 
-// moment.js
-// version : 2.1.0
-// author : Tim Wood
-// license : MIT
-// momentjs.com
+//! moment.js
+//! version : 2.6.0
+//! authors : Tim Wood, Iskren Chernev, Moment.js contributors
+//! license : MIT
+//! momentjs.com
 
 (function (undefined) {
 
@@ -5203,41 +9344,89 @@ _.extend(Marionette.Module, {
     ************************************/
 
     var moment,
-        VERSION = "2.1.0",
-        round = Math.round, i,
+        VERSION = "2.6.0",
+        // the global-scope this is NOT the global object in Node.js
+        globalScope = typeof global !== 'undefined' ? global : this,
+        oldGlobalMoment,
+        round = Math.round,
+        i,
+
+        YEAR = 0,
+        MONTH = 1,
+        DATE = 2,
+        HOUR = 3,
+        MINUTE = 4,
+        SECOND = 5,
+        MILLISECOND = 6,
+
         // internal storage for language config files
         languages = {},
+
+        // moment internal properties
+        momentProperties = {
+            _isAMomentObject: null,
+            _i : null,
+            _f : null,
+            _l : null,
+            _strict : null,
+            _isUTC : null,
+            _offset : null,  // optional. Combine with _isUTC
+            _pf : null,
+            _lang : null  // optional
+        },
 
         // check for nodeJS
         hasModule = (typeof module !== 'undefined' && module.exports),
 
         // ASP.NET json date format regex
         aspNetJsonRegex = /^\/?Date\((\-?\d+)/i,
-        aspNetTimeSpanJsonRegex = /(\-)?(\d*)?\.?(\d+)\:(\d+)\:(\d+)\.?(\d{3})?/,
+        aspNetTimeSpanJsonRegex = /(\-)?(?:(\d*)\.)?(\d+)\:(\d+)(?:\:(\d+)\.?(\d{3})?)?/,
+
+        // from http://docs.closure-library.googlecode.com/git/closure_goog_date_date.js.source.html
+        // somewhat more in line with 4.4.3.2 2004 spec, but allows decimal anywhere
+        isoDurationRegex = /^(-)?P(?:(?:([0-9,.]*)Y)?(?:([0-9,.]*)M)?(?:([0-9,.]*)D)?(?:T(?:([0-9,.]*)H)?(?:([0-9,.]*)M)?(?:([0-9,.]*)S)?)?|([0-9,.]*)W)$/,
 
         // format tokens
-        formattingTokens = /(\[[^\[]*\])|(\\)?(Mo|MM?M?M?|Do|DDDo|DD?D?D?|ddd?d?|do?|w[o|w]?|W[o|W]?|YYYYY|YYYY|YY|gg(ggg?)?|GG(GGG?)?|e|E|a|A|hh?|HH?|mm?|ss?|SS?S?|X|zz?|ZZ?|.)/g,
+        formattingTokens = /(\[[^\[]*\])|(\\)?(Mo|MM?M?M?|Do|DDDo|DD?D?D?|ddd?d?|do?|w[o|w]?|W[o|W]?|Q|YYYYYY|YYYYY|YYYY|YY|gg(ggg?)?|GG(GGG?)?|e|E|a|A|hh?|HH?|mm?|ss?|S{1,4}|X|zz?|ZZ?|.)/g,
         localFormattingTokens = /(\[[^\[]*\])|(\\)?(LT|LL?L?L?|l{1,4})/g,
 
         // parsing token regexes
         parseTokenOneOrTwoDigits = /\d\d?/, // 0 - 99
         parseTokenOneToThreeDigits = /\d{1,3}/, // 0 - 999
-        parseTokenThreeDigits = /\d{3}/, // 000 - 999
-        parseTokenFourDigits = /\d{1,4}/, // 0 - 9999
-        parseTokenSixDigits = /[+\-]?\d{1,6}/, // -999,999 - 999,999
+        parseTokenOneToFourDigits = /\d{1,4}/, // 0 - 9999
+        parseTokenOneToSixDigits = /[+\-]?\d{1,6}/, // -999,999 - 999,999
+        parseTokenDigits = /\d+/, // nonzero number of digits
         parseTokenWord = /[0-9]*['a-z\u00A0-\u05FF\u0700-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+|[\u0600-\u06FF\/]+(\s*?[\u0600-\u06FF]+){1,2}/i, // any word (or two) characters or numbers including two/three word month in arabic.
-        parseTokenTimezone = /Z|[\+\-]\d\d:?\d\d/i, // +00:00 -00:00 +0000 -0000 or Z
-        parseTokenT = /T/i, // T (ISO seperator)
+        parseTokenTimezone = /Z|[\+\-]\d\d:?\d\d/gi, // +00:00 -00:00 +0000 -0000 or Z
+        parseTokenT = /T/i, // T (ISO separator)
         parseTokenTimestampMs = /[\+\-]?\d+(\.\d{1,3})?/, // 123456789 123456789.123
+        parseTokenOrdinal = /\d{1,2}/,
 
-        // preliminary iso regex
-        // 0000-00-00 + T + 00 or 00:00 or 00:00:00 or 00:00:00.000 + +00:00 or +0000
-        isoRegex = /^\s*\d{4}-\d\d-\d\d((T| )(\d\d(:\d\d(:\d\d(\.\d\d?\d?)?)?)?)?([\+\-]\d\d:?\d\d)?)?/,
+        //strict parsing regexes
+        parseTokenOneDigit = /\d/, // 0 - 9
+        parseTokenTwoDigits = /\d\d/, // 00 - 99
+        parseTokenThreeDigits = /\d{3}/, // 000 - 999
+        parseTokenFourDigits = /\d{4}/, // 0000 - 9999
+        parseTokenSixDigits = /[+-]?\d{6}/, // -999,999 - 999,999
+        parseTokenSignedNumber = /[+-]?\d+/, // -inf - inf
+
+        // iso 8601 regex
+        // 0000-00-00 0000-W00 or 0000-W00-0 + T + 00 or 00:00 or 00:00:00 or 00:00:00.000 + +00:00 or +0000 or +00)
+        isoRegex = /^\s*(?:[+-]\d{6}|\d{4})-(?:(\d\d-\d\d)|(W\d\d$)|(W\d\d-\d)|(\d\d\d))((T| )(\d\d(:\d\d(:\d\d(\.\d+)?)?)?)?([\+\-]\d\d(?::?\d\d)?|\s*Z)?)?$/,
+
         isoFormat = 'YYYY-MM-DDTHH:mm:ssZ',
+
+        isoDates = [
+            ['YYYYYY-MM-DD', /[+-]\d{6}-\d{2}-\d{2}/],
+            ['YYYY-MM-DD', /\d{4}-\d{2}-\d{2}/],
+            ['GGGG-[W]WW-E', /\d{4}-W\d{2}-\d/],
+            ['GGGG-[W]WW', /\d{4}-W\d{2}/],
+            ['YYYY-DDD', /\d{4}-\d{3}/]
+        ],
 
         // iso time formats and regexes
         isoTimes = [
-            ['HH:mm:ss.S', /(T| )\d\d:\d\d:\d\d\.\d{1,3}/],
+            ['HH:mm:ss.SSSS', /(T| )\d\d:\d\d:\d\d\.\d+/],
             ['HH:mm:ss', /(T| )\d\d:\d\d:\d\d/],
             ['HH:mm', /(T| )\d\d:\d\d/],
             ['HH', /(T| )\d\d/]
@@ -5264,9 +9453,25 @@ _.extend(Marionette.Module, {
             m : 'minute',
             h : 'hour',
             d : 'day',
+            D : 'date',
             w : 'week',
+            W : 'isoWeek',
             M : 'month',
-            y : 'year'
+            Q : 'quarter',
+            y : 'year',
+            DDD : 'dayOfYear',
+            e : 'weekday',
+            E : 'isoWeekday',
+            gg: 'weekYear',
+            GG: 'isoWeekYear'
+        },
+
+        camelFunctions = {
+            dayofyear : 'dayOfYear',
+            isoweekday : 'isoWeekday',
+            isoweek : 'isoWeek',
+            weekyear : 'weekYear',
+            isoweekyear : 'isoWeekYear'
         },
 
         // format function strings
@@ -5319,11 +9524,15 @@ _.extend(Marionette.Module, {
             YYYYY : function () {
                 return leftZeroFill(this.year(), 5);
             },
+            YYYYYY : function () {
+                var y = this.year(), sign = y >= 0 ? '+' : '-';
+                return sign + leftZeroFill(Math.abs(y), 6);
+            },
             gg   : function () {
                 return leftZeroFill(this.weekYear() % 100, 2);
             },
             gggg : function () {
-                return this.weekYear();
+                return leftZeroFill(this.weekYear(), 4);
             },
             ggggg : function () {
                 return leftZeroFill(this.weekYear(), 5);
@@ -5332,7 +9541,7 @@ _.extend(Marionette.Module, {
                 return leftZeroFill(this.isoWeekYear() % 100, 2);
             },
             GGGG : function () {
-                return this.isoWeekYear();
+                return leftZeroFill(this.isoWeekYear(), 4);
             },
             GGGGG : function () {
                 return leftZeroFill(this.isoWeekYear(), 5);
@@ -5362,12 +9571,15 @@ _.extend(Marionette.Module, {
                 return this.seconds();
             },
             S    : function () {
-                return ~~(this.milliseconds() / 100);
+                return toInt(this.milliseconds() / 100);
             },
             SS   : function () {
-                return leftZeroFill(~~(this.milliseconds() / 10), 2);
+                return leftZeroFill(toInt(this.milliseconds() / 10), 2);
             },
             SSS  : function () {
+                return leftZeroFill(this.milliseconds(), 3);
+            },
+            SSSS : function () {
                 return leftZeroFill(this.milliseconds(), 3);
             },
             Z    : function () {
@@ -5377,7 +9589,7 @@ _.extend(Marionette.Module, {
                     a = -a;
                     b = "-";
                 }
-                return b + leftZeroFill(~~(a / 60), 2) + ":" + leftZeroFill(~~a % 60, 2);
+                return b + leftZeroFill(toInt(a / 60), 2) + ":" + leftZeroFill(toInt(a) % 60, 2);
             },
             ZZ   : function () {
                 var a = -this.zone(),
@@ -5386,7 +9598,7 @@ _.extend(Marionette.Module, {
                     a = -a;
                     b = "-";
                 }
-                return b + leftZeroFill(~~(10 * a / 6), 4);
+                return b + leftZeroFill(toInt(a / 60), 2) + leftZeroFill(toInt(a) % 60, 2);
             },
             z : function () {
                 return this.zoneAbbr();
@@ -5396,8 +9608,47 @@ _.extend(Marionette.Module, {
             },
             X    : function () {
                 return this.unix();
+            },
+            Q : function () {
+                return this.quarter();
             }
+        },
+
+        lists = ['months', 'monthsShort', 'weekdays', 'weekdaysShort', 'weekdaysMin'];
+
+    function defaultParsingFlags() {
+        // We need to deep clone this object, and es5 standard is not very
+        // helpful.
+        return {
+            empty : false,
+            unusedTokens : [],
+            unusedInput : [],
+            overflow : -2,
+            charsLeftOver : 0,
+            nullInput : false,
+            invalidMonth : null,
+            invalidFormat : false,
+            userInvalidated : false,
+            iso: false
         };
+    }
+
+    function deprecate(msg, fn) {
+        var firstTime = true;
+        function printMsg() {
+            if (moment.suppressDeprecationWarnings === false &&
+                    typeof console !== 'undefined' && console.warn) {
+                console.warn("Deprecation warning: " + msg);
+            }
+        }
+        return extend(function () {
+            if (firstTime) {
+                printMsg();
+                firstTime = false;
+            }
+            return fn.apply(this, arguments);
+        }, fn);
+    }
 
     function padToken(func, count) {
         return function (a) {
@@ -5431,43 +9682,43 @@ _.extend(Marionette.Module, {
 
     // Moment prototype object
     function Moment(config) {
+        checkOverflow(config);
         extend(this, config);
     }
 
     // Duration Constructor
     function Duration(duration) {
-        var years = duration.years || duration.year || duration.y || 0,
-            months = duration.months || duration.month || duration.M || 0,
-            weeks = duration.weeks || duration.week || duration.w || 0,
-            days = duration.days || duration.day || duration.d || 0,
-            hours = duration.hours || duration.hour || duration.h || 0,
-            minutes = duration.minutes || duration.minute || duration.m || 0,
-            seconds = duration.seconds || duration.second || duration.s || 0,
-            milliseconds = duration.milliseconds || duration.millisecond || duration.ms || 0;
-
-        // store reference to input for deterministic cloning
-        this._input = duration;
+        var normalizedInput = normalizeObjectUnits(duration),
+            years = normalizedInput.year || 0,
+            quarters = normalizedInput.quarter || 0,
+            months = normalizedInput.month || 0,
+            weeks = normalizedInput.week || 0,
+            days = normalizedInput.day || 0,
+            hours = normalizedInput.hour || 0,
+            minutes = normalizedInput.minute || 0,
+            seconds = normalizedInput.second || 0,
+            milliseconds = normalizedInput.millisecond || 0;
 
         // representation for dateAddRemove
-        this._milliseconds = milliseconds +
+        this._milliseconds = +milliseconds +
             seconds * 1e3 + // 1000
             minutes * 6e4 + // 1000 * 60
             hours * 36e5; // 1000 * 60 * 60
         // Because of dateAddRemove treats 24 hours as different from a
         // day when working around DST, we need to store them separately
-        this._days = days +
+        this._days = +days +
             weeks * 7;
         // It is impossible translate months into days without knowing
         // which months you are are talking about, so we have to store
         // it separately.
-        this._months = months +
+        this._months = +months +
+            quarters * 3 +
             years * 12;
 
         this._data = {};
 
         this._bubble();
     }
-
 
     /************************************
         Helpers
@@ -5480,7 +9731,27 @@ _.extend(Marionette.Module, {
                 a[i] = b[i];
             }
         }
+
+        if (b.hasOwnProperty("toString")) {
+            a.toString = b.toString;
+        }
+
+        if (b.hasOwnProperty("valueOf")) {
+            a.valueOf = b.valueOf;
+        }
+
         return a;
+    }
+
+    function cloneMoment(m) {
+        var result = {}, i;
+        for (i in m) {
+            if (m.hasOwnProperty(i) && momentProperties.hasOwnProperty(i)) {
+                result[i] = m[i];
+            }
+        }
+
+        return result;
     }
 
     function absRound(number) {
@@ -5493,44 +9764,34 @@ _.extend(Marionette.Module, {
 
     // left zero fill a number
     // see http://jsperf.com/left-zero-filling for performance comparison
-    function leftZeroFill(number, targetLength) {
-        var output = number + '';
+    function leftZeroFill(number, targetLength, forceSign) {
+        var output = '' + Math.abs(number),
+            sign = number >= 0;
+
         while (output.length < targetLength) {
             output = '0' + output;
         }
-        return output;
+        return (sign ? (forceSign ? '+' : '') : '-') + output;
     }
 
     // helper function for _.addTime and _.subtractTime
-    function addOrSubtractDurationFromMoment(mom, duration, isAdding, ignoreUpdateOffset) {
+    function addOrSubtractDurationFromMoment(mom, duration, isAdding, updateOffset) {
         var milliseconds = duration._milliseconds,
             days = duration._days,
-            months = duration._months,
-            minutes,
-            hours,
-            currentDate;
+            months = duration._months;
+        updateOffset = updateOffset == null ? true : updateOffset;
 
         if (milliseconds) {
             mom._d.setTime(+mom._d + milliseconds * isAdding);
         }
-        // store the minutes and hours so we can restore them
-        if (days || months) {
-            minutes = mom.minute();
-            hours = mom.hour();
-        }
         if (days) {
-            mom.date(mom.date() + days * isAdding);
+            rawSetter(mom, 'Date', rawGetter(mom, 'Date') + days * isAdding);
         }
         if (months) {
-            mom.month(mom.month() + months * isAdding);
+            rawMonthSetter(mom, rawGetter(mom, 'Month') + months * isAdding);
         }
-        if (milliseconds && !ignoreUpdateOffset) {
-            moment.updateOffset(mom);
-        }
-        // restore the minutes and hours after possibly changing dst
-        if (days || months) {
-            mom.minute(minutes);
-            mom.hour(hours);
+        if (updateOffset) {
+            moment.updateOffset(mom, days || months);
         }
     }
 
@@ -5539,14 +9800,20 @@ _.extend(Marionette.Module, {
         return Object.prototype.toString.call(input) === '[object Array]';
     }
 
+    function isDate(input) {
+        return  Object.prototype.toString.call(input) === '[object Date]' ||
+                input instanceof Date;
+    }
+
     // compare two arrays, return the number of differences
-    function compareArrays(array1, array2) {
+    function compareArrays(array1, array2, dontConvert) {
         var len = Math.min(array1.length, array2.length),
             lengthDiff = Math.abs(array1.length - array2.length),
             diffs = 0,
             i;
         for (i = 0; i < len; i++) {
-            if (~~array1[i] !== ~~array2[i]) {
+            if ((dontConvert && array1[i] !== array2[i]) ||
+                (!dontConvert && toInt(array1[i]) !== toInt(array2[i]))) {
                 diffs++;
             }
         }
@@ -5554,16 +9821,159 @@ _.extend(Marionette.Module, {
     }
 
     function normalizeUnits(units) {
-        return units ? unitAliases[units] || units.toLowerCase().replace(/(.)s$/, '$1') : units;
+        if (units) {
+            var lowered = units.toLowerCase().replace(/(.)s$/, '$1');
+            units = unitAliases[units] || camelFunctions[lowered] || lowered;
+        }
+        return units;
     }
 
+    function normalizeObjectUnits(inputObject) {
+        var normalizedInput = {},
+            normalizedProp,
+            prop;
+
+        for (prop in inputObject) {
+            if (inputObject.hasOwnProperty(prop)) {
+                normalizedProp = normalizeUnits(prop);
+                if (normalizedProp) {
+                    normalizedInput[normalizedProp] = inputObject[prop];
+                }
+            }
+        }
+
+        return normalizedInput;
+    }
+
+    function makeList(field) {
+        var count, setter;
+
+        if (field.indexOf('week') === 0) {
+            count = 7;
+            setter = 'day';
+        }
+        else if (field.indexOf('month') === 0) {
+            count = 12;
+            setter = 'month';
+        }
+        else {
+            return;
+        }
+
+        moment[field] = function (format, index) {
+            var i, getter,
+                method = moment.fn._lang[field],
+                results = [];
+
+            if (typeof format === 'number') {
+                index = format;
+                format = undefined;
+            }
+
+            getter = function (i) {
+                var m = moment().utc().set(setter, i);
+                return method.call(moment.fn._lang, m, format || '');
+            };
+
+            if (index != null) {
+                return getter(index);
+            }
+            else {
+                for (i = 0; i < count; i++) {
+                    results.push(getter(i));
+                }
+                return results;
+            }
+        };
+    }
+
+    function toInt(argumentForCoercion) {
+        var coercedNumber = +argumentForCoercion,
+            value = 0;
+
+        if (coercedNumber !== 0 && isFinite(coercedNumber)) {
+            if (coercedNumber >= 0) {
+                value = Math.floor(coercedNumber);
+            } else {
+                value = Math.ceil(coercedNumber);
+            }
+        }
+
+        return value;
+    }
+
+    function daysInMonth(year, month) {
+        return new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+    }
+
+    function weeksInYear(year, dow, doy) {
+        return weekOfYear(moment([year, 11, 31 + dow - doy]), dow, doy).week;
+    }
+
+    function daysInYear(year) {
+        return isLeapYear(year) ? 366 : 365;
+    }
+
+    function isLeapYear(year) {
+        return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+    }
+
+    function checkOverflow(m) {
+        var overflow;
+        if (m._a && m._pf.overflow === -2) {
+            overflow =
+                m._a[MONTH] < 0 || m._a[MONTH] > 11 ? MONTH :
+                m._a[DATE] < 1 || m._a[DATE] > daysInMonth(m._a[YEAR], m._a[MONTH]) ? DATE :
+                m._a[HOUR] < 0 || m._a[HOUR] > 23 ? HOUR :
+                m._a[MINUTE] < 0 || m._a[MINUTE] > 59 ? MINUTE :
+                m._a[SECOND] < 0 || m._a[SECOND] > 59 ? SECOND :
+                m._a[MILLISECOND] < 0 || m._a[MILLISECOND] > 999 ? MILLISECOND :
+                -1;
+
+            if (m._pf._overflowDayOfYear && (overflow < YEAR || overflow > DATE)) {
+                overflow = DATE;
+            }
+
+            m._pf.overflow = overflow;
+        }
+    }
+
+    function isValid(m) {
+        if (m._isValid == null) {
+            m._isValid = !isNaN(m._d.getTime()) &&
+                m._pf.overflow < 0 &&
+                !m._pf.empty &&
+                !m._pf.invalidMonth &&
+                !m._pf.nullInput &&
+                !m._pf.invalidFormat &&
+                !m._pf.userInvalidated;
+
+            if (m._strict) {
+                m._isValid = m._isValid &&
+                    m._pf.charsLeftOver === 0 &&
+                    m._pf.unusedTokens.length === 0;
+            }
+        }
+        return m._isValid;
+    }
+
+    function normalizeLanguage(key) {
+        return key ? key.toLowerCase().replace('_', '-') : key;
+    }
+
+    // Return a moment from input, that is local/utc/zone equivalent to model.
+    function makeAs(input, model) {
+        return model._isUTC ? moment(input).zone(model._offset || 0) :
+            moment(input).local();
+    }
 
     /************************************
         Languages
     ************************************/
 
 
-    Language.prototype = {
+    extend(Language.prototype, {
+
         set : function (config) {
             var prop, i;
             for (i in config) {
@@ -5596,7 +10006,7 @@ _.extend(Marionette.Module, {
             for (i = 0; i < 12; i++) {
                 // make the regex if we don't have it already
                 if (!this._monthsParse[i]) {
-                    mom = moment([2000, i]);
+                    mom = moment.utc([2000, i]);
                     regex = '^' + this.months(mom, '') + '|^' + this.monthsShort(mom, '');
                     this._monthsParse[i] = new RegExp(regex.replace('.', ''), 'i');
                 }
@@ -5662,7 +10072,9 @@ _.extend(Marionette.Module, {
         },
 
         isPM : function (input) {
-            return ((input + '').toLowerCase()[0] === 'p');
+            // IE8 Quirks Mode & IE7 Standards Mode do not allow accessing strings like arrays
+            // Using charAt should be more compatible.
+            return ((input + '').toLowerCase().charAt(0) === 'p');
         },
 
         _meridiemParse : /[ap]\.?m?\.?/i,
@@ -5729,11 +10141,17 @@ _.extend(Marionette.Module, {
         week : function (mom) {
             return weekOfYear(mom, this._week.dow, this._week.doy).week;
         },
+
         _week : {
             dow : 0, // Sunday is the first day of the week.
             doy : 6  // The week that contains Jan 1st is the first week of the year.
+        },
+
+        _invalidDate: 'Invalid date',
+        invalidDate: function () {
+            return this._invalidDate;
         }
-    };
+    });
 
     // Loads a language definition into the `languages` cache.  The function
     // takes a key and optionally values.  If not in the browser and no values
@@ -5748,6 +10166,11 @@ _.extend(Marionette.Module, {
         return languages[key];
     }
 
+    // Remove a language from the `languages` cache. Mostly useful in tests.
+    function unloadLang(key) {
+        delete languages[key];
+    }
+
     // Determines which language definition to use and returns it.
     //
     // With no parameters, it will return the global language.  If you
@@ -5755,20 +10178,52 @@ _.extend(Marionette.Module, {
     // definition for 'en', so long as 'en' has already been loaded using
     // moment.lang.
     function getLangDefinition(key) {
+        var i = 0, j, lang, next, split,
+            get = function (k) {
+                if (!languages[k] && hasModule) {
+                    try {
+                        require('./lang/' + k);
+                    } catch (e) { }
+                }
+                return languages[k];
+            };
+
         if (!key) {
             return moment.fn._lang;
         }
-        if (!languages[key] && hasModule) {
-            try {
-                require('./lang/' + key);
-            } catch (e) {
-                // call with no params to set to default
-                return moment.fn._lang;
-            }
-        }
-        return languages[key];
-    }
 
+        if (!isArray(key)) {
+            //short-circuit everything else
+            lang = get(key);
+            if (lang) {
+                return lang;
+            }
+            key = [key];
+        }
+
+        //pick the language from the array
+        //try ['en-au', 'en-gb'] as 'en-au', 'en-gb', 'en', as in move through the list trying each
+        //substring from most specific to least, but move to the next array item if it's a more specific variant than the current root
+        while (i < key.length) {
+            split = normalizeLanguage(key[i]).split('-');
+            j = split.length;
+            next = normalizeLanguage(key[i + 1]);
+            next = next ? next.split('-') : null;
+            while (j > 0) {
+                lang = get(split.slice(0, j).join('-'));
+                if (lang) {
+                    return lang;
+                }
+                if (next && next.length >= j && compareArrays(split, next, true) >= j - 1) {
+                    //the next array item is better than a shallower substring of this one
+                    break;
+                }
+                j--;
+            }
+            i++;
+        }
+        return moment.fn._lang;
+    }
 
     /************************************
         Formatting
@@ -5776,7 +10231,7 @@ _.extend(Marionette.Module, {
 
 
     function removeFormattingTokens(input) {
-        if (input.match(/\[.*\]/)) {
+        if (input.match(/\[[\s\S]/)) {
             return input.replace(/^\[|\]$/g, "");
         }
         return input.replace(/\\/g, "");
@@ -5804,21 +10259,35 @@ _.extend(Marionette.Module, {
 
     // format date using native date object
     function formatMoment(m, format) {
-        var i = 5;
 
-        function replaceLongDateFormatTokens(input) {
-            return m.lang().longDateFormat(input) || input;
+        if (!m.isValid()) {
+            return m.lang().invalidDate();
         }
 
-        while (i-- && localFormattingTokens.test(format)) {
-            format = format.replace(localFormattingTokens, replaceLongDateFormatTokens);
-        }
+        format = expandFormat(format, m.lang());
 
         if (!formatFunctions[format]) {
             formatFunctions[format] = makeFormatFunction(format);
         }
 
         return formatFunctions[format](m);
+    }
+
+    function expandFormat(format, lang) {
+        var i = 5;
+
+        function replaceLongDateFormatTokens(input) {
+            return lang.longDateFormat(input) || input;
+        }
+
+        localFormattingTokens.lastIndex = 0;
+        while (i >= 0 && localFormattingTokens.test(format)) {
+            format = format.replace(localFormattingTokens, replaceLongDateFormatTokens);
+            localFormattingTokens.lastIndex = 0;
+            i -= 1;
+        }
+
+        return format;
     }
 
 
@@ -5829,16 +10298,34 @@ _.extend(Marionette.Module, {
 
     // get the regex to find the next token
     function getParseRegexForToken(token, config) {
+        var a, strict = config._strict;
         switch (token) {
+        case 'Q':
+            return parseTokenOneDigit;
         case 'DDDD':
             return parseTokenThreeDigits;
         case 'YYYY':
-            return parseTokenFourDigits;
+        case 'GGGG':
+        case 'gggg':
+            return strict ? parseTokenFourDigits : parseTokenOneToFourDigits;
+        case 'Y':
+        case 'G':
+        case 'g':
+            return parseTokenSignedNumber;
+        case 'YYYYYY':
         case 'YYYYY':
-            return parseTokenSixDigits;
+        case 'GGGGG':
+        case 'ggggg':
+            return strict ? parseTokenSixDigits : parseTokenOneToSixDigits;
         case 'S':
+            if (strict) { return parseTokenOneDigit; }
+            /* falls through */
         case 'SS':
+            if (strict) { return parseTokenTwoDigits; }
+            /* falls through */
         case 'SSS':
+            if (strict) { return parseTokenThreeDigits; }
+            /* falls through */
         case 'DDD':
             return parseTokenOneToThreeDigits;
         case 'MMM':
@@ -5857,13 +10344,20 @@ _.extend(Marionette.Module, {
             return parseTokenTimezone;
         case 'T':
             return parseTokenT;
+        case 'SSSS':
+            return parseTokenDigits;
         case 'MM':
         case 'DD':
         case 'YY':
+        case 'GG':
+        case 'gg':
         case 'HH':
         case 'hh':
         case 'mm':
         case 'ss':
+        case 'ww':
+        case 'WW':
+            return strict ? parseTokenTwoDigits : parseTokenOneOrTwoDigits;
         case 'M':
         case 'D':
         case 'd':
@@ -5871,16 +10365,25 @@ _.extend(Marionette.Module, {
         case 'h':
         case 'm':
         case 's':
+        case 'w':
+        case 'W':
+        case 'e':
+        case 'E':
             return parseTokenOneOrTwoDigits;
+        case 'Do':
+            return parseTokenOrdinal;
         default :
-            return new RegExp(token.replace('\\', ''));
+            a = new RegExp(regexpEscape(unescapeFormat(token.replace('\\', '')), "i"));
+            return a;
         }
     }
 
     function timezoneMinutesFromString(string) {
-        var tzchunk = (parseTokenTimezone.exec(string) || [])[0],
-            parts = (tzchunk + '').match(parseTimezoneChunker) || ['-', 0, 0],
-            minutes = +(parts[1] * 60) + ~~parts[2];
+        string = string || "";
+        var possibleTzMatches = (string.match(parseTokenTimezone) || []),
+            tzChunk = possibleTzMatches[possibleTzMatches.length - 1] || [],
+            parts = (tzChunk + '').match(parseTimezoneChunker) || ['-', 0, 0],
+            minutes = +(parts[1] * 60) + toInt(parts[2]);
 
         return parts[0] === '+' ? -minutes : minutes;
     }
@@ -5890,37 +10393,57 @@ _.extend(Marionette.Module, {
         var a, datePartArray = config._a;
 
         switch (token) {
+        // QUARTER
+        case 'Q':
+            if (input != null) {
+                datePartArray[MONTH] = (toInt(input) - 1) * 3;
+            }
+            break;
         // MONTH
         case 'M' : // fall through to MM
         case 'MM' :
-            datePartArray[1] = (input == null) ? 0 : ~~input - 1;
+            if (input != null) {
+                datePartArray[MONTH] = toInt(input) - 1;
+            }
             break;
         case 'MMM' : // fall through to MMMM
         case 'MMMM' :
             a = getLangDefinition(config._l).monthsParse(input);
             // if we didn't find a month name, mark the date as invalid.
             if (a != null) {
-                datePartArray[1] = a;
+                datePartArray[MONTH] = a;
             } else {
-                config._isValid = false;
+                config._pf.invalidMonth = input;
             }
             break;
         // DAY OF MONTH
-        case 'D' : // fall through to DDDD
-        case 'DD' : // fall through to DDDD
+        case 'D' : // fall through to DD
+        case 'DD' :
+            if (input != null) {
+                datePartArray[DATE] = toInt(input);
+            }
+            break;
+        case 'Do' :
+            if (input != null) {
+                datePartArray[DATE] = toInt(parseInt(input, 10));
+            }
+            break;
+        // DAY OF YEAR
         case 'DDD' : // fall through to DDDD
         case 'DDDD' :
             if (input != null) {
-                datePartArray[2] = ~~input;
+                config._dayOfYear = toInt(input);
             }
+
             break;
         // YEAR
         case 'YY' :
-            datePartArray[0] = ~~input + (~~input > 68 ? 1900 : 2000);
+            datePartArray[YEAR] = moment.parseTwoDigitYear(input);
             break;
         case 'YYYY' :
         case 'YYYYY' :
-            datePartArray[0] = ~~input;
+        case 'YYYYYY' :
+            datePartArray[YEAR] = toInt(input);
             break;
         // AM / PM
         case 'a' : // fall through to A
@@ -5932,23 +10455,24 @@ _.extend(Marionette.Module, {
         case 'HH' : // fall through to hh
         case 'h' : // fall through to hh
         case 'hh' :
-            datePartArray[3] = ~~input;
+            datePartArray[HOUR] = toInt(input);
             break;
         // MINUTE
         case 'm' : // fall through to mm
         case 'mm' :
-            datePartArray[4] = ~~input;
+            datePartArray[MINUTE] = toInt(input);
             break;
         // SECOND
         case 's' : // fall through to ss
         case 'ss' :
-            datePartArray[5] = ~~input;
+            datePartArray[SECOND] = toInt(input);
             break;
         // MILLISECOND
         case 'S' :
         case 'SS' :
         case 'SSS' :
-            datePartArray[6] = ~~ (('0.' + input) * 1000);
+        case 'SSSS' :
+            datePartArray[MILLISECOND] = toInt(('0.' + input) * 1000);
             break;
         // UNIX TIMESTAMP WITH MS
         case 'X':
@@ -5960,11 +10484,29 @@ _.extend(Marionette.Module, {
             config._useUTC = true;
             config._tzm = timezoneMinutesFromString(input);
             break;
-        }
-
-        // if the input is null, the date is not valid
-        if (input == null) {
-            config._isValid = false;
+        case 'w':
+        case 'ww':
+        case 'W':
+        case 'WW':
+        case 'd':
+        case 'dd':
+        case 'ddd':
+        case 'dddd':
+        case 'e':
+        case 'E':
+            token = token.substr(0, 1);
+            /* falls through */
+        case 'gg':
+        case 'gggg':
+        case 'GG':
+        case 'GGGG':
+        case 'GGGGG':
+            token = token.substr(0, 2);
+            if (input) {
+                config._w = config._w || {};
+                config._w[token] = input;
+            }
+            break;
         }
     }
 
@@ -5972,125 +10514,258 @@ _.extend(Marionette.Module, {
     // the array should mirror the parameters below
     // note: all values past the year are optional and will default to the lowest possible value.
     // [year, month, day , hour, minute, second, millisecond]
-    function dateFromArray(config) {
-        var i, date, input = [];
+    function dateFromConfig(config) {
+        var i, date, input = [], currentDate,
+            yearToUse, fixYear, w, temp, lang, weekday, week;
 
         if (config._d) {
             return;
         }
 
-        for (i = 0; i < 7; i++) {
+        currentDate = currentDateArray(config);
+
+        //compute day of the year from weeks and weekdays
+        if (config._w && config._a[DATE] == null && config._a[MONTH] == null) {
+            fixYear = function (val) {
+                var intVal = parseInt(val, 10);
+                return val ?
+                  (val.length < 3 ? (intVal > 68 ? 1900 + intVal : 2000 + intVal) : intVal) :
+                  (config._a[YEAR] == null ? moment().weekYear() : config._a[YEAR]);
+            };
+
+            w = config._w;
+            if (w.GG != null || w.W != null || w.E != null) {
+                temp = dayOfYearFromWeeks(fixYear(w.GG), w.W || 1, w.E, 4, 1);
+            }
+            else {
+                lang = getLangDefinition(config._l);
+                weekday = w.d != null ?  parseWeekday(w.d, lang) :
+                  (w.e != null ?  parseInt(w.e, 10) + lang._week.dow : 0);
+
+                week = parseInt(w.w, 10) || 1;
+
+                //if we're parsing 'd', then the low day numbers may be next week
+                if (w.d != null && weekday < lang._week.dow) {
+                    week++;
+                }
+
+                temp = dayOfYearFromWeeks(fixYear(w.gg), week, weekday, lang._week.doy, lang._week.dow);
+            }
+
+            config._a[YEAR] = temp.year;
+            config._dayOfYear = temp.dayOfYear;
+        }
+
+        //if the day of the year is set, figure out what it is
+        if (config._dayOfYear) {
+            yearToUse = config._a[YEAR] == null ? currentDate[YEAR] : config._a[YEAR];
+
+            if (config._dayOfYear > daysInYear(yearToUse)) {
+                config._pf._overflowDayOfYear = true;
+            }
+
+            date = makeUTCDate(yearToUse, 0, config._dayOfYear);
+            config._a[MONTH] = date.getUTCMonth();
+            config._a[DATE] = date.getUTCDate();
+        }
+
+        // Default to current date.
+        // * if no year, month, day of month are given, default to today
+        // * if day of month is given, default month and year
+        // * if month is given, default only year
+        // * if year is given, don't default anything
+        for (i = 0; i < 3 && config._a[i] == null; ++i) {
+            config._a[i] = input[i] = currentDate[i];
+        }
+
+        // Zero out whatever was not defaulted, including time
+        for (; i < 7; i++) {
             config._a[i] = input[i] = (config._a[i] == null) ? (i === 2 ? 1 : 0) : config._a[i];
         }
 
         // add the offsets to the time to be parsed so that we can have a clean array for checking isValid
-        input[3] += ~~((config._tzm || 0) / 60);
-        input[4] += ~~((config._tzm || 0) % 60);
+        input[HOUR] += toInt((config._tzm || 0) / 60);
+        input[MINUTE] += toInt((config._tzm || 0) % 60);
 
-        date = new Date(0);
+        config._d = (config._useUTC ? makeUTCDate : makeDate).apply(null, input);
+    }
 
-        if (config._useUTC) {
-            date.setUTCFullYear(input[0], input[1], input[2]);
-            date.setUTCHours(input[3], input[4], input[5], input[6]);
-        } else {
-            date.setFullYear(input[0], input[1], input[2]);
-            date.setHours(input[3], input[4], input[5], input[6]);
+    function dateFromObject(config) {
+        var normalizedInput;
+
+        if (config._d) {
+            return;
         }
 
-        config._d = date;
+        normalizedInput = normalizeObjectUnits(config._i);
+        config._a = [
+            normalizedInput.year,
+            normalizedInput.month,
+            normalizedInput.day,
+            normalizedInput.hour,
+            normalizedInput.minute,
+            normalizedInput.second,
+            normalizedInput.millisecond
+        ];
+
+        dateFromConfig(config);
+    }
+
+    function currentDateArray(config) {
+        var now = new Date();
+        if (config._useUTC) {
+            return [
+                now.getUTCFullYear(),
+                now.getUTCMonth(),
+                now.getUTCDate()
+            ];
+        } else {
+            return [now.getFullYear(), now.getMonth(), now.getDate()];
+        }
     }
 
     // date from string and format string
     function makeDateFromStringAndFormat(config) {
-        // This array is used to make a Date, either with `new Date` or `Date.UTC`
-        var tokens = config._f.match(formattingTokens),
-            string = config._i,
-            i, parsedInput;
 
         config._a = [];
+        config._pf.empty = true;
+
+        // This array is used to make a Date, either with `new Date` or `Date.UTC`
+        var lang = getLangDefinition(config._l),
+            string = '' + config._i,
+            i, parsedInput, tokens, token, skipped,
+            stringLength = string.length,
+            totalParsedInputLength = 0;
+
+        tokens = expandFormat(config._f, lang).match(formattingTokens) || [];
 
         for (i = 0; i < tokens.length; i++) {
-            parsedInput = (getParseRegexForToken(tokens[i], config).exec(string) || [])[0];
+            token = tokens[i];
+            parsedInput = (string.match(getParseRegexForToken(token, config)) || [])[0];
             if (parsedInput) {
+                skipped = string.substr(0, string.indexOf(parsedInput));
+                if (skipped.length > 0) {
+                    config._pf.unusedInput.push(skipped);
+                }
                 string = string.slice(string.indexOf(parsedInput) + parsedInput.length);
+                totalParsedInputLength += parsedInput.length;
             }
-            // don't parse if its not a known token
-            if (formatTokenFunctions[tokens[i]]) {
-                addTimeToArrayFromToken(tokens[i], parsedInput, config);
+            // don't parse if it's not a known token
+            if (formatTokenFunctions[token]) {
+                if (parsedInput) {
+                    config._pf.empty = false;
+                }
+                else {
+                    config._pf.unusedTokens.push(token);
+                }
+                addTimeToArrayFromToken(token, parsedInput, config);
+            }
+            else if (config._strict && !parsedInput) {
+                config._pf.unusedTokens.push(token);
             }
         }
 
-        // add remaining unparsed input to the string
-        if (string) {
-            config._il = string;
+        // add remaining unparsed input length to the string
+        config._pf.charsLeftOver = stringLength - totalParsedInputLength;
+        if (string.length > 0) {
+            config._pf.unusedInput.push(string);
         }
 
         // handle am pm
-        if (config._isPm && config._a[3] < 12) {
-            config._a[3] += 12;
+        if (config._isPm && config._a[HOUR] < 12) {
+            config._a[HOUR] += 12;
         }
         // if is 12 am, change hours to 0
-        if (config._isPm === false && config._a[3] === 12) {
-            config._a[3] = 0;
+        if (config._isPm === false && config._a[HOUR] === 12) {
+            config._a[HOUR] = 0;
         }
-        // return
-        dateFromArray(config);
+
+        dateFromConfig(config);
+        checkOverflow(config);
+    }
+
+    function unescapeFormat(s) {
+        return s.replace(/\\(\[)|\\(\])|\[([^\]\[]*)\]|\\(.)/g, function (matched, p1, p2, p3, p4) {
+            return p1 || p2 || p3 || p4;
+        });
+    }
+
+    // Code from http://stackoverflow.com/questions/3561493/is-there-a-regexp-escape-function-in-javascript
+    function regexpEscape(s) {
+        return s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
     }
 
     // date from string and array of format strings
     function makeDateFromStringAndArray(config) {
         var tempConfig,
-            tempMoment,
             bestMoment,
 
-            scoreToBeat = 99,
+            scoreToBeat,
             i,
             currentScore;
 
+        if (config._f.length === 0) {
+            config._pf.invalidFormat = true;
+            config._d = new Date(NaN);
+            return;
+        }
+
         for (i = 0; i < config._f.length; i++) {
+            currentScore = 0;
             tempConfig = extend({}, config);
+            tempConfig._pf = defaultParsingFlags();
             tempConfig._f = config._f[i];
             makeDateFromStringAndFormat(tempConfig);
-            tempMoment = new Moment(tempConfig);
 
-            currentScore = compareArrays(tempConfig._a, tempMoment.toArray());
-
-            // if there is any input that was not parsed
-            // add a penalty for that format
-            if (tempMoment._il) {
-                currentScore += tempMoment._il.length;
+            if (!isValid(tempConfig)) {
+                continue;
             }
 
-            if (currentScore < scoreToBeat) {
+            // if there is any input that was not parsed add a penalty for that format
+            currentScore += tempConfig._pf.charsLeftOver;
+
+            //or tokens
+            currentScore += tempConfig._pf.unusedTokens.length * 10;
+
+            tempConfig._pf.score = currentScore;
+
+            if (scoreToBeat == null || currentScore < scoreToBeat) {
                 scoreToBeat = currentScore;
-                bestMoment = tempMoment;
+                bestMoment = tempConfig;
             }
         }
 
-        extend(config, bestMoment);
+        extend(config, bestMoment || tempConfig);
     }
 
     // date from iso format
     function makeDateFromString(config) {
-        var i,
+        var i, l,
             string = config._i,
             match = isoRegex.exec(string);
 
         if (match) {
-            // match[2] should be "T" or undefined
-            config._f = 'YYYY-MM-DD' + (match[2] || " ");
-            for (i = 0; i < 4; i++) {
+            config._pf.iso = true;
+            for (i = 0, l = isoDates.length; i < l; i++) {
+                if (isoDates[i][1].exec(string)) {
+                    // match[5] should be "T" or undefined
+                    config._f = isoDates[i][0] + (match[6] || " ");
+                    break;
+                }
+            }
+            for (i = 0, l = isoTimes.length; i < l; i++) {
                 if (isoTimes[i][1].exec(string)) {
                     config._f += isoTimes[i][0];
                     break;
                 }
             }
-            if (parseTokenTimezone.exec(string)) {
-                config._f += " Z";
+            if (string.match(parseTokenTimezone)) {
+                config._f += "Z";
             }
             makeDateFromStringAndFormat(config);
-        } else {
-            config._d = new Date(string);
+        }
+        else {
+            moment.createFromInputFallback(config);
         }
     }
 
@@ -6106,12 +10781,53 @@ _.extend(Marionette.Module, {
             makeDateFromString(config);
         } else if (isArray(input)) {
             config._a = input.slice(0);
-            dateFromArray(config);
+            dateFromConfig(config);
+        } else if (isDate(input)) {
+            config._d = new Date(+input);
+        } else if (typeof(input) === 'object') {
+            dateFromObject(config);
+        } else if (typeof(input) === 'number') {
+            // from milliseconds
+            config._d = new Date(input);
         } else {
-            config._d = input instanceof Date ? new Date(+input) : new Date(input);
+            moment.createFromInputFallback(config);
         }
     }
 
+    function makeDate(y, m, d, h, M, s, ms) {
+        //can't just apply() to create a date:
+        //http://stackoverflow.com/questions/181348/instantiating-a-javascript-object-by-calling-prototype-constructor-apply
+        var date = new Date(y, m, d, h, M, s, ms);
+
+        //the date constructor doesn't accept years < 1970
+        if (y < 1970) {
+            date.setFullYear(y);
+        }
+        return date;
+    }
+
+    function makeUTCDate(y) {
+        var date = new Date(Date.UTC.apply(null, arguments));
+        if (y < 1970) {
+            date.setUTCFullYear(y);
+        }
+        return date;
+    }
+
+    function parseWeekday(input, language) {
+        if (typeof input === 'string') {
+            if (!isNaN(input)) {
+                input = parseInt(input, 10);
+            }
+            else {
+                input = language.weekdaysParse(input);
+                if (typeof input !== 'number') {
+                    return null;
+                }
+            }
+        }
+        return input;
+    }
 
     /************************************
         Relative Time
@@ -6179,6 +10895,19 @@ _.extend(Marionette.Module, {
         };
     }
 
+    //http://en.wikipedia.org/wiki/ISO_week_date#Calculating_a_date_given_the_year.2C_week_number_and_weekday
+    function dayOfYearFromWeeks(year, week, weekday, firstDayOfWeekOfYear, firstDayOfWeek) {
+        var d = makeUTCDate(year, 0, 1).getUTCDay(), daysToAdd, dayOfYear;
+
+        weekday = weekday != null ? weekday : firstDayOfWeek;
+        daysToAdd = firstDayOfWeek - d + (d > firstDayOfWeekOfYear ? 7 : 0) - (d < firstDayOfWeek ? 7 : 0);
+        dayOfYear = 7 * (week - 1) + (weekday - firstDayOfWeek) + daysToAdd + 1;
+
+        return {
+            year: dayOfYear > 0 ? year : year - 1,
+            dayOfYear: dayOfYear > 0 ?  dayOfYear : daysInYear(year - 1) + dayOfYear
+        };
+    }
 
     /************************************
         Top Level Functions
@@ -6188,8 +10917,8 @@ _.extend(Marionette.Module, {
         var input = config._i,
             format = config._f;
 
-        if (input === null || input === '') {
-            return null;
+        if (input === null || (format === undefined && input === '')) {
+            return moment.invalid({nullInput: true});
         }
 
         if (typeof input === 'string') {
@@ -6197,7 +10926,8 @@ _.extend(Marionette.Module, {
         }
 
         if (moment.isMoment(input)) {
-            config = extend({}, input);
+            config = cloneMoment(input);
+
             config._d = new Date(+input._d);
         } else if (format) {
             if (isArray(format)) {
@@ -6212,24 +10942,59 @@ _.extend(Marionette.Module, {
         return new Moment(config);
     }
 
-    moment = function (input, format, lang) {
-        return makeMoment({
-            _i : input,
-            _f : format,
-            _l : lang,
-            _isUTC : false
-        });
+    moment = function (input, format, lang, strict) {
+        var c;
+
+        if (typeof(lang) === "boolean") {
+            strict = lang;
+            lang = undefined;
+        }
+        // object construction must be done this way.
+        // https://github.com/moment/moment/issues/1423
+        c = {};
+        c._isAMomentObject = true;
+        c._i = input;
+        c._f = format;
+        c._l = lang;
+        c._strict = strict;
+        c._isUTC = false;
+        c._pf = defaultParsingFlags();
+
+        return makeMoment(c);
     };
 
+    moment.suppressDeprecationWarnings = false;
+
+    moment.createFromInputFallback = deprecate(
+            "moment construction falls back to js Date. This is " +
+            "discouraged and will be removed in upcoming major " +
+            "release. Please refer to " +
+            "https://github.com/moment/moment/issues/1407 for more info.",
+            function (config) {
+        config._d = new Date(config._i);
+    });
+
     // creating with utc
-    moment.utc = function (input, format, lang) {
-        return makeMoment({
-            _useUTC : true,
-            _isUTC : true,
-            _l : lang,
-            _i : input,
-            _f : format
-        });
+    moment.utc = function (input, format, lang, strict) {
+        var c;
+
+        if (typeof(lang) === "boolean") {
+            strict = lang;
+            lang = undefined;
+        }
+        // object construction must be done this way.
+        // https://github.com/moment/moment/issues/1423
+        c = {};
+        c._isAMomentObject = true;
+        c._useUTC = true;
+        c._isUTC = true;
+        c._l = lang;
+        c._i = input;
+        c._f = format;
+        c._strict = strict;
+        c._pf = defaultParsingFlags();
+
+        return makeMoment(c).utc();
     };
 
     // creating with unix timestamp (in seconds)
@@ -6239,34 +11004,60 @@ _.extend(Marionette.Module, {
 
     // duration
     moment.duration = function (input, key) {
-        var isDuration = moment.isDuration(input),
-            isNumber = (typeof input === 'number'),
-            duration = (isDuration ? input._input : (isNumber ? {} : input)),
-            matched = aspNetTimeSpanJsonRegex.exec(input),
+        var duration = input,
+            // matching against regexp is expensive, do it on demand
+            match = null,
             sign,
-            ret;
+            ret,
+            parseIso;
 
-        if (isNumber) {
+        if (moment.isDuration(input)) {
+            duration = {
+                ms: input._milliseconds,
+                d: input._days,
+                M: input._months
+            };
+        } else if (typeof input === 'number') {
+            duration = {};
             if (key) {
                 duration[key] = input;
             } else {
                 duration.milliseconds = input;
             }
-        } else if (matched) {
-            sign = (matched[1] === "-") ? -1 : 1;
+        } else if (!!(match = aspNetTimeSpanJsonRegex.exec(input))) {
+            sign = (match[1] === "-") ? -1 : 1;
             duration = {
                 y: 0,
-                d: ~~matched[2] * sign,
-                h: ~~matched[3] * sign,
-                m: ~~matched[4] * sign,
-                s: ~~matched[5] * sign,
-                ms: ~~matched[6] * sign
+                d: toInt(match[DATE]) * sign,
+                h: toInt(match[HOUR]) * sign,
+                m: toInt(match[MINUTE]) * sign,
+                s: toInt(match[SECOND]) * sign,
+                ms: toInt(match[MILLISECOND]) * sign
+            };
+        } else if (!!(match = isoDurationRegex.exec(input))) {
+            sign = (match[1] === "-") ? -1 : 1;
+            parseIso = function (inp) {
+                // We'd normally use ~~inp for this, but unfortunately it also
+                // converts floats to ints.
+                // inp may be undefined, so careful calling replace on it.
+                var res = inp && parseFloat(inp.replace(',', '.'));
+                // apply sign while we're at it
+                return (isNaN(res) ? 0 : res) * sign;
+            };
+            duration = {
+                y: parseIso(match[2]),
+                M: parseIso(match[3]),
+                d: parseIso(match[4]),
+                h: parseIso(match[5]),
+                m: parseIso(match[6]),
+                s: parseIso(match[7]),
+                w: parseIso(match[8])
             };
         }
 
         ret = new Duration(duration);
 
-        if (isDuration && input.hasOwnProperty('_lang')) {
+        if (moment.isDuration(input) && input.hasOwnProperty('_lang')) {
             ret._lang = input._lang;
         }
 
@@ -6279,6 +11070,10 @@ _.extend(Marionette.Module, {
     // default format
     moment.defaultFormat = isoFormat;
 
+    // Plugins that add properties should also add the key here (null value),
+    // so we can properly clone ourselves.
+    moment.momentProperties = momentProperties;
+
     // This function will be called whenever a moment is mutated.
     // It is intended to keep the offset in sync with the timezone.
     moment.updateOffset = function () {};
@@ -6287,15 +11082,20 @@ _.extend(Marionette.Module, {
     // no arguments are passed in, it will simply return the current global
     // language key.
     moment.lang = function (key, values) {
+        var r;
         if (!key) {
             return moment.fn._lang._abbr;
         }
         if (values) {
-            loadLang(key, values);
+            loadLang(normalizeLanguage(key), values);
+        } else if (values === null) {
+            unloadLang(key);
+            key = 'en';
         } else if (!languages[key]) {
             getLangDefinition(key);
         }
-        moment.duration.fn._lang = moment.fn._lang = getLangDefinition(key);
+        r = moment.duration.fn._lang = moment.fn._lang = getLangDefinition(key);
+        return r._abbr;
     };
 
     // returns language data
@@ -6308,7 +11108,8 @@ _.extend(Marionette.Module, {
 
     // compare moment object
     moment.isMoment = function (obj) {
-        return obj instanceof Moment;
+        return obj instanceof Moment ||
+            (obj != null &&  obj.hasOwnProperty('_isAMomentObject'));
     };
 
     // for typechecking Duration objects
@@ -6316,13 +11117,40 @@ _.extend(Marionette.Module, {
         return obj instanceof Duration;
     };
 
+    for (i = lists.length - 1; i >= 0; --i) {
+        makeList(lists[i]);
+    }
+
+    moment.normalizeUnits = function (units) {
+        return normalizeUnits(units);
+    };
+
+    moment.invalid = function (flags) {
+        var m = moment.utc(NaN);
+        if (flags != null) {
+            extend(m._pf, flags);
+        }
+        else {
+            m._pf.userInvalidated = true;
+        }
+
+        return m;
+    };
+
+    moment.parseZone = function () {
+        return moment.apply(null, arguments).parseZone();
+    };
+
+    moment.parseTwoDigitYear = function (input) {
+        return toInt(input) + (toInt(input) > 68 ? 1900 : 2000);
+    };
 
     /************************************
         Moment Prototype
     ************************************/
 
 
-    moment.fn = Moment.prototype = {
+    extend(moment.fn = Moment.prototype, {
 
         clone : function () {
             return moment(this);
@@ -6337,7 +11165,7 @@ _.extend(Marionette.Module, {
         },
 
         toString : function () {
-            return this.format("ddd MMM DD YYYY HH:mm:ss [GMT]ZZ");
+            return this.clone().lang('en').format("ddd MMM DD YYYY HH:mm:ss [GMT]ZZ");
         },
 
         toDate : function () {
@@ -6345,7 +11173,12 @@ _.extend(Marionette.Module, {
         },
 
         toISOString : function () {
-            return formatMoment(moment(this).utc(), 'YYYY-MM-DD[T]HH:mm:ss.SSS[Z]');
+            var m = moment(this).utc();
+            if (0 < m.year() && m.year() <= 9999) {
+                return formatMoment(m, 'YYYY-MM-DD[T]HH:mm:ss.SSS[Z]');
+            } else {
+                return formatMoment(m, 'YYYYYY-MM-DD[T]HH:mm:ss.SSS[Z]');
+            }
         },
 
         toArray : function () {
@@ -6362,14 +11195,24 @@ _.extend(Marionette.Module, {
         },
 
         isValid : function () {
-            if (this._isValid == null) {
-                if (this._a) {
-                    this._isValid = !compareArrays(this._a, (this._isUTC ? moment.utc(this._a) : moment(this._a)).toArray());
-                } else {
-                    this._isValid = !isNaN(this._d.getTime());
-                }
+            return isValid(this);
+        },
+
+        isDSTShifted : function () {
+
+            if (this._a) {
+                return this.isValid() && compareArrays(this._a, (this._isUTC ? moment.utc(this._a) : moment(this._a)).toArray()) > 0;
             }
-            return !!this._isValid;
+
+            return false;
+        },
+
+        parsingFlags : function () {
+            return extend({}, this._pf);
+        },
+
+        invalidAt: function () {
+            return this._pf.overflow;
         },
 
         utc : function () {
@@ -6412,7 +11255,7 @@ _.extend(Marionette.Module, {
         },
 
         diff : function (input, units, asFloat) {
-            var that = this._isUTC ? moment(input).zone(this._offset || 0) : moment(input).local(),
+            var that = makeAs(input, this),
                 zoneDiff = (this.zone() - that.zone()) * 6e4,
                 diff, output;
 
@@ -6454,19 +11297,21 @@ _.extend(Marionette.Module, {
         },
 
         calendar : function () {
-            var diff = this.diff(moment().startOf('day'), 'days', true),
+            // We want to compare the start of today, vs this.
+            // Getting start-of-today depends on whether we're zone'd or not.
+            var sod = makeAs(moment(), this).startOf('day'),
+                diff = this.diff(sod, 'days', true),
                 format = diff < -6 ? 'sameElse' :
-                diff < -1 ? 'lastWeek' :
-                diff < 0 ? 'lastDay' :
-                diff < 1 ? 'sameDay' :
-                diff < 2 ? 'nextDay' :
-                diff < 7 ? 'nextWeek' : 'sameElse';
+                    diff < -1 ? 'lastWeek' :
+                    diff < 0 ? 'lastDay' :
+                    diff < 1 ? 'sameDay' :
+                    diff < 2 ? 'nextDay' :
+                    diff < 7 ? 'nextWeek' : 'sameElse';
             return this.format(this.lang().calendar(format, this));
         },
 
         isLeapYear : function () {
-            var year = this.year();
-            return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+            return isLeapYear(this.year());
         },
 
         isDST : function () {
@@ -6477,42 +11322,14 @@ _.extend(Marionette.Module, {
         day : function (input) {
             var day = this._isUTC ? this._d.getUTCDay() : this._d.getDay();
             if (input != null) {
-                if (typeof input === 'string') {
-                    input = this.lang().weekdaysParse(input);
-                    if (typeof input !== 'number') {
-                        return this;
-                    }
-                }
+                input = parseWeekday(input, this.lang());
                 return this.add({ d : input - day });
             } else {
                 return day;
             }
         },
 
-        month : function (input) {
-            var utc = this._isUTC ? 'UTC' : '',
-                dayOfMonth,
-                daysInMonth;
-
-            if (input != null) {
-                if (typeof input === 'string') {
-                    input = this.lang().monthsParse(input);
-                    if (typeof input !== 'number') {
-                        return this;
-                    }
-                }
-
-                dayOfMonth = this.date();
-                this.date(1);
-                this._d['set' + utc + 'Month'](input);
-                this.date(Math.min(dayOfMonth, this.daysInMonth()));
-
-                moment.updateOffset(this);
-                return this;
-            } else {
-                return this._d['get' + utc + 'Month']();
-            }
-        },
+        month : makeAccessor('Month', true),
 
         startOf: function (units) {
             units = normalizeUnits(units);
@@ -6522,10 +11339,12 @@ _.extend(Marionette.Module, {
             case 'year':
                 this.month(0);
                 /* falls through */
+            case 'quarter':
             case 'month':
                 this.date(1);
                 /* falls through */
             case 'week':
+            case 'isoWeek':
             case 'day':
                 this.hours(0);
                 /* falls through */
@@ -6543,13 +11362,21 @@ _.extend(Marionette.Module, {
             // weeks are a special case
             if (units === 'week') {
                 this.weekday(0);
+            } else if (units === 'isoWeek') {
+                this.isoWeekday(1);
+            }
+
+            // quarters are also special
+            if (units === 'quarter') {
+                this.month(Math.floor(this.month() / 3) * 3);
             }
 
             return this;
         },
 
         endOf: function (units) {
-            return this.startOf(units).add(units, 1).subtract('ms', 1);
+            units = normalizeUnits(units);
+            return this.startOf(units).add((units === 'isoWeek' ? 'week' : units), 1).subtract('ms', 1);
         },
 
         isAfter: function (input, units) {
@@ -6563,8 +11390,8 @@ _.extend(Marionette.Module, {
         },
 
         isSame: function (input, units) {
-            units = typeof units !== 'undefined' ? units : 'millisecond';
-            return +this.clone().startOf(units) === +moment(input).startOf(units);
+            units = units || 'ms';
+            return +this.clone().startOf(units) === +makeAs(input, this).startOf(units);
         },
 
         min: function (other) {
@@ -6577,7 +11404,17 @@ _.extend(Marionette.Module, {
             return other > this ? this : other;
         },
 
-        zone : function (input) {
+        // keepTime = true means only change the timezone, without affecting
+        // the local hour. So 5:31:26 +0300 --[zone(2, true)]--> 5:31:26 +0200
+        // It is possible that 5:31:26 doesn't exist int zone +0200, so we
+        // adjust the time as needed, to be valid.
+        //
+        // Keeping the time actually adds/subtracts (one hour)
+        // from the actual represented time. That is why we call updateOffset
+        // a second time. In case it wants us to change the offset again
+        // _changeInProgress == true case, then we have to adjust, because
+        // there is no such time in the given timezone.
+        zone : function (input, keepTime) {
             var offset = this._offset || 0;
             if (input != null) {
                 if (typeof input === "string") {
@@ -6589,7 +11426,14 @@ _.extend(Marionette.Module, {
                 this._offset = input;
                 this._isUTC = true;
                 if (offset !== input) {
-                    addOrSubtractDurationFromMoment(this, moment.duration(offset - input, 'm'), 1, true);
+                    if (!keepTime || this._changeInProgress) {
+                        addOrSubtractDurationFromMoment(this,
+                                moment.duration(offset - input, 'm'), 1, false);
+                    } else if (!this._changeInProgress) {
+                        this._changeInProgress = true;
+                        moment.updateOffset(this, true);
+                        this._changeInProgress = null;
+                    }
                 }
             } else {
                 return this._isUTC ? offset : this._d.getTimezoneOffset();
@@ -6605,13 +11449,37 @@ _.extend(Marionette.Module, {
             return this._isUTC ? "Coordinated Universal Time" : "";
         },
 
+        parseZone : function () {
+            if (this._tzm) {
+                this.zone(this._tzm);
+            } else if (typeof this._i === 'string') {
+                this.zone(this._i);
+            }
+            return this;
+        },
+
+        hasAlignedHourOffset : function (input) {
+            if (!input) {
+                input = 0;
+            }
+            else {
+                input = moment(input).zone();
+            }
+
+            return (this.zone() - input) % 60 === 0;
+        },
+
         daysInMonth : function () {
-            return moment.utc([this.year(), this.month() + 1, 0]).date();
+            return daysInMonth(this.year(), this.month());
         },
 
         dayOfYear : function (input) {
             var dayOfYear = round((moment(this).startOf('day') - moment(this).startOf('year')) / 864e5) + 1;
             return input == null ? dayOfYear : this.add("d", (input - dayOfYear));
+        },
+
+        quarter : function (input) {
+            return input == null ? Math.ceil((this.month() + 1) / 3) : this.month((input - 1) * 3 + this.month() % 3);
         },
 
         weekYear : function (input) {
@@ -6635,7 +11503,7 @@ _.extend(Marionette.Module, {
         },
 
         weekday : function (input) {
-            var weekday = (this._d.getDay() + 7 - this.lang()._week.dow) % 7;
+            var weekday = (this.day() + 7 - this.lang()._week.dow) % 7;
             return input == null ? weekday : this.add("d", input - weekday);
         },
 
@@ -6644,6 +11512,28 @@ _.extend(Marionette.Module, {
             // as a getter, returns 7 instead of 0 (1-7 range instead of 0-6)
             // as a setter, sunday should belong to the previous week.
             return input == null ? this.day() || 7 : this.day(this.day() % 7 ? input : input - 7);
+        },
+
+        isoWeeksInYear : function () {
+            return weeksInYear(this.year(), 1, 4);
+        },
+
+        weeksInYear : function () {
+            var weekInfo = this._lang._week;
+            return weeksInYear(this.year(), weekInfo.dow, weekInfo.doy);
+        },
+
+        get : function (units) {
+            units = normalizeUnits(units);
+            return this[units]();
+        },
+
+        set : function (units, value) {
+            units = normalizeUnits(units);
+            if (typeof this[units] === 'function') {
+                this[units](value);
+            }
+            return this;
         },
 
         // If passed a language key, it will set the language for this
@@ -6657,35 +11547,70 @@ _.extend(Marionette.Module, {
                 return this;
             }
         }
-    };
+    });
 
-    // helper for adding shortcuts
-    function makeGetterAndSetter(name, key) {
-        moment.fn[name] = moment.fn[name + 's'] = function (input) {
-            var utc = this._isUTC ? 'UTC' : '';
-            if (input != null) {
-                this._d['set' + utc + key](input);
-                moment.updateOffset(this);
+    function rawMonthSetter(mom, value) {
+        var dayOfMonth;
+
+        // TODO: Move this out of here!
+        if (typeof value === 'string') {
+            value = mom.lang().monthsParse(value);
+            // TODO: Another silent failure?
+            if (typeof value !== 'number') {
+                return mom;
+            }
+        }
+
+        dayOfMonth = Math.min(mom.date(),
+                daysInMonth(mom.year(), value));
+        mom._d['set' + (mom._isUTC ? 'UTC' : '') + 'Month'](value, dayOfMonth);
+        return mom;
+    }
+
+    function rawGetter(mom, unit) {
+        return mom._d['get' + (mom._isUTC ? 'UTC' : '') + unit]();
+    }
+
+    function rawSetter(mom, unit, value) {
+        if (unit === 'Month') {
+            return rawMonthSetter(mom, value);
+        } else {
+            return mom._d['set' + (mom._isUTC ? 'UTC' : '') + unit](value);
+        }
+    }
+
+    function makeAccessor(unit, keepTime) {
+        return function (value) {
+            if (value != null) {
+                rawSetter(this, unit, value);
+                moment.updateOffset(this, keepTime);
                 return this;
             } else {
-                return this._d['get' + utc + key]();
+                return rawGetter(this, unit);
             }
         };
     }
 
-    // loop through and add shortcuts (Month, Date, Hours, Minutes, Seconds, Milliseconds)
-    for (i = 0; i < proxyGettersAndSetters.length; i ++) {
-        makeGetterAndSetter(proxyGettersAndSetters[i].toLowerCase().replace(/s$/, ''), proxyGettersAndSetters[i]);
-    }
-
-    // add shortcut for year (uses different syntax than the getter/setter 'year' == 'FullYear')
-    makeGetterAndSetter('year', 'FullYear');
+    moment.fn.millisecond = moment.fn.milliseconds = makeAccessor('Milliseconds', false);
+    moment.fn.second = moment.fn.seconds = makeAccessor('Seconds', false);
+    moment.fn.minute = moment.fn.minutes = makeAccessor('Minutes', false);
+    // Setting the hour should keep the time, because the user explicitly
+    // specified which hour he wants. So trying to maintain the same hour (in
+    // a new timezone) makes sense. Adding/subtracting hours does not follow
+    // this rule.
+    moment.fn.hour = moment.fn.hours = makeAccessor('Hours', true);
+    // moment.fn.month is defined separately
+    moment.fn.date = makeAccessor('Date', true);
+    moment.fn.dates = deprecate("dates accessor is deprecated. Use date instead.", makeAccessor('Date', true));
+    moment.fn.year = makeAccessor('FullYear', true);
+    moment.fn.years = deprecate("years accessor is deprecated. Use year instead.", makeAccessor('FullYear', true));
 
     // add plural methods
     moment.fn.days = moment.fn.day;
     moment.fn.months = moment.fn.month;
     moment.fn.weeks = moment.fn.week;
     moment.fn.isoWeeks = moment.fn.isoWeek;
+    moment.fn.quarters = moment.fn.quarter;
 
     // add aliased format methods
     moment.fn.toJSON = moment.fn.toISOString;
@@ -6695,7 +11620,8 @@ _.extend(Marionette.Module, {
     ************************************/
 
 
-    moment.duration.fn = Duration.prototype = {
+    extend(moment.duration.fn = Duration.prototype, {
+
         _bubble : function () {
             var milliseconds = this._milliseconds,
                 days = this._days,
@@ -6734,7 +11660,7 @@ _.extend(Marionette.Module, {
             return this._milliseconds +
               this._days * 864e5 +
               (this._months % 12) * 2592e6 +
-              ~~(this._months / 12) * 31536e6;
+              toInt(this._months / 12) * 31536e6;
         },
 
         humanize : function (withSuffix) {
@@ -6783,8 +11709,34 @@ _.extend(Marionette.Module, {
             return this['as' + units.charAt(0).toUpperCase() + units.slice(1) + 's']();
         },
 
-        lang : moment.fn.lang
-    };
+        lang : moment.fn.lang,
+
+        toIsoString : function () {
+            // inspired by https://github.com/dordille/moment-isoduration/blob/master/moment.isoduration.js
+            var years = Math.abs(this.years()),
+                months = Math.abs(this.months()),
+                days = Math.abs(this.days()),
+                hours = Math.abs(this.hours()),
+                minutes = Math.abs(this.minutes()),
+                seconds = Math.abs(this.seconds() + this.milliseconds() / 1000);
+
+            if (!this.asSeconds()) {
+                // this is the same as C#'s (Noda) and python (isodate)...
+                // but not other JS (goog.date)
+                return 'P0D';
+            }
+
+            return (this.asSeconds() < 0 ? '-' : '') +
+                'P' +
+                (years ? years + 'Y' : '') +
+                (months ? months + 'M' : '') +
+                (days ? days + 'D' : '') +
+                ((hours || minutes || seconds) ? 'T' : '') +
+                (hours ? hours + 'H' : '') +
+                (minutes ? minutes + 'M' : '') +
+                (seconds ? seconds + 'S' : '');
+        }
+    });
 
     function makeDurationGetter(name) {
         moment.duration.fn[name] = function () {
@@ -6820,7 +11772,7 @@ _.extend(Marionette.Module, {
     moment.lang('en', {
         ordinal : function (number) {
             var b = number % 10,
-                output = (~~ (number % 100 / 10) === 1) ? 'th' :
+                output = (toInt(number % 100 / 10) === 1) ? 'th' :
                 (b === 1) ? 'st' :
                 (b === 2) ? 'nd' :
                 (b === 3) ? 'rd' : 'th';
@@ -6828,28 +11780,44 @@ _.extend(Marionette.Module, {
         }
     });
 
+    /* EMBED_LANGUAGES */
 
     /************************************
         Exposing Moment
     ************************************/
 
+    function makeGlobal(shouldDeprecate) {
+        /*global ender:false */
+        if (typeof ender !== 'undefined') {
+            return;
+        }
+        oldGlobalMoment = globalScope.moment;
+        if (shouldDeprecate) {
+            globalScope.moment = deprecate(
+                    "Accessing Moment through the global scope is " +
+                    "deprecated, and will be removed in an upcoming " +
+                    "release.",
+                    moment);
+        } else {
+            globalScope.moment = moment;
+        }
+    }
 
     // CommonJS module is defined
     if (hasModule) {
         module.exports = moment;
-    }
-    /*global ender:false */
-    if (typeof ender === 'undefined') {
-        // here, `this` means `window` in the browser, or `global` on the server
-        // add `moment` as a global object via a string identifier,
-        // for Closure Compiler "advanced" mode
-        this['moment'] = moment;
-    }
-    /*global define:false */
-    if (typeof define === "function" && define.amd) {
-        define("moment", [], function () {
+    } else if (typeof define === "function" && define.amd) {
+        define("moment", function (require, exports, module) {
+            if (module.config && module.config() && module.config().noGlobal === true) {
+                // release the global variable
+                globalScope.moment = oldGlobalMoment;
+            }
+
             return moment;
         });
+        makeGlobal(true);
+    } else {
+        makeGlobal();
     }
 }).call(this);
 
@@ -14351,6 +19319,967 @@ global.Editor = Editor;
     }
 }(this));
 
+/*
+ * ----------------------------- JSTORAGE -------------------------------------
+ * Simple local storage wrapper to save data on the browser side, supporting
+ * all major browsers - IE6+, Firefox2+, Safari4+, Chrome4+ and Opera 10.5+
+ *
+ * Author: Andris Reinman, andris.reinman@gmail.com
+ * Project homepage: www.jstorage.info
+ *
+ * Licensed under Unlicense:
+ *
+ * This is free and unencumbered software released into the public domain.
+ * 
+ * Anyone is free to copy, modify, publish, use, compile, sell, or
+ * distribute this software, either in source code form or as a compiled
+ * binary, for any purpose, commercial or non-commercial, and by any
+ * means.
+ * 
+ * In jurisdictions that recognize copyright laws, the author or authors
+ * of this software dedicate any and all copyright interest in the
+ * software to the public domain. We make this dedication for the benefit
+ * of the public at large and to the detriment of our heirs and
+ * successors. We intend this dedication to be an overt act of
+ * relinquishment in perpetuity of all present and future rights to this
+ * software under copyright law.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ * 
+ * For more information, please refer to <http://unlicense.org/>
+ */
+
+ (function(){
+    var
+        /* jStorage version */
+        JSTORAGE_VERSION = "0.4.8",
+
+        /* detect a dollar object or create one if not found */
+        $ = window.jQuery || window.$ || (window.$ = {}),
+
+        /* check for a JSON handling support */
+        JSON = {
+            parse:
+                window.JSON && (window.JSON.parse || window.JSON.decode) ||
+                String.prototype.evalJSON && function(str){return String(str).evalJSON();} ||
+                $.parseJSON ||
+                $.evalJSON,
+            stringify:
+                Object.toJSON ||
+                window.JSON && (window.JSON.stringify || window.JSON.encode) ||
+                $.toJSON
+        };
+
+    // Break if no JSON support was found
+    if(!("parse" in JSON) || !("stringify" in JSON)){
+        throw new Error("No JSON support found, include //cdnjs.cloudflare.com/ajax/libs/json2/20110223/json2.js to page");
+    }
+
+    var
+        /* This is the object, that holds the cached values */
+        _storage = {__jstorage_meta:{CRC32:{}}},
+
+        /* Actual browser storage (localStorage or globalStorage["domain"]) */
+        _storage_service = {jStorage:"{}"},
+
+        /* DOM element for older IE versions, holds userData behavior */
+        _storage_elm = null,
+
+        /* How much space does the storage take */
+        _storage_size = 0,
+
+        /* which backend is currently used */
+        _backend = false,
+
+        /* onchange observers */
+        _observers = {},
+
+        /* timeout to wait after onchange event */
+        _observer_timeout = false,
+
+        /* last update time */
+        _observer_update = 0,
+
+        /* pubsub observers */
+        _pubsub_observers = {},
+
+        /* skip published items older than current timestamp */
+        _pubsub_last = +new Date(),
+
+        /* Next check for TTL */
+        _ttl_timeout,
+
+        /**
+         * XML encoding and decoding as XML nodes can't be JSON'ized
+         * XML nodes are encoded and decoded if the node is the value to be saved
+         * but not if it's as a property of another object
+         * Eg. -
+         *   $.jStorage.set("key", xmlNode);        // IS OK
+         *   $.jStorage.set("key", {xml: xmlNode}); // NOT OK
+         */
+        _XMLService = {
+
+            /**
+             * Validates a XML node to be XML
+             * based on jQuery.isXML function
+             */
+            isXML: function(elm){
+                var documentElement = (elm ? elm.ownerDocument || elm : 0).documentElement;
+                return documentElement ? documentElement.nodeName !== "HTML" : false;
+            },
+
+            /**
+             * Encodes a XML node to string
+             * based on http://www.mercurytide.co.uk/news/article/issues-when-working-ajax/
+             */
+            encode: function(xmlNode) {
+                if(!this.isXML(xmlNode)){
+                    return false;
+                }
+                try{ // Mozilla, Webkit, Opera
+                    return new XMLSerializer().serializeToString(xmlNode);
+                }catch(E1) {
+                    try {  // IE
+                        return xmlNode.xml;
+                    }catch(E2){}
+                }
+                return false;
+            },
+
+            /**
+             * Decodes a XML node from string
+             * loosely based on http://outwestmedia.com/jquery-plugins/xmldom/
+             */
+            decode: function(xmlString){
+                var dom_parser = ("DOMParser" in window && (new DOMParser()).parseFromString) ||
+                        (window.ActiveXObject && function(_xmlString) {
+                    var xml_doc = new ActiveXObject("Microsoft.XMLDOM");
+                    xml_doc.async = "false";
+                    xml_doc.loadXML(_xmlString);
+                    return xml_doc;
+                }),
+                resultXML;
+                if(!dom_parser){
+                    return false;
+                }
+                resultXML = dom_parser.call("DOMParser" in window && (new DOMParser()) || window, xmlString, "text/xml");
+                return this.isXML(resultXML)?resultXML:false;
+            }
+        };
+
+
+    ////////////////////////// PRIVATE METHODS ////////////////////////
+
+    /**
+     * Initialization function. Detects if the browser supports DOM Storage
+     * or userData behavior and behaves accordingly.
+     */
+    function _init(){
+        /* Check if browser supports localStorage */
+        var localStorageReallyWorks = false;
+        if("localStorage" in window){
+            try {
+                window.localStorage.setItem("_tmptest", "tmpval");
+                localStorageReallyWorks = true;
+                window.localStorage.removeItem("_tmptest");
+            } catch(BogusQuotaExceededErrorOnIos5) {
+                // Thanks be to iOS5 Private Browsing mode which throws
+                // QUOTA_EXCEEDED_ERRROR DOM Exception 22.
+            }
+        }
+
+        if(localStorageReallyWorks){
+            try {
+                if(window.localStorage) {
+                    _storage_service = window.localStorage;
+                    _backend = "localStorage";
+                    _observer_update = _storage_service.jStorage_update;
+                }
+            } catch(E3) {/* Firefox fails when touching localStorage and cookies are disabled */}
+        }
+        /* Check if browser supports globalStorage */
+        else if("globalStorage" in window){
+            try {
+                if(window.globalStorage) {
+                    if(window.location.hostname == "localhost"){
+                        _storage_service = window.globalStorage["localhost.localdomain"];
+                    }
+                    else{
+                        _storage_service = window.globalStorage[window.location.hostname];
+                    }
+                    _backend = "globalStorage";
+                    _observer_update = _storage_service.jStorage_update;
+                }
+            } catch(E4) {/* Firefox fails when touching localStorage and cookies are disabled */}
+        }
+        /* Check if browser supports userData behavior */
+        else {
+            _storage_elm = document.createElement("link");
+            if(_storage_elm.addBehavior){
+
+                /* Use a DOM element to act as userData storage */
+                _storage_elm.style.behavior = "url(#default#userData)";
+
+                /* userData element needs to be inserted into the DOM! */
+                document.getElementsByTagName("head")[0].appendChild(_storage_elm);
+
+                try{
+                    _storage_elm.load("jStorage");
+                }catch(E){
+                    // try to reset cache
+                    _storage_elm.setAttribute("jStorage", "{}");
+                    _storage_elm.save("jStorage");
+                    _storage_elm.load("jStorage");
+                }
+
+                var data = "{}";
+                try{
+                    data = _storage_elm.getAttribute("jStorage");
+                }catch(E5){}
+
+                try{
+                    _observer_update = _storage_elm.getAttribute("jStorage_update");
+                }catch(E6){}
+
+                _storage_service.jStorage = data;
+                _backend = "userDataBehavior";
+            }else{
+                _storage_elm = null;
+                return;
+            }
+        }
+
+        // Load data from storage
+        _load_storage();
+
+        // remove dead keys
+        _handleTTL();
+
+        // start listening for changes
+        _setupObserver();
+
+        // initialize publish-subscribe service
+        _handlePubSub();
+
+        // handle cached navigation
+        if("addEventListener" in window){
+            window.addEventListener("pageshow", function(event){
+                if(event.persisted){
+                    _storageObserver();
+                }
+            }, false);
+        }
+    }
+
+    /**
+     * Reload data from storage when needed
+     */
+    function _reloadData(){
+        var data = "{}";
+
+        if(_backend == "userDataBehavior"){
+            _storage_elm.load("jStorage");
+
+            try{
+                data = _storage_elm.getAttribute("jStorage");
+            }catch(E5){}
+
+            try{
+                _observer_update = _storage_elm.getAttribute("jStorage_update");
+            }catch(E6){}
+
+            _storage_service.jStorage = data;
+        }
+
+        _load_storage();
+
+        // remove dead keys
+        _handleTTL();
+
+        _handlePubSub();
+    }
+
+    /**
+     * Sets up a storage change observer
+     */
+    function _setupObserver(){
+        if(_backend == "localStorage" || _backend == "globalStorage"){
+            if("addEventListener" in window){
+                window.addEventListener("storage", _storageObserver, false);
+            }else{
+                document.attachEvent("onstorage", _storageObserver);
+            }
+        }else if(_backend == "userDataBehavior"){
+            setInterval(_storageObserver, 1000);
+        }
+    }
+
+    /**
+     * Fired on any kind of data change, needs to check if anything has
+     * really been changed
+     */
+    function _storageObserver(){
+        var updateTime;
+        // cumulate change notifications with timeout
+        clearTimeout(_observer_timeout);
+        _observer_timeout = setTimeout(function(){
+
+            if(_backend == "localStorage" || _backend == "globalStorage"){
+                updateTime = _storage_service.jStorage_update;
+            }else if(_backend == "userDataBehavior"){
+                _storage_elm.load("jStorage");
+                try{
+                    updateTime = _storage_elm.getAttribute("jStorage_update");
+                }catch(E5){}
+            }
+
+            if(updateTime && updateTime != _observer_update){
+                _observer_update = updateTime;
+                _checkUpdatedKeys();
+            }
+
+        }, 25);
+    }
+
+    /**
+     * Reloads the data and checks if any keys are changed
+     */
+    function _checkUpdatedKeys(){
+        var oldCrc32List = JSON.parse(JSON.stringify(_storage.__jstorage_meta.CRC32)),
+            newCrc32List;
+
+        _reloadData();
+        newCrc32List = JSON.parse(JSON.stringify(_storage.__jstorage_meta.CRC32));
+
+        var key,
+            updated = [],
+            removed = [];
+
+        for(key in oldCrc32List){
+            if(oldCrc32List.hasOwnProperty(key)){
+                if(!newCrc32List[key]){
+                    removed.push(key);
+                    continue;
+                }
+                if(oldCrc32List[key] != newCrc32List[key] && String(oldCrc32List[key]).substr(0,2) == "2."){
+                    updated.push(key);
+                }
+            }
+        }
+
+        for(key in newCrc32List){
+            if(newCrc32List.hasOwnProperty(key)){
+                if(!oldCrc32List[key]){
+                    updated.push(key);
+                }
+            }
+        }
+
+        _fireObservers(updated, "updated");
+        _fireObservers(removed, "deleted");
+    }
+
+    /**
+     * Fires observers for updated keys
+     *
+     * @param {Array|String} keys Array of key names or a key
+     * @param {String} action What happened with the value (updated, deleted, flushed)
+     */
+    function _fireObservers(keys, action){
+        keys = [].concat(keys || []);
+        if(action == "flushed"){
+            keys = [];
+            for(var key in _observers){
+                if(_observers.hasOwnProperty(key)){
+                    keys.push(key);
+                }
+            }
+            action = "deleted";
+        }
+        for(var i=0, len = keys.length; i<len; i++){
+            if(_observers[keys[i]]){
+                for(var j=0, jlen = _observers[keys[i]].length; j<jlen; j++){
+                    _observers[keys[i]][j](keys[i], action);
+                }
+            }
+            if(_observers["*"]){
+                for(var j=0, jlen = _observers["*"].length; j<jlen; j++){
+                    _observers["*"][j](keys[i], action);
+                }
+            }
+        }
+    }
+
+    /**
+     * Publishes key change to listeners
+     */
+    function _publishChange(){
+        var updateTime = (+new Date()).toString();
+
+        if(_backend == "localStorage" || _backend == "globalStorage"){
+            try {
+                _storage_service.jStorage_update = updateTime;
+            } catch (E8) {
+                // safari private mode has been enabled after the jStorage initialization
+                _backend = false;
+            }
+        }else if(_backend == "userDataBehavior"){
+            _storage_elm.setAttribute("jStorage_update", updateTime);
+            _storage_elm.save("jStorage");
+        }
+
+        _storageObserver();
+    }
+
+    /**
+     * Loads the data from the storage based on the supported mechanism
+     */
+    function _load_storage(){
+        /* if jStorage string is retrieved, then decode it */
+        if(_storage_service.jStorage){
+            try{
+                _storage = JSON.parse(String(_storage_service.jStorage));
+            }catch(E6){_storage_service.jStorage = "{}";}
+        }else{
+            _storage_service.jStorage = "{}";
+        }
+        _storage_size = _storage_service.jStorage?String(_storage_service.jStorage).length:0;
+
+        if(!_storage.__jstorage_meta){
+            _storage.__jstorage_meta = {};
+        }
+        if(!_storage.__jstorage_meta.CRC32){
+            _storage.__jstorage_meta.CRC32 = {};
+        }
+    }
+
+    /**
+     * This functions provides the "save" mechanism to store the jStorage object
+     */
+    function _save(){
+        _dropOldEvents(); // remove expired events
+        try{
+            _storage_service.jStorage = JSON.stringify(_storage);
+            // If userData is used as the storage engine, additional
+            if(_storage_elm) {
+                _storage_elm.setAttribute("jStorage",_storage_service.jStorage);
+                _storage_elm.save("jStorage");
+            }
+            _storage_size = _storage_service.jStorage?String(_storage_service.jStorage).length:0;
+        }catch(E7){/* probably cache is full, nothing is saved this way*/}
+    }
+
+    /**
+     * Function checks if a key is set and is string or numberic
+     *
+     * @param {String} key Key name
+     */
+    function _checkKey(key){
+        if(typeof key != "string" && typeof key != "number"){
+            throw new TypeError("Key name must be string or numeric");
+        }
+        if(key == "__jstorage_meta"){
+            throw new TypeError("Reserved key name");
+        }
+        return true;
+    }
+
+    /**
+     * Removes expired keys
+     */
+    function _handleTTL(){
+        var curtime, i, TTL, CRC32, nextExpire = Infinity, changed = false, deleted = [];
+
+        clearTimeout(_ttl_timeout);
+
+        if(!_storage.__jstorage_meta || typeof _storage.__jstorage_meta.TTL != "object"){
+            // nothing to do here
+            return;
+        }
+
+        curtime = +new Date();
+        TTL = _storage.__jstorage_meta.TTL;
+
+        CRC32 = _storage.__jstorage_meta.CRC32;
+        for(i in TTL){
+            if(TTL.hasOwnProperty(i)){
+                if(TTL[i] <= curtime){
+                    delete TTL[i];
+                    delete CRC32[i];
+                    delete _storage[i];
+                    changed = true;
+                    deleted.push(i);
+                }else if(TTL[i] < nextExpire){
+                    nextExpire = TTL[i];
+                }
+            }
+        }
+
+        // set next check
+        if(nextExpire != Infinity){
+            _ttl_timeout = setTimeout(_handleTTL, nextExpire - curtime);
+        }
+
+        // save changes
+        if(changed){
+            _save();
+            _publishChange();
+            _fireObservers(deleted, "deleted");
+        }
+    }
+
+    /**
+     * Checks if there's any events on hold to be fired to listeners
+     */
+    function _handlePubSub(){
+        var i, len;
+        if(!_storage.__jstorage_meta.PubSub){
+            return;
+        }
+        var pubelm,
+            _pubsubCurrent = _pubsub_last;
+
+        for(i=len=_storage.__jstorage_meta.PubSub.length-1; i>=0; i--){
+            pubelm = _storage.__jstorage_meta.PubSub[i];
+            if(pubelm[0] > _pubsub_last){
+                _pubsubCurrent = pubelm[0];
+                _fireSubscribers(pubelm[1], pubelm[2]);
+            }
+        }
+
+        _pubsub_last = _pubsubCurrent;
+    }
+
+    /**
+     * Fires all subscriber listeners for a pubsub channel
+     *
+     * @param {String} channel Channel name
+     * @param {Mixed} payload Payload data to deliver
+     */
+    function _fireSubscribers(channel, payload){
+        if(_pubsub_observers[channel]){
+            for(var i=0, len = _pubsub_observers[channel].length; i<len; i++){
+                // send immutable data that can't be modified by listeners
+                try{
+                    _pubsub_observers[channel][i](channel, JSON.parse(JSON.stringify(payload)));
+                }catch(E){};
+            }
+        }
+    }
+
+    /**
+     * Remove old events from the publish stream (at least 2sec old)
+     */
+    function _dropOldEvents(){
+        if(!_storage.__jstorage_meta.PubSub){
+            return;
+        }
+
+        var retire = +new Date() - 2000;
+
+        for(var i=0, len = _storage.__jstorage_meta.PubSub.length; i<len; i++){
+            if(_storage.__jstorage_meta.PubSub[i][0] <= retire){
+                // deleteCount is needed for IE6
+                _storage.__jstorage_meta.PubSub.splice(i, _storage.__jstorage_meta.PubSub.length - i);
+                break;
+            }
+        }
+
+        if(!_storage.__jstorage_meta.PubSub.length){
+            delete _storage.__jstorage_meta.PubSub;
+        }
+
+    }
+
+    /**
+     * Publish payload to a channel
+     *
+     * @param {String} channel Channel name
+     * @param {Mixed} payload Payload to send to the subscribers
+     */
+    function _publish(channel, payload){
+        if(!_storage.__jstorage_meta){
+            _storage.__jstorage_meta = {};
+        }
+        if(!_storage.__jstorage_meta.PubSub){
+            _storage.__jstorage_meta.PubSub = [];
+        }
+
+        _storage.__jstorage_meta.PubSub.unshift([+new Date, channel, payload]);
+
+        _save();
+        _publishChange();
+    }
+
+
+    /**
+     * JS Implementation of MurmurHash2
+     *
+     *  SOURCE: https://github.com/garycourt/murmurhash-js (MIT licensed)
+     *
+     * @author <a href="mailto:gary.court@gmail.com">Gary Court</a>
+     * @see http://github.com/garycourt/murmurhash-js
+     * @author <a href="mailto:aappleby@gmail.com">Austin Appleby</a>
+     * @see http://sites.google.com/site/murmurhash/
+     *
+     * @param {string} str ASCII only
+     * @param {number} seed Positive integer only
+     * @return {number} 32-bit positive integer hash
+     */
+
+    function murmurhash2_32_gc(str, seed) {
+        var
+            l = str.length,
+            h = seed ^ l,
+            i = 0,
+            k;
+
+        while (l >= 4) {
+            k =
+                ((str.charCodeAt(i) & 0xff)) |
+                ((str.charCodeAt(++i) & 0xff) << 8) |
+                ((str.charCodeAt(++i) & 0xff) << 16) |
+                ((str.charCodeAt(++i) & 0xff) << 24);
+
+            k = (((k & 0xffff) * 0x5bd1e995) + ((((k >>> 16) * 0x5bd1e995) & 0xffff) << 16));
+            k ^= k >>> 24;
+            k = (((k & 0xffff) * 0x5bd1e995) + ((((k >>> 16) * 0x5bd1e995) & 0xffff) << 16));
+
+            h = (((h & 0xffff) * 0x5bd1e995) + ((((h >>> 16) * 0x5bd1e995) & 0xffff) << 16)) ^ k;
+
+            l -= 4;
+            ++i;
+        }
+
+        switch (l) {
+            case 3: h ^= (str.charCodeAt(i + 2) & 0xff) << 16;
+            case 2: h ^= (str.charCodeAt(i + 1) & 0xff) << 8;
+            case 1: h ^= (str.charCodeAt(i) & 0xff);
+                h = (((h & 0xffff) * 0x5bd1e995) + ((((h >>> 16) * 0x5bd1e995) & 0xffff) << 16));
+        }
+
+        h ^= h >>> 13;
+        h = (((h & 0xffff) * 0x5bd1e995) + ((((h >>> 16) * 0x5bd1e995) & 0xffff) << 16));
+        h ^= h >>> 15;
+
+        return h >>> 0;
+    }
+
+    ////////////////////////// PUBLIC INTERFACE /////////////////////////
+
+    $.jStorage = {
+        /* Version number */
+        version: JSTORAGE_VERSION,
+
+        /**
+         * Sets a key's value.
+         *
+         * @param {String} key Key to set. If this value is not set or not
+         *              a string an exception is raised.
+         * @param {Mixed} value Value to set. This can be any value that is JSON
+         *              compatible (Numbers, Strings, Objects etc.).
+         * @param {Object} [options] - possible options to use
+         * @param {Number} [options.TTL] - optional TTL value
+         * @return {Mixed} the used value
+         */
+        set: function(key, value, options){
+            _checkKey(key);
+
+            options = options || {};
+
+            // undefined values are deleted automatically
+            if(typeof value == "undefined"){
+                this.deleteKey(key);
+                return value;
+            }
+
+            if(_XMLService.isXML(value)){
+                value = {_is_xml:true,xml:_XMLService.encode(value)};
+            }else if(typeof value == "function"){
+                return undefined; // functions can't be saved!
+            }else if(value && typeof value == "object"){
+                // clone the object before saving to _storage tree
+                value = JSON.parse(JSON.stringify(value));
+            }
+
+            _storage[key] = value;
+
+            _storage.__jstorage_meta.CRC32[key] = "2." + murmurhash2_32_gc(JSON.stringify(value), 0x9747b28c);
+
+            this.setTTL(key, options.TTL || 0); // also handles saving and _publishChange
+
+            _fireObservers(key, "updated");
+            return value;
+        },
+
+        /**
+         * Looks up a key in cache
+         *
+         * @param {String} key - Key to look up.
+         * @param {mixed} def - Default value to return, if key didn't exist.
+         * @return {Mixed} the key value, default value or null
+         */
+        get: function(key, def){
+            _checkKey(key);
+            if(key in _storage){
+                if(_storage[key] && typeof _storage[key] == "object" && _storage[key]._is_xml) {
+                    return _XMLService.decode(_storage[key].xml);
+                }else{
+                    return _storage[key];
+                }
+            }
+            return typeof(def) == "undefined" ? null : def;
+        },
+
+        /**
+         * Deletes a key from cache.
+         *
+         * @param {String} key - Key to delete.
+         * @return {Boolean} true if key existed or false if it didn't
+         */
+        deleteKey: function(key){
+            _checkKey(key);
+            if(key in _storage){
+                delete _storage[key];
+                // remove from TTL list
+                if(typeof _storage.__jstorage_meta.TTL == "object" &&
+                  key in _storage.__jstorage_meta.TTL){
+                    delete _storage.__jstorage_meta.TTL[key];
+                }
+
+                delete _storage.__jstorage_meta.CRC32[key];
+
+                _save();
+                _publishChange();
+                _fireObservers(key, "deleted");
+                return true;
+            }
+            return false;
+        },
+
+        /**
+         * Sets a TTL for a key, or remove it if ttl value is 0 or below
+         *
+         * @param {String} key - key to set the TTL for
+         * @param {Number} ttl - TTL timeout in milliseconds
+         * @return {Boolean} true if key existed or false if it didn't
+         */
+        setTTL: function(key, ttl){
+            var curtime = +new Date();
+            _checkKey(key);
+            ttl = Number(ttl) || 0;
+            if(key in _storage){
+
+                if(!_storage.__jstorage_meta.TTL){
+                    _storage.__jstorage_meta.TTL = {};
+                }
+
+                // Set TTL value for the key
+                if(ttl>0){
+                    _storage.__jstorage_meta.TTL[key] = curtime + ttl;
+                }else{
+                    delete _storage.__jstorage_meta.TTL[key];
+                }
+
+                _save();
+
+                _handleTTL();
+
+                _publishChange();
+                return true;
+            }
+            return false;
+        },
+
+        /**
+         * Gets remaining TTL (in milliseconds) for a key or 0 when no TTL has been set
+         *
+         * @param {String} key Key to check
+         * @return {Number} Remaining TTL in milliseconds
+         */
+        getTTL: function(key){
+            var curtime = +new Date(), ttl;
+            _checkKey(key);
+            if(key in _storage && _storage.__jstorage_meta.TTL && _storage.__jstorage_meta.TTL[key]){
+                ttl = _storage.__jstorage_meta.TTL[key] - curtime;
+                return ttl || 0;
+            }
+            return 0;
+        },
+
+        /**
+         * Deletes everything in cache.
+         *
+         * @return {Boolean} Always true
+         */
+        flush: function(){
+            _storage = {__jstorage_meta:{CRC32:{}}};
+            _save();
+            _publishChange();
+            _fireObservers(null, "flushed");
+            return true;
+        },
+
+        /**
+         * Returns a read-only copy of _storage
+         *
+         * @return {Object} Read-only copy of _storage
+        */
+        storageObj: function(){
+            function F() {}
+            F.prototype = _storage;
+            return new F();
+        },
+
+        /**
+         * Returns an index of all used keys as an array
+         * ["key1", "key2",.."keyN"]
+         *
+         * @return {Array} Used keys
+        */
+        index: function(){
+            var index = [], i;
+            for(i in _storage){
+                if(_storage.hasOwnProperty(i) && i != "__jstorage_meta"){
+                    index.push(i);
+                }
+            }
+            return index;
+        },
+
+        /**
+         * How much space in bytes does the storage take?
+         *
+         * @return {Number} Storage size in chars (not the same as in bytes,
+         *                  since some chars may take several bytes)
+         */
+        storageSize: function(){
+            return _storage_size;
+        },
+
+        /**
+         * Which backend is currently in use?
+         *
+         * @return {String} Backend name
+         */
+        currentBackend: function(){
+            return _backend;
+        },
+
+        /**
+         * Test if storage is available
+         *
+         * @return {Boolean} True if storage can be used
+         */
+        storageAvailable: function(){
+            return !!_backend;
+        },
+
+        /**
+         * Register change listeners
+         *
+         * @param {String} key Key name
+         * @param {Function} callback Function to run when the key changes
+         */
+        listenKeyChange: function(key, callback){
+            _checkKey(key);
+            if(!_observers[key]){
+                _observers[key] = [];
+            }
+            _observers[key].push(callback);
+        },
+
+        /**
+         * Remove change listeners
+         *
+         * @param {String} key Key name to unregister listeners against
+         * @param {Function} [callback] If set, unregister the callback, if not - unregister all
+         */
+        stopListening: function(key, callback){
+            _checkKey(key);
+
+            if(!_observers[key]){
+                return;
+            }
+
+            if(!callback){
+                delete _observers[key];
+                return;
+            }
+
+            for(var i = _observers[key].length - 1; i>=0; i--){
+                if(_observers[key][i] == callback){
+                    _observers[key].splice(i,1);
+                }
+            }
+        },
+
+        /**
+         * Subscribe to a Publish/Subscribe event stream
+         *
+         * @param {String} channel Channel name
+         * @param {Function} callback Function to run when the something is published to the channel
+         */
+        subscribe: function(channel, callback){
+            channel = (channel || "").toString();
+            if(!channel){
+                throw new TypeError("Channel not defined");
+            }
+            if(!_pubsub_observers[channel]){
+                _pubsub_observers[channel] = [];
+            }
+            _pubsub_observers[channel].push(callback);
+        },
+
+        /**
+         * Publish data to an event stream
+         *
+         * @param {String} channel Channel name
+         * @param {Mixed} payload Payload to deliver
+         */
+        publish: function(channel, payload){
+            channel = (channel || "").toString();
+            if(!channel){
+                throw new TypeError("Channel not defined");
+            }
+
+            _publish(channel, payload);
+        },
+
+        /**
+         * Reloads the data from browser storage
+         */
+        reInit: function(){
+            _reloadData();
+        },
+
+        /**
+         * Removes reference from global objects and saves it as jStorage
+         *
+         * @param {Boolean} option if needed to save object as simple "jStorage" in windows context
+         */
+         noConflict: function( saveInGlobal ) {
+            delete window.$.jStorage
+
+            if ( saveInGlobal ) {
+                window.jStorage = this;
+            }
+
+            return this;
+         }
+    };
+
+    // Initialize jStorage
+    _init();
+
+})();
+
 /**
 * bootstrap.js v3.0.0 by @fat and @mdo
 * Copyright 2013 Twitter Inc.
@@ -16350,5736 +22279,6 @@ if (!jQuery) { throw new Error("Bootstrap requires jQuery") }
   })
 
 }(window.jQuery);
-
-;(function(){
-
-/**
- * Require the given path.
- *
- * @param {String} path
- * @return {Object} exports
- * @api public
- */
-
-function require(path, parent, orig) {
-  var resolved = require.resolve(path);
-
-  // lookup failed
-  if (null == resolved) {
-    orig = orig || path;
-    parent = parent || 'root';
-    var err = new Error('Failed to require "' + orig + '" from "' + parent + '"');
-    err.path = orig;
-    err.parent = parent;
-    err.require = true;
-    throw err;
-  }
-
-  var module = require.modules[resolved];
-
-  // perform real require()
-  // by invoking the module's
-  // registered function
-  if (!module.exports) {
-    module.exports = {};
-    module.client = module.component = true;
-    module.call(this, module.exports, require.relative(resolved), module);
-  }
-
-  return module.exports;
-}
-
-/**
- * Registered modules.
- */
-
-require.modules = {};
-
-/**
- * Registered aliases.
- */
-
-require.aliases = {};
-
-/**
- * Resolve `path`.
- *
- * Lookup:
- *
- *   - PATH/index.js
- *   - PATH.js
- *   - PATH
- *
- * @param {String} path
- * @return {String} path or null
- * @api private
- */
-
-require.resolve = function(path) {
-  if (path.charAt(0) === '/') path = path.slice(1);
-
-  var paths = [
-    path,
-    path + '.js',
-    path + '.json',
-    path + '/index.js',
-    path + '/index.json'
-  ];
-
-  for (var i = 0; i < paths.length; i++) {
-    var path = paths[i];
-    if (require.modules.hasOwnProperty(path)) return path;
-    if (require.aliases.hasOwnProperty(path)) return require.aliases[path];
-  }
-};
-
-/**
- * Normalize `path` relative to the current path.
- *
- * @param {String} curr
- * @param {String} path
- * @return {String}
- * @api private
- */
-
-require.normalize = function(curr, path) {
-  var segs = [];
-
-  if ('.' != path.charAt(0)) return path;
-
-  curr = curr.split('/');
-  path = path.split('/');
-
-  for (var i = 0; i < path.length; ++i) {
-    if ('..' == path[i]) {
-      curr.pop();
-    } else if ('.' != path[i] && '' != path[i]) {
-      segs.push(path[i]);
-    }
-  }
-
-  return curr.concat(segs).join('/');
-};
-
-/**
- * Register module at `path` with callback `definition`.
- *
- * @param {String} path
- * @param {Function} definition
- * @api private
- */
-
-require.register = function(path, definition) {
-  require.modules[path] = definition;
-};
-
-/**
- * Alias a module definition.
- *
- * @param {String} from
- * @param {String} to
- * @api private
- */
-
-require.alias = function(from, to) {
-  if (!require.modules.hasOwnProperty(from)) {
-    throw new Error('Failed to alias "' + from + '", it does not exist');
-  }
-  require.aliases[to] = from;
-};
-
-/**
- * Return a require function relative to the `parent` path.
- *
- * @param {String} parent
- * @return {Function}
- * @api private
- */
-
-require.relative = function(parent) {
-  var p = require.normalize(parent, '..');
-
-  /**
-   * lastIndexOf helper.
-   */
-
-  function lastIndexOf(arr, obj) {
-    var i = arr.length;
-    while (i--) {
-      if (arr[i] === obj) return i;
-    }
-    return -1;
-  }
-
-  /**
-   * The relative require() itself.
-   */
-
-  function localRequire(path) {
-    var resolved = localRequire.resolve(path);
-    return require(resolved, parent, path);
-  }
-
-  /**
-   * Resolve relative to the parent.
-   */
-
-  localRequire.resolve = function(path) {
-    var c = path.charAt(0);
-    if ('/' == c) return path.slice(1);
-    if ('.' == c) return require.normalize(p, path);
-
-    // resolve deps by returning
-    // the dep in the nearest "deps"
-    // directory
-    var segs = parent.split('/');
-    var i = lastIndexOf(segs, 'deps') + 1;
-    if (!i) i = 0;
-    path = segs.slice(0, i + 1).join('/') + '/deps/' + path;
-    return path;
-  };
-
-  /**
-   * Check if module is defined at `path`.
-   */
-
-  localRequire.exists = function(path) {
-    return require.modules.hasOwnProperty(localRequire.resolve(path));
-  };
-
-  return localRequire;
-};
-require.register("component-emitter/index.js", function(exports, require, module){
-
-/**
- * Expose `Emitter`.
- */
-
-module.exports = Emitter;
-
-/**
- * Initialize a new `Emitter`.
- *
- * @api public
- */
-
-function Emitter(obj) {
-  if (obj) return mixin(obj);
-};
-
-/**
- * Mixin the emitter properties.
- *
- * @param {Object} obj
- * @return {Object}
- * @api private
- */
-
-function mixin(obj) {
-  for (var key in Emitter.prototype) {
-    obj[key] = Emitter.prototype[key];
-  }
-  return obj;
-}
-
-/**
- * Listen on the given `event` with `fn`.
- *
- * @param {String} event
- * @param {Function} fn
- * @return {Emitter}
- * @api public
- */
-
-Emitter.prototype.on = function(event, fn){
-  this._callbacks = this._callbacks || {};
-  (this._callbacks[event] = this._callbacks[event] || [])
-    .push(fn);
-  return this;
-};
-
-/**
- * Adds an `event` listener that will be invoked a single
- * time then automatically removed.
- *
- * @param {String} event
- * @param {Function} fn
- * @return {Emitter}
- * @api public
- */
-
-Emitter.prototype.once = function(event, fn){
-  var self = this;
-  this._callbacks = this._callbacks || {};
-
-  function on() {
-    self.off(event, on);
-    fn.apply(this, arguments);
-  }
-
-  fn._off = on;
-  this.on(event, on);
-  return this;
-};
-
-/**
- * Remove the given callback for `event` or all
- * registered callbacks.
- *
- * @param {String} event
- * @param {Function} fn
- * @return {Emitter}
- * @api public
- */
-
-Emitter.prototype.off =
-Emitter.prototype.removeListener =
-Emitter.prototype.removeAllListeners = function(event, fn){
-  this._callbacks = this._callbacks || {};
-  var callbacks = this._callbacks[event];
-  if (!callbacks) return this;
-
-  // remove all handlers
-  if (1 == arguments.length) {
-    delete this._callbacks[event];
-    return this;
-  }
-
-  // remove specific handler
-  var i = callbacks.indexOf(fn._off || fn);
-  if (~i) callbacks.splice(i, 1);
-  return this;
-};
-
-/**
- * Emit `event` with the given args.
- *
- * @param {String} event
- * @param {Mixed} ...
- * @return {Emitter}
- */
-
-Emitter.prototype.emit = function(event){
-  this._callbacks = this._callbacks || {};
-  var args = [].slice.call(arguments, 1)
-    , callbacks = this._callbacks[event];
-
-  if (callbacks) {
-    callbacks = callbacks.slice(0);
-    for (var i = 0, len = callbacks.length; i < len; ++i) {
-      callbacks[i].apply(this, args);
-    }
-  }
-
-  return this;
-};
-
-/**
- * Return array of callbacks for `event`.
- *
- * @param {String} event
- * @return {Array}
- * @api public
- */
-
-Emitter.prototype.listeners = function(event){
-  this._callbacks = this._callbacks || {};
-  return this._callbacks[event] || [];
-};
-
-/**
- * Check if this emitter has `event` handlers.
- *
- * @param {String} event
- * @return {Boolean}
- * @api public
- */
-
-Emitter.prototype.hasListeners = function(event){
-  return !! this.listeners(event).length;
-};
-
-});
-require.register("dropzone/index.js", function(exports, require, module){
-
-
-/**
- * Exposing dropzone
- */
-module.exports = require("./lib/dropzone.js");
-
-});
-require.register("dropzone/lib/dropzone.js", function(exports, require, module){
-/*
-#
-# More info at [www.dropzonejs.com](http://www.dropzonejs.com)
-# 
-# Copyright (c) 2012, Matias Meno  
-# 
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-# 
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-# 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
-#
-*/
-
-
-(function() {
-  var Dropzone, Em, camelize, contentLoaded, noop, without,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-    __slice = [].slice;
-
-  Em = typeof Emitter !== "undefined" && Emitter !== null ? Emitter : require("emitter");
-
-  noop = function() {};
-
-  Dropzone = (function(_super) {
-    var extend;
-
-    __extends(Dropzone, _super);
-
-    /*
-    This is a list of all available events you can register on a dropzone object.
-    
-    You can register an event handler like this:
-    
-        dropzone.on("dragEnter", function() { });
-    */
-
-
-    Dropzone.prototype.events = ["drop", "dragstart", "dragend", "dragenter", "dragover", "dragleave", "selectedfiles", "addedfile", "removedfile", "thumbnail", "error", "errormultiple", "processing", "processingmultiple", "uploadprogress", "totaluploadprogress", "sending", "sendingmultiple", "success", "successmultiple", "canceled", "canceledmultiple", "complete", "completemultiple", "reset", "maxfilesexceeded"];
-
-    Dropzone.prototype.defaultOptions = {
-      url: null,
-      method: "post",
-      withCredentials: false,
-      parallelUploads: 2,
-      uploadMultiple: false,
-      maxFilesize: 256,
-      paramName: "file",
-      createImageThumbnails: true,
-      maxThumbnailFilesize: 10,
-      thumbnailWidth: 100,
-      thumbnailHeight: 100,
-      maxFiles: null,
-      params: {},
-      clickable: true,
-      ignoreHiddenFiles: true,
-      acceptedFiles: null,
-      acceptedMimeTypes: null,
-      autoProcessQueue: true,
-      addRemoveLinks: false,
-      previewsContainer: null,
-      dictDefaultMessage: "Drop files here to upload",
-      dictFallbackMessage: "Your browser does not support drag'n'drop file uploads.",
-      dictFallbackText: "Please use the fallback form below to upload your files like in the olden days.",
-      dictFileTooBig: "File is too big ({{filesize}}MB). Max filesize: {{maxFilesize}}MB.",
-      dictInvalidFileType: "You can't upload files of this type.",
-      dictResponseError: "Server responded with {{statusCode}} code.",
-      dictCancelUpload: "Cancel upload",
-      dictCancelUploadConfirmation: "Are you sure you want to cancel this upload?",
-      dictRemoveFile: "Remove file",
-      dictRemoveFileConfirmation: null,
-      dictMaxFilesExceeded: "You can only upload {{maxFiles}} files.",
-      accept: function(file, done) {
-        return done();
-      },
-      init: function() {
-        return noop;
-      },
-      forceFallback: false,
-      fallback: function() {
-        var child, messageElement, span, _i, _len, _ref;
-        this.element.className = "" + this.element.className + " dz-browser-not-supported";
-        _ref = this.element.getElementsByTagName("div");
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          child = _ref[_i];
-          if (/(^| )dz-message($| )/.test(child.className)) {
-            messageElement = child;
-            child.className = "dz-message";
-            continue;
-          }
-        }
-        if (!messageElement) {
-          messageElement = Dropzone.createElement("<div class=\"dz-message\"><span></span></div>");
-          this.element.appendChild(messageElement);
-        }
-        span = messageElement.getElementsByTagName("span")[0];
-        if (span) {
-          span.textContent = this.options.dictFallbackMessage;
-        }
-        return this.element.appendChild(this.getFallbackForm());
-      },
-      resize: function(file) {
-        var info, srcRatio, trgRatio;
-        info = {
-          srcX: 0,
-          srcY: 0,
-          srcWidth: file.width,
-          srcHeight: file.height
-        };
-        srcRatio = file.width / file.height;
-        trgRatio = this.options.thumbnailWidth / this.options.thumbnailHeight;
-        if (file.height < this.options.thumbnailHeight || file.width < this.options.thumbnailWidth) {
-          info.trgHeight = info.srcHeight;
-          info.trgWidth = info.srcWidth;
-        } else {
-          if (srcRatio > trgRatio) {
-            info.srcHeight = file.height;
-            info.srcWidth = info.srcHeight * trgRatio;
-          } else {
-            info.srcWidth = file.width;
-            info.srcHeight = info.srcWidth / trgRatio;
-          }
-        }
-        info.srcX = (file.width - info.srcWidth) / 2;
-        info.srcY = (file.height - info.srcHeight) / 2;
-        return info;
-      },
-      /*
-      Those functions register themselves to the events on init and handle all
-      the user interface specific stuff. Overwriting them won't break the upload
-      but can break the way it's displayed.
-      You can overwrite them if you don't like the default behavior. If you just
-      want to add an additional event handler, register it on the dropzone object
-      and don't overwrite those options.
-      */
-
-      drop: function(e) {
-        return this.element.classList.remove("dz-drag-hover");
-      },
-      dragstart: noop,
-      dragend: function(e) {
-        return this.element.classList.remove("dz-drag-hover");
-      },
-      dragenter: function(e) {
-        return this.element.classList.add("dz-drag-hover");
-      },
-      dragover: function(e) {
-        return this.element.classList.add("dz-drag-hover");
-      },
-      dragleave: function(e) {
-        return this.element.classList.remove("dz-drag-hover");
-      },
-      selectedfiles: function(files) {
-        if (this.element === this.previewsContainer) {
-          return this.element.classList.add("dz-started");
-        }
-      },
-      reset: function() {
-        return this.element.classList.remove("dz-started");
-      },
-      addedfile: function(file) {
-        var _this = this;
-        file.previewElement = Dropzone.createElement(this.options.previewTemplate);
-        file.previewTemplate = file.previewElement;
-        this.previewsContainer.appendChild(file.previewElement);
-        file.previewElement.querySelector("[data-dz-name]").textContent = file.name;
-        file.previewElement.querySelector("[data-dz-size]").innerHTML = this.filesize(file.size);
-        if (this.options.addRemoveLinks) {
-          file._removeLink = Dropzone.createElement("<a class=\"dz-remove\" href=\"javascript:undefined;\">" + this.options.dictRemoveFile + "</a>");
-          file._removeLink.addEventListener("click", function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (file.status === Dropzone.UPLOADING) {
-              return Dropzone.confirm(_this.options.dictCancelUploadConfirmation, function() {
-                return _this.removeFile(file);
-              });
-            } else {
-              if (_this.options.dictRemoveFileConfirmation) {
-                return Dropzone.confirm(_this.options.dictRemoveFileConfirmation, function() {
-                  return _this.removeFile(file);
-                });
-              } else {
-                return _this.removeFile(file);
-              }
-            }
-          });
-          file.previewElement.appendChild(file._removeLink);
-        }
-        return this._updateMaxFilesReachedClass();
-      },
-      removedfile: function(file) {
-        var _ref;
-        if ((_ref = file.previewElement) != null) {
-          _ref.parentNode.removeChild(file.previewElement);
-        }
-        return this._updateMaxFilesReachedClass();
-      },
-      thumbnail: function(file, dataUrl) {
-        var thumbnailElement;
-        file.previewElement.classList.remove("dz-file-preview");
-        file.previewElement.classList.add("dz-image-preview");
-        thumbnailElement = file.previewElement.querySelector("[data-dz-thumbnail]");
-        thumbnailElement.alt = file.name;
-        return thumbnailElement.src = dataUrl;
-      },
-      error: function(file, message) {
-        file.previewElement.classList.add("dz-error");
-        return file.previewElement.querySelector("[data-dz-errormessage]").textContent = message;
-      },
-      errormultiple: noop,
-      processing: function(file) {
-        file.previewElement.classList.add("dz-processing");
-        if (file._removeLink) {
-          return file._removeLink.textContent = this.options.dictCancelUpload;
-        }
-      },
-      processingmultiple: noop,
-      uploadprogress: function(file, progress, bytesSent) {
-        return file.previewElement.querySelector("[data-dz-uploadprogress]").style.width = "" + progress + "%";
-      },
-      totaluploadprogress: noop,
-      sending: noop,
-      sendingmultiple: noop,
-      success: function(file) {
-        return file.previewElement.classList.add("dz-success");
-      },
-      successmultiple: noop,
-      canceled: function(file) {
-        return this.emit("error", file, "Upload canceled.");
-      },
-      canceledmultiple: noop,
-      complete: function(file) {
-        if (file._removeLink) {
-          return file._removeLink.textContent = this.options.dictRemoveFile;
-        }
-      },
-      completemultiple: noop,
-      maxfilesexceeded: noop,
-      previewTemplate: "<div class=\"dz-preview dz-file-preview\">\n  <div class=\"dz-details\">\n    <div class=\"dz-filename\"><span data-dz-name></span></div>\n    <div class=\"dz-size\" data-dz-size></div>\n    <img data-dz-thumbnail />\n  </div>\n  <div class=\"dz-progress\"><span class=\"dz-upload\" data-dz-uploadprogress></span></div>\n  <div class=\"dz-success-mark\"><span>✔</span></div>\n  <div class=\"dz-error-mark\"><span>✘</span></div>\n  <div class=\"dz-error-message\"><span data-dz-errormessage></span></div>\n</div>"
-    };
-
-    extend = function() {
-      var key, object, objects, target, val, _i, _len;
-      target = arguments[0], objects = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-      for (_i = 0, _len = objects.length; _i < _len; _i++) {
-        object = objects[_i];
-        for (key in object) {
-          val = object[key];
-          target[key] = val;
-        }
-      }
-      return target;
-    };
-
-    function Dropzone(element, options) {
-      var elementOptions, fallback, _ref;
-      this.element = element;
-      this.version = Dropzone.version;
-      this.defaultOptions.previewTemplate = this.defaultOptions.previewTemplate.replace(/\n*/g, "");
-      this.clickableElements = [];
-      this.listeners = [];
-      this.files = [];
-      if (typeof this.element === "string") {
-        this.element = document.querySelector(this.element);
-      }
-      if (!(this.element && (this.element.nodeType != null))) {
-        throw new Error("Invalid dropzone element.");
-      }
-      if (this.element.dropzone) {
-        throw new Error("Dropzone already attached.");
-      }
-      Dropzone.instances.push(this);
-      element.dropzone = this;
-      elementOptions = (_ref = Dropzone.optionsForElement(this.element)) != null ? _ref : {};
-      this.options = extend({}, this.defaultOptions, elementOptions, options != null ? options : {});
-      if (this.options.forceFallback || !Dropzone.isBrowserSupported()) {
-        return this.options.fallback.call(this);
-      }
-      if (this.options.url == null) {
-        this.options.url = this.element.getAttribute("action");
-      }
-      if (!this.options.url) {
-        throw new Error("No URL provided.");
-      }
-      if (this.options.acceptedFiles && this.options.acceptedMimeTypes) {
-        throw new Error("You can't provide both 'acceptedFiles' and 'acceptedMimeTypes'. 'acceptedMimeTypes' is deprecated.");
-      }
-      if (this.options.acceptedMimeTypes) {
-        this.options.acceptedFiles = this.options.acceptedMimeTypes;
-        delete this.options.acceptedMimeTypes;
-      }
-      this.options.method = this.options.method.toUpperCase();
-      if ((fallback = this.getExistingFallback()) && fallback.parentNode) {
-        fallback.parentNode.removeChild(fallback);
-      }
-      if (this.options.previewsContainer) {
-        this.previewsContainer = Dropzone.getElement(this.options.previewsContainer, "previewsContainer");
-      } else {
-        this.previewsContainer = this.element;
-      }
-      if (this.options.clickable) {
-        if (this.options.clickable === true) {
-          this.clickableElements = [this.element];
-        } else {
-          this.clickableElements = Dropzone.getElements(this.options.clickable, "clickable");
-        }
-      }
-      this.init();
-    }
-
-    Dropzone.prototype.getAcceptedFiles = function() {
-      var file, _i, _len, _ref, _results;
-      _ref = this.files;
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        file = _ref[_i];
-        if (file.accepted) {
-          _results.push(file);
-        }
-      }
-      return _results;
-    };
-
-    Dropzone.prototype.getRejectedFiles = function() {
-      var file, _i, _len, _ref, _results;
-      _ref = this.files;
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        file = _ref[_i];
-        if (!file.accepted) {
-          _results.push(file);
-        }
-      }
-      return _results;
-    };
-
-    Dropzone.prototype.getQueuedFiles = function() {
-      var file, _i, _len, _ref, _results;
-      _ref = this.files;
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        file = _ref[_i];
-        if (file.status === Dropzone.QUEUED) {
-          _results.push(file);
-        }
-      }
-      return _results;
-    };
-
-    Dropzone.prototype.getUploadingFiles = function() {
-      var file, _i, _len, _ref, _results;
-      _ref = this.files;
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        file = _ref[_i];
-        if (file.status === Dropzone.UPLOADING) {
-          _results.push(file);
-        }
-      }
-      return _results;
-    };
-
-    Dropzone.prototype.init = function() {
-      var eventName, noPropagation, setupHiddenFileInput, _i, _len, _ref, _ref1,
-        _this = this;
-      if (this.element.tagName === "form") {
-        this.element.setAttribute("enctype", "multipart/form-data");
-      }
-      if (this.element.classList.contains("dropzone") && !this.element.querySelector(".dz-message")) {
-        this.element.appendChild(Dropzone.createElement("<div class=\"dz-default dz-message\"><span>" + this.options.dictDefaultMessage + "</span></div>"));
-      }
-      if (this.clickableElements.length) {
-        setupHiddenFileInput = function() {
-          if (_this.hiddenFileInput) {
-            document.body.removeChild(_this.hiddenFileInput);
-          }
-          _this.hiddenFileInput = document.createElement("input");
-          _this.hiddenFileInput.setAttribute("type", "file");
-          _this.hiddenFileInput.setAttribute("multiple", "multiple");
-          if (_this.options.acceptedFiles != null) {
-            _this.hiddenFileInput.setAttribute("accept", _this.options.acceptedFiles);
-          }
-          _this.hiddenFileInput.style.visibility = "hidden";
-          _this.hiddenFileInput.style.position = "absolute";
-          _this.hiddenFileInput.style.top = "0";
-          _this.hiddenFileInput.style.left = "0";
-          _this.hiddenFileInput.style.height = "0";
-          _this.hiddenFileInput.style.width = "0";
-          document.body.appendChild(_this.hiddenFileInput);
-          return _this.hiddenFileInput.addEventListener("change", function() {
-            var files;
-            files = _this.hiddenFileInput.files;
-            if (files.length) {
-              _this.emit("selectedfiles", files);
-              _this.handleFiles(files);
-            }
-            return setupHiddenFileInput();
-          });
-        };
-        setupHiddenFileInput();
-      }
-      this.URL = (_ref = window.URL) != null ? _ref : window.webkitURL;
-      _ref1 = this.events;
-      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-        eventName = _ref1[_i];
-        this.on(eventName, this.options[eventName]);
-      }
-      this.on("uploadprogress", function() {
-        return _this.updateTotalUploadProgress();
-      });
-      this.on("removedfile", function() {
-        return _this.updateTotalUploadProgress();
-      });
-      this.on("canceled", function(file) {
-        return _this.emit("complete", file);
-      });
-      noPropagation = function(e) {
-        e.stopPropagation();
-        if (e.preventDefault) {
-          return e.preventDefault();
-        } else {
-          return e.returnValue = false;
-        }
-      };
-      this.listeners = [
-        {
-          element: this.element,
-          events: {
-            "dragstart": function(e) {
-              return _this.emit("dragstart", e);
-            },
-            "dragenter": function(e) {
-              noPropagation(e);
-              return _this.emit("dragenter", e);
-            },
-            "dragover": function(e) {
-              noPropagation(e);
-              return _this.emit("dragover", e);
-            },
-            "dragleave": function(e) {
-              return _this.emit("dragleave", e);
-            },
-            "drop": function(e) {
-              noPropagation(e);
-              return _this.drop(e);
-            },
-            "dragend": function(e) {
-              return _this.emit("dragend", e);
-            }
-          }
-        }
-      ];
-      this.clickableElements.forEach(function(clickableElement) {
-        return _this.listeners.push({
-          element: clickableElement,
-          events: {
-            "click": function(evt) {
-              if ((clickableElement !== _this.element) || (evt.target === _this.element || Dropzone.elementInside(evt.target, _this.element.querySelector(".dz-message")))) {
-                return _this.hiddenFileInput.click();
-              }
-            }
-          }
-        });
-      });
-      this.enable();
-      return this.options.init.call(this);
-    };
-
-    Dropzone.prototype.destroy = function() {
-      var _ref;
-      this.disable();
-      this.removeAllFiles(true);
-      if ((_ref = this.hiddenFileInput) != null ? _ref.parentNode : void 0) {
-        this.hiddenFileInput.parentNode.removeChild(this.hiddenFileInput);
-        this.hiddenFileInput = null;
-      }
-      return delete this.element.dropzone;
-    };
-
-    Dropzone.prototype.updateTotalUploadProgress = function() {
-      var acceptedFiles, file, totalBytes, totalBytesSent, totalUploadProgress, _i, _len, _ref;
-      totalBytesSent = 0;
-      totalBytes = 0;
-      acceptedFiles = this.getAcceptedFiles();
-      if (acceptedFiles.length) {
-        _ref = this.getAcceptedFiles();
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          file = _ref[_i];
-          totalBytesSent += file.upload.bytesSent;
-          totalBytes += file.upload.total;
-        }
-        totalUploadProgress = 100 * totalBytesSent / totalBytes;
-      } else {
-        totalUploadProgress = 100;
-      }
-      return this.emit("totaluploadprogress", totalUploadProgress, totalBytes, totalBytesSent);
-    };
-
-    Dropzone.prototype.getFallbackForm = function() {
-      var existingFallback, fields, fieldsString, form;
-      if (existingFallback = this.getExistingFallback()) {
-        return existingFallback;
-      }
-      fieldsString = "<div class=\"dz-fallback\">";
-      if (this.options.dictFallbackText) {
-        fieldsString += "<p>" + this.options.dictFallbackText + "</p>";
-      }
-      fieldsString += "<input type=\"file\" name=\"" + this.options.paramName + (this.options.uploadMultiple ? "[]" : "") + "\" " + (this.options.uploadMultiple ? 'multiple="multiple"' : void 0) + " /><button type=\"submit\">Upload!</button></div>";
-      fields = Dropzone.createElement(fieldsString);
-      if (this.element.tagName !== "FORM") {
-        form = Dropzone.createElement("<form action=\"" + this.options.url + "\" enctype=\"multipart/form-data\" method=\"" + this.options.method + "\"></form>");
-        form.appendChild(fields);
-      } else {
-        this.element.setAttribute("enctype", "multipart/form-data");
-        this.element.setAttribute("method", this.options.method);
-      }
-      return form != null ? form : fields;
-    };
-
-    Dropzone.prototype.getExistingFallback = function() {
-      var fallback, getFallback, tagName, _i, _len, _ref;
-      getFallback = function(elements) {
-        var el, _i, _len;
-        for (_i = 0, _len = elements.length; _i < _len; _i++) {
-          el = elements[_i];
-          if (/(^| )fallback($| )/.test(el.className)) {
-            return el;
-          }
-        }
-      };
-      _ref = ["div", "form"];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        tagName = _ref[_i];
-        if (fallback = getFallback(this.element.getElementsByTagName(tagName))) {
-          return fallback;
-        }
-      }
-    };
-
-    Dropzone.prototype.setupEventListeners = function() {
-      var elementListeners, event, listener, _i, _len, _ref, _results;
-      _ref = this.listeners;
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        elementListeners = _ref[_i];
-        _results.push((function() {
-          var _ref1, _results1;
-          _ref1 = elementListeners.events;
-          _results1 = [];
-          for (event in _ref1) {
-            listener = _ref1[event];
-            _results1.push(elementListeners.element.addEventListener(event, listener, false));
-          }
-          return _results1;
-        })());
-      }
-      return _results;
-    };
-
-    Dropzone.prototype.removeEventListeners = function() {
-      var elementListeners, event, listener, _i, _len, _ref, _results;
-      _ref = this.listeners;
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        elementListeners = _ref[_i];
-        _results.push((function() {
-          var _ref1, _results1;
-          _ref1 = elementListeners.events;
-          _results1 = [];
-          for (event in _ref1) {
-            listener = _ref1[event];
-            _results1.push(elementListeners.element.removeEventListener(event, listener, false));
-          }
-          return _results1;
-        })());
-      }
-      return _results;
-    };
-
-    Dropzone.prototype.disable = function() {
-      var file, _i, _len, _ref, _results;
-      this.clickableElements.forEach(function(element) {
-        return element.classList.remove("dz-clickable");
-      });
-      this.removeEventListeners();
-      _ref = this.files;
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        file = _ref[_i];
-        _results.push(this.cancelUpload(file));
-      }
-      return _results;
-    };
-
-    Dropzone.prototype.enable = function() {
-      this.clickableElements.forEach(function(element) {
-        return element.classList.add("dz-clickable");
-      });
-      return this.setupEventListeners();
-    };
-
-    Dropzone.prototype.filesize = function(size) {
-      var string;
-      if (size >= 100000000000) {
-        size = size / 100000000000;
-        string = "TB";
-      } else if (size >= 100000000) {
-        size = size / 100000000;
-        string = "GB";
-      } else if (size >= 100000) {
-        size = size / 100000;
-        string = "MB";
-      } else if (size >= 100) {
-        size = size / 100;
-        string = "KB";
-      } else {
-        size = size * 10;
-        string = "b";
-      }
-      return "<strong>" + (Math.round(size) / 10) + "</strong> " + string;
-    };
-
-    Dropzone.prototype._updateMaxFilesReachedClass = function() {
-      if (this.options.maxFiles && this.getAcceptedFiles().length >= this.options.maxFiles) {
-        return this.element.classList.add("dz-max-files-reached");
-      } else {
-        return this.element.classList.remove("dz-max-files-reached");
-      }
-    };
-
-    Dropzone.prototype.drop = function(e) {
-      var files, items;
-      if (!e.dataTransfer) {
-        return;
-      }
-      this.emit("drop", e);
-      files = e.dataTransfer.files;
-      this.emit("selectedfiles", files);
-      if (files.length) {
-        items = e.dataTransfer.items;
-        if (items && items.length && ((items[0].webkitGetAsEntry != null) || (items[0].getAsEntry != null))) {
-          this.handleItems(items);
-        } else {
-          this.handleFiles(files);
-        }
-      }
-    };
-
-    Dropzone.prototype.handleFiles = function(files) {
-      var file, _i, _len, _results;
-      _results = [];
-      for (_i = 0, _len = files.length; _i < _len; _i++) {
-        file = files[_i];
-        _results.push(this.addFile(file));
-      }
-      return _results;
-    };
-
-    Dropzone.prototype.handleItems = function(items) {
-      var entry, item, _i, _len;
-      for (_i = 0, _len = items.length; _i < _len; _i++) {
-        item = items[_i];
-        if (item.webkitGetAsEntry != null) {
-          entry = item.webkitGetAsEntry();
-          if (entry.isFile) {
-            this.addFile(item.getAsFile());
-          } else if (entry.isDirectory) {
-            this.addDirectory(entry, entry.name);
-          }
-        } else {
-          this.addFile(item.getAsFile());
-        }
-      }
-    };
-
-    Dropzone.prototype.accept = function(file, done) {
-      if (file.size > this.options.maxFilesize * 1024 * 1024) {
-        return done(this.options.dictFileTooBig.replace("{{filesize}}", Math.round(file.size / 1024 / 10.24) / 100).replace("{{maxFilesize}}", this.options.maxFilesize));
-      } else if (!Dropzone.isValidFile(file, this.options.acceptedFiles)) {
-        return done(this.options.dictInvalidFileType);
-      } else if (this.options.maxFiles && this.getAcceptedFiles().length >= this.options.maxFiles) {
-        done(this.options.dictMaxFilesExceeded.replace("{{maxFiles}}", this.options.maxFiles));
-        return this.emit("maxfilesexceeded", file);
-      } else {
-        return this.options.accept.call(this, file, done);
-      }
-    };
-
-    Dropzone.prototype.addFile = function(file) {
-      var _this = this;
-      file.upload = {
-        progress: 0,
-        total: file.size,
-        bytesSent: 0
-      };
-      this.files.push(file);
-      file.status = Dropzone.ADDED;
-      this.emit("addedfile", file);
-      if (this.options.createImageThumbnails && file.type.match(/image.*/) && file.size <= this.options.maxThumbnailFilesize * 1024 * 1024) {
-        this.createThumbnail(file);
-      }
-      return this.accept(file, function(error) {
-        if (error) {
-          file.accepted = false;
-          return _this._errorProcessing([file], error);
-        } else {
-          return _this.enqueueFile(file);
-        }
-      });
-    };
-
-    Dropzone.prototype.enqueueFiles = function(files) {
-      var file, _i, _len;
-      for (_i = 0, _len = files.length; _i < _len; _i++) {
-        file = files[_i];
-        this.enqueueFile(file);
-      }
-      return null;
-    };
-
-    Dropzone.prototype.enqueueFile = function(file) {
-      var _this = this;
-      file.accepted = true;
-      if (file.status === Dropzone.ADDED) {
-        file.status = Dropzone.QUEUED;
-        if (this.options.autoProcessQueue) {
-          return setTimeout((function() {
-            return _this.processQueue();
-          }), 1);
-        }
-      } else {
-        throw new Error("This file can't be queued because it has already been processed or was rejected.");
-      }
-    };
-
-    Dropzone.prototype.addDirectory = function(entry, path) {
-      var dirReader, entriesReader,
-        _this = this;
-      dirReader = entry.createReader();
-      entriesReader = function(entries) {
-        var _i, _len;
-        for (_i = 0, _len = entries.length; _i < _len; _i++) {
-          entry = entries[_i];
-          if (entry.isFile) {
-            entry.file(function(file) {
-              if (_this.options.ignoreHiddenFiles && file.name.substring(0, 1) === '.') {
-                return;
-              }
-              file.fullPath = "" + path + "/" + file.name;
-              return _this.addFile(file);
-            });
-          } else if (entry.isDirectory) {
-            _this.addDirectory(entry, "" + path + "/" + entry.name);
-          }
-        }
-      };
-      return dirReader.readEntries(entriesReader, function(error) {
-        return typeof console !== "undefined" && console !== null ? typeof console.log === "function" ? console.log(error) : void 0 : void 0;
-      });
-    };
-
-    Dropzone.prototype.removeFile = function(file) {
-      if (file.status === Dropzone.UPLOADING) {
-        this.cancelUpload(file);
-      }
-      this.files = without(this.files, file);
-      this.emit("removedfile", file);
-      if (this.files.length === 0) {
-        return this.emit("reset");
-      }
-    };
-
-    Dropzone.prototype.removeAllFiles = function(cancelIfNecessary) {
-      var file, _i, _len, _ref;
-      if (cancelIfNecessary == null) {
-        cancelIfNecessary = false;
-      }
-      _ref = this.files.slice();
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        file = _ref[_i];
-        if (file.status !== Dropzone.UPLOADING || cancelIfNecessary) {
-          this.removeFile(file);
-        }
-      }
-      return null;
-    };
-
-    Dropzone.prototype.createThumbnail = function(file) {
-      var fileReader,
-        _this = this;
-      fileReader = new FileReader;
-      fileReader.onload = function() {
-        var img;
-        img = new Image;
-        img.onload = function() {
-          var canvas, ctx, resizeInfo, thumbnail, _ref, _ref1, _ref2, _ref3;
-          file.width = img.width;
-          file.height = img.height;
-          resizeInfo = _this.options.resize.call(_this, file);
-          if (resizeInfo.trgWidth == null) {
-            resizeInfo.trgWidth = _this.options.thumbnailWidth;
-          }
-          if (resizeInfo.trgHeight == null) {
-            resizeInfo.trgHeight = _this.options.thumbnailHeight;
-          }
-          canvas = document.createElement("canvas");
-          ctx = canvas.getContext("2d");
-          canvas.width = resizeInfo.trgWidth;
-          canvas.height = resizeInfo.trgHeight;
-          ctx.drawImage(img, (_ref = resizeInfo.srcX) != null ? _ref : 0, (_ref1 = resizeInfo.srcY) != null ? _ref1 : 0, resizeInfo.srcWidth, resizeInfo.srcHeight, (_ref2 = resizeInfo.trgX) != null ? _ref2 : 0, (_ref3 = resizeInfo.trgY) != null ? _ref3 : 0, resizeInfo.trgWidth, resizeInfo.trgHeight);
-          thumbnail = canvas.toDataURL("image/png");
-          return _this.emit("thumbnail", file, thumbnail);
-        };
-        return img.src = fileReader.result;
-      };
-      return fileReader.readAsDataURL(file);
-    };
-
-    Dropzone.prototype.processQueue = function() {
-      var i, parallelUploads, processingLength, queuedFiles;
-      parallelUploads = this.options.parallelUploads;
-      processingLength = this.getUploadingFiles().length;
-      i = processingLength;
-      if (processingLength >= parallelUploads) {
-        return;
-      }
-      queuedFiles = this.getQueuedFiles();
-      if (!(queuedFiles.length > 0)) {
-        return;
-      }
-      if (this.options.uploadMultiple) {
-        return this.processFiles(queuedFiles.slice(0, parallelUploads - processingLength));
-      } else {
-        while (i < parallelUploads) {
-          if (!queuedFiles.length) {
-            return;
-          }
-          this.processFile(queuedFiles.shift());
-          i++;
-        }
-      }
-    };
-
-    Dropzone.prototype.processFile = function(file) {
-      return this.processFiles([file]);
-    };
-
-    Dropzone.prototype.processFiles = function(files) {
-      var file, _i, _len;
-      for (_i = 0, _len = files.length; _i < _len; _i++) {
-        file = files[_i];
-        file.processing = true;
-        file.status = Dropzone.UPLOADING;
-        this.emit("processing", file);
-      }
-      if (this.options.uploadMultiple) {
-        this.emit("processingmultiple", files);
-      }
-      return this.uploadFiles(files);
-    };
-
-    Dropzone.prototype._getFilesWithXhr = function(xhr) {
-      var file, files;
-      return files = (function() {
-        var _i, _len, _ref, _results;
-        _ref = this.files;
-        _results = [];
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          file = _ref[_i];
-          if (file.xhr === xhr) {
-            _results.push(file);
-          }
-        }
-        return _results;
-      }).call(this);
-    };
-
-    Dropzone.prototype.cancelUpload = function(file) {
-      var groupedFile, groupedFiles, _i, _j, _len, _len1, _ref;
-      if (file.status === Dropzone.UPLOADING) {
-        groupedFiles = this._getFilesWithXhr(file.xhr);
-        for (_i = 0, _len = groupedFiles.length; _i < _len; _i++) {
-          groupedFile = groupedFiles[_i];
-          groupedFile.status = Dropzone.CANCELED;
-        }
-        file.xhr.abort();
-        for (_j = 0, _len1 = groupedFiles.length; _j < _len1; _j++) {
-          groupedFile = groupedFiles[_j];
-          this.emit("canceled", groupedFile);
-        }
-        if (this.options.uploadMultiple) {
-          this.emit("canceledmultiple", groupedFiles);
-        }
-      } else if ((_ref = file.status) === Dropzone.ADDED || _ref === Dropzone.QUEUED) {
-        file.status = Dropzone.CANCELED;
-        this.emit("canceled", file);
-        if (this.options.uploadMultiple) {
-          this.emit("canceledmultiple", [file]);
-        }
-      }
-      if (this.options.autoProcessQueue) {
-        return this.processQueue();
-      }
-    };
-
-    Dropzone.prototype.uploadFile = function(file) {
-      return this.uploadFiles([file]);
-    };
-
-    Dropzone.prototype.uploadFiles = function(files) {
-      var file, formData, handleError, headerName, headerValue, headers, input, inputName, inputType, key, progressObj, response, updateProgress, value, xhr, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1, _ref2, _ref3,
-        _this = this;
-      xhr = new XMLHttpRequest();
-      for (_i = 0, _len = files.length; _i < _len; _i++) {
-        file = files[_i];
-        file.xhr = xhr;
-      }
-      xhr.open(this.options.method, this.options.url, true);
-      xhr.withCredentials = !!this.options.withCredentials;
-      response = null;
-      handleError = function() {
-        var _j, _len1, _results;
-        _results = [];
-        for (_j = 0, _len1 = files.length; _j < _len1; _j++) {
-          file = files[_j];
-          _results.push(_this._errorProcessing(files, response || _this.options.dictResponseError.replace("{{statusCode}}", xhr.status), xhr));
-        }
-        return _results;
-      };
-      updateProgress = function(e) {
-        var allFilesFinished, progress, _j, _k, _l, _len1, _len2, _len3, _results;
-        if (e != null) {
-          progress = 100 * e.loaded / e.total;
-          for (_j = 0, _len1 = files.length; _j < _len1; _j++) {
-            file = files[_j];
-            file.upload = {
-              progress: progress,
-              total: e.total,
-              bytesSent: e.loaded
-            };
-          }
-        } else {
-          allFilesFinished = true;
-          progress = 100;
-          for (_k = 0, _len2 = files.length; _k < _len2; _k++) {
-            file = files[_k];
-            if (!(file.upload.progress === 100 && file.upload.bytesSent === file.upload.total)) {
-              allFilesFinished = false;
-            }
-            file.upload.progress = progress;
-            file.upload.bytesSent = file.upload.total;
-          }
-          if (allFilesFinished) {
-            return;
-          }
-        }
-        _results = [];
-        for (_l = 0, _len3 = files.length; _l < _len3; _l++) {
-          file = files[_l];
-          _results.push(_this.emit("uploadprogress", file, progress, file.upload.bytesSent));
-        }
-        return _results;
-      };
-      xhr.onload = function(e) {
-        var _ref;
-        if (files[0].status === Dropzone.CANCELED) {
-          return;
-        }
-        if (xhr.readyState !== 4) {
-          return;
-        }
-        response = xhr.responseText;
-        if (xhr.getResponseHeader("content-type") && ~xhr.getResponseHeader("content-type").indexOf("application/json")) {
-          try {
-            response = JSON.parse(response);
-          } catch (_error) {
-            e = _error;
-            response = "Invalid JSON response from server.";
-          }
-        }
-        updateProgress();
-        if (!((200 <= (_ref = xhr.status) && _ref < 300))) {
-          return handleError();
-        } else {
-          return _this._finished(files, response, e);
-        }
-      };
-      xhr.onerror = function() {
-        if (files[0].status === Dropzone.CANCELED) {
-          return;
-        }
-        return handleError();
-      };
-      progressObj = (_ref = xhr.upload) != null ? _ref : xhr;
-      progressObj.onprogress = updateProgress;
-      headers = {
-        "Accept": "application/json",
-        "Cache-Control": "no-cache",
-        "X-Requested-With": "XMLHttpRequest"
-      };
-      if (this.options.headers) {
-        extend(headers, this.options.headers);
-      }
-      for (headerName in headers) {
-        headerValue = headers[headerName];
-        xhr.setRequestHeader(headerName, headerValue);
-      }
-      formData = new FormData();
-      if (this.options.params) {
-        _ref1 = this.options.params;
-        for (key in _ref1) {
-          value = _ref1[key];
-          formData.append(key, value);
-        }
-      }
-      for (_j = 0, _len1 = files.length; _j < _len1; _j++) {
-        file = files[_j];
-        this.emit("sending", file, xhr, formData);
-      }
-      if (this.options.uploadMultiple) {
-        this.emit("sendingmultiple", files, xhr, formData);
-      }
-      if (this.element.tagName === "FORM") {
-        _ref2 = this.element.querySelectorAll("input, textarea, select, button");
-        for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
-          input = _ref2[_k];
-          inputName = input.getAttribute("name");
-          inputType = input.getAttribute("type");
-          if (!inputType || ((_ref3 = inputType.toLowerCase()) !== "checkbox" && _ref3 !== "radio") || input.checked) {
-            formData.append(inputName, input.value);
-          }
-        }
-      }
-      for (_l = 0, _len3 = files.length; _l < _len3; _l++) {
-        file = files[_l];
-        formData.append("" + this.options.paramName + (this.options.uploadMultiple ? "[]" : ""), file, file.name);
-      }
-      return xhr.send(formData);
-    };
-
-    Dropzone.prototype._finished = function(files, responseText, e) {
-      var file, _i, _len;
-      for (_i = 0, _len = files.length; _i < _len; _i++) {
-        file = files[_i];
-        file.status = Dropzone.SUCCESS;
-        this.emit("success", file, responseText, e);
-        this.emit("complete", file);
-      }
-      if (this.options.uploadMultiple) {
-        this.emit("successmultiple", files, responseText, e);
-        this.emit("completemultiple", files);
-      }
-      if (this.options.autoProcessQueue) {
-        return this.processQueue();
-      }
-    };
-
-    Dropzone.prototype._errorProcessing = function(files, message, xhr) {
-      var file, _i, _len;
-      for (_i = 0, _len = files.length; _i < _len; _i++) {
-        file = files[_i];
-        file.status = Dropzone.ERROR;
-        this.emit("error", file, message, xhr);
-        this.emit("complete", file);
-      }
-      if (this.options.uploadMultiple) {
-        this.emit("errormultiple", files, message, xhr);
-        this.emit("completemultiple", files);
-      }
-      if (this.options.autoProcessQueue) {
-        return this.processQueue();
-      }
-    };
-
-    return Dropzone;
-
-  })(Em);
-
-  Dropzone.version = "3.7.1";
-
-  Dropzone.options = {};
-
-  Dropzone.optionsForElement = function(element) {
-    if (element.id) {
-      return Dropzone.options[camelize(element.id)];
-    } else {
-      return void 0;
-    }
-  };
-
-  Dropzone.instances = [];
-
-  Dropzone.forElement = function(element) {
-    if (typeof element === "string") {
-      element = document.querySelector(element);
-    }
-    if ((element != null ? element.dropzone : void 0) == null) {
-      throw new Error("No Dropzone found for given element. This is probably because you're trying to access it before Dropzone had the time to initialize. Use the `init` option to setup any additional observers on your Dropzone.");
-    }
-    return element.dropzone;
-  };
-
-  Dropzone.autoDiscover = true;
-
-  Dropzone.discover = function() {
-    var checkElements, dropzone, dropzones, _i, _len, _results;
-    if (document.querySelectorAll) {
-      dropzones = document.querySelectorAll(".dropzone");
-    } else {
-      dropzones = [];
-      checkElements = function(elements) {
-        var el, _i, _len, _results;
-        _results = [];
-        for (_i = 0, _len = elements.length; _i < _len; _i++) {
-          el = elements[_i];
-          if (/(^| )dropzone($| )/.test(el.className)) {
-            _results.push(dropzones.push(el));
-          } else {
-            _results.push(void 0);
-          }
-        }
-        return _results;
-      };
-      checkElements(document.getElementsByTagName("div"));
-      checkElements(document.getElementsByTagName("form"));
-    }
-    _results = [];
-    for (_i = 0, _len = dropzones.length; _i < _len; _i++) {
-      dropzone = dropzones[_i];
-      if (Dropzone.optionsForElement(dropzone) !== false) {
-        _results.push(new Dropzone(dropzone));
-      } else {
-        _results.push(void 0);
-      }
-    }
-    return _results;
-  };
-
-  Dropzone.blacklistedBrowsers = [/opera.*Macintosh.*version\/12/i];
-
-  Dropzone.isBrowserSupported = function() {
-    var capableBrowser, regex, _i, _len, _ref;
-    capableBrowser = true;
-    if (window.File && window.FileReader && window.FileList && window.Blob && window.FormData && document.querySelector) {
-      if (!("classList" in document.createElement("a"))) {
-        capableBrowser = false;
-      } else {
-        _ref = Dropzone.blacklistedBrowsers;
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          regex = _ref[_i];
-          if (regex.test(navigator.userAgent)) {
-            capableBrowser = false;
-            continue;
-          }
-        }
-      }
-    } else {
-      capableBrowser = false;
-    }
-    return capableBrowser;
-  };
-
-  without = function(list, rejectedItem) {
-    var item, _i, _len, _results;
-    _results = [];
-    for (_i = 0, _len = list.length; _i < _len; _i++) {
-      item = list[_i];
-      if (item !== rejectedItem) {
-        _results.push(item);
-      }
-    }
-    return _results;
-  };
-
-  camelize = function(str) {
-    return str.replace(/[\-_](\w)/g, function(match) {
-      return match[1].toUpperCase();
-    });
-  };
-
-  Dropzone.createElement = function(string) {
-    var div;
-    div = document.createElement("div");
-    div.innerHTML = string;
-    return div.childNodes[0];
-  };
-
-  Dropzone.elementInside = function(element, container) {
-    if (element === container) {
-      return true;
-    }
-    while (element = element.parentNode) {
-      if (element === container) {
-        return true;
-      }
-    }
-    return false;
-  };
-
-  Dropzone.getElement = function(el, name) {
-    var element;
-    if (typeof el === "string") {
-      element = document.querySelector(el);
-    } else if (el.nodeType != null) {
-      element = el;
-    }
-    if (element == null) {
-      throw new Error("Invalid `" + name + "` option provided. Please provide a CSS selector or a plain HTML element.");
-    }
-    return element;
-  };
-
-  Dropzone.getElements = function(els, name) {
-    var e, el, elements, _i, _j, _len, _len1, _ref;
-    if (els instanceof Array) {
-      elements = [];
-      try {
-        for (_i = 0, _len = els.length; _i < _len; _i++) {
-          el = els[_i];
-          elements.push(this.getElement(el, name));
-        }
-      } catch (_error) {
-        e = _error;
-        elements = null;
-      }
-    } else if (typeof els === "string") {
-      elements = [];
-      _ref = document.querySelectorAll(els);
-      for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
-        el = _ref[_j];
-        elements.push(el);
-      }
-    } else if (els.nodeType != null) {
-      elements = [els];
-    }
-    if (!((elements != null) && elements.length)) {
-      throw new Error("Invalid `" + name + "` option provided. Please provide a CSS selector, a plain HTML element or a list of those.");
-    }
-    return elements;
-  };
-
-  Dropzone.confirm = function(question, accepted, rejected) {
-    if (window.confirm(question)) {
-      return accepted();
-    } else if (rejected != null) {
-      return rejected();
-    }
-  };
-
-  Dropzone.isValidFile = function(file, acceptedFiles) {
-    var baseMimeType, mimeType, validType, _i, _len;
-    if (!acceptedFiles) {
-      return true;
-    }
-    acceptedFiles = acceptedFiles.split(",");
-    mimeType = file.type;
-    baseMimeType = mimeType.replace(/\/.*$/, "");
-    for (_i = 0, _len = acceptedFiles.length; _i < _len; _i++) {
-      validType = acceptedFiles[_i];
-      validType = validType.trim();
-      if (validType.charAt(0) === ".") {
-        if (file.name.indexOf(validType, file.name.length - validType.length) !== -1) {
-          return true;
-        }
-      } else if (/\/\*$/.test(validType)) {
-        if (baseMimeType === validType.replace(/\/.*$/, "")) {
-          return true;
-        }
-      } else {
-        if (mimeType === validType) {
-          return true;
-        }
-      }
-    }
-    return false;
-  };
-
-  if (typeof jQuery !== "undefined" && jQuery !== null) {
-    jQuery.fn.dropzone = function(options) {
-      return this.each(function() {
-        return new Dropzone(this, options);
-      });
-    };
-  }
-
-  if (typeof module !== "undefined" && module !== null) {
-    module.exports = Dropzone;
-  } else {
-    window.Dropzone = Dropzone;
-  }
-
-  Dropzone.ADDED = "added";
-
-  Dropzone.QUEUED = "queued";
-
-  Dropzone.ACCEPTED = Dropzone.QUEUED;
-
-  Dropzone.UPLOADING = "uploading";
-
-  Dropzone.PROCESSING = Dropzone.UPLOADING;
-
-  Dropzone.CANCELED = "canceled";
-
-  Dropzone.ERROR = "error";
-
-  Dropzone.SUCCESS = "success";
-
-  /*
-  # contentloaded.js
-  #
-  # Author: Diego Perini (diego.perini at gmail.com)
-  # Summary: cross-browser wrapper for DOMContentLoaded
-  # Updated: 20101020
-  # License: MIT
-  # Version: 1.2
-  #
-  # URL:
-  # http://javascript.nwbox.com/ContentLoaded/
-  # http://javascript.nwbox.com/ContentLoaded/MIT-LICENSE
-  */
-
-
-  contentLoaded = function(win, fn) {
-    var add, doc, done, init, poll, pre, rem, root, top;
-    done = false;
-    top = true;
-    doc = win.document;
-    root = doc.documentElement;
-    add = (doc.addEventListener ? "addEventListener" : "attachEvent");
-    rem = (doc.addEventListener ? "removeEventListener" : "detachEvent");
-    pre = (doc.addEventListener ? "" : "on");
-    init = function(e) {
-      if (e.type === "readystatechange" && doc.readyState !== "complete") {
-        return;
-      }
-      (e.type === "load" ? win : doc)[rem](pre + e.type, init, false);
-      if (!done && (done = true)) {
-        return fn.call(win, e.type || e);
-      }
-    };
-    poll = function() {
-      var e;
-      try {
-        root.doScroll("left");
-      } catch (_error) {
-        e = _error;
-        setTimeout(poll, 50);
-        return;
-      }
-      return init("poll");
-    };
-    if (doc.readyState !== "complete") {
-      if (doc.createEventObject && root.doScroll) {
-        try {
-          top = !win.frameElement;
-        } catch (_error) {}
-        if (top) {
-          poll();
-        }
-      }
-      doc[add](pre + "DOMContentLoaded", init, false);
-      doc[add](pre + "readystatechange", init, false);
-      return win[add](pre + "load", init, false);
-    }
-  };
-
-  Dropzone._autoDiscoverFunction = function() {
-    if (Dropzone.autoDiscover) {
-      return Dropzone.discover();
-    }
-  };
-
-  contentLoaded(window, Dropzone._autoDiscoverFunction);
-
-}).call(this);
-
-});
-require.alias("component-emitter/index.js", "dropzone/deps/emitter/index.js");
-require.alias("component-emitter/index.js", "emitter/index.js");
-if (typeof exports == "object") {
-  module.exports = require("dropzone");
-} else if (typeof define == "function" && define.amd) {
-  define(function(){ return require("dropzone"); });
-} else {
-  this["Dropzone"] = require("dropzone");
-}})();
-/**
- * sifter.js
- * Copyright (c) 2013 Brian Reavis & contributors
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
- * file except in compliance with the License. You may obtain a copy of the License at:
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software distributed under
- * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
- * ANY KIND, either express or implied. See the License for the specific language
- * governing permissions and limitations under the License.
- *
- * @author Brian Reavis <brian@thirdroute.com>
- */
-
-(function(root, factory) {
-	if (typeof define === 'function' && define.amd) {
-		define(factory);
-	} else if (typeof exports === 'object') {
-		module.exports = factory();
-	} else {
-		root.Sifter = factory();
-	}
-}(this, function() {
-
-	/**
-	 * Textually searches arrays and hashes of objects
-	 * by property (or multiple properties). Designed
-	 * specifically for autocomplete.
-	 *
-	 * @constructor
-	 * @param {array|object} items
-	 * @param {object} items
-	 */
-	var Sifter = function(items, settings) {
-		this.items = items;
-		this.settings = settings || {diacritics: true};
-	};
-
-	/**
-	 * Splits a search string into an array of individual
-	 * regexps to be used to match results.
-	 *
-	 * @param {string} query
-	 * @returns {array}
-	 */
-	Sifter.prototype.tokenize = function(query) {
-		query = trim(String(query || '').toLowerCase());
-		if (!query || !query.length) return [];
-
-		var i, n, regex, letter;
-		var tokens = [];
-		var words = query.split(/ +/);
-
-		for (i = 0, n = words.length; i < n; i++) {
-			regex = escape_regex(words[i]);
-			if (this.settings.diacritics) {
-				for (letter in DIACRITICS) {
-					if (DIACRITICS.hasOwnProperty(letter)) {
-						regex = regex.replace(new RegExp(letter, 'g'), DIACRITICS[letter]);
-					}
-				}
-			}
-			tokens.push({
-				string : words[i],
-				regex  : new RegExp(regex, 'i')
-			});
-		}
-
-		return tokens;
-	};
-
-	/**
-	 * Iterates over arrays and hashes.
-	 *
-	 * ```
-	 * this.iterator(this.items, function(item, id) {
-	 *    // invoked for each item
-	 * });
-	 * ```
-	 *
-	 * @param {array|object} object
-	 */
-	Sifter.prototype.iterator = function(object, callback) {
-		var iterator;
-		if (is_array(object)) {
-			iterator = Array.prototype.forEach || function(callback) {
-				for (var i = 0, n = this.length; i < n; i++) {
-					callback(this[i], i, this);
-				}
-			};
-		} else {
-			iterator = function(callback) {
-				for (var key in this) {
-					if (this.hasOwnProperty(key)) {
-						callback(this[key], key, this);
-					}
-				}
-			};
-		}
-
-		iterator.apply(object, [callback]);
-	};
-
-	/**
-	 * Returns a function to be used to score individual results.
-	 *
-	 * Good matches will have a higher score than poor matches.
-	 * If an item is not a match, 0 will be returned by the function.
-	 *
-	 * @param {object|string} search
-	 * @param {object} options (optional)
-	 * @returns {function}
-	 */
-	Sifter.prototype.getScoreFunction = function(search, options) {
-		var self, fields, tokens, token_count;
-
-		self        = this;
-		search      = self.prepareSearch(search, options);
-		tokens      = search.tokens;
-		fields      = search.options.fields;
-		token_count = tokens.length;
-
-		/**
-		 * Calculates how close of a match the
-		 * given value is against a search token.
-		 *
-		 * @param {mixed} value
-		 * @param {object} token
-		 * @return {number}
-		 */
-		var scoreValue = function(value, token) {
-			var score, pos;
-
-			if (!value) return 0;
-			value = String(value || '');
-			pos = value.search(token.regex);
-			if (pos === -1) return 0;
-			score = token.string.length / value.length;
-			if (pos === 0) score += 0.5;
-			return score;
-		};
-
-		/**
-		 * Calculates the score of an object
-		 * against the search query.
-		 *
-		 * @param {object} token
-		 * @param {object} data
-		 * @return {number}
-		 */
-		var scoreObject = (function() {
-			var field_count = fields.length;
-			if (!field_count) {
-				return function() { return 0; };
-			}
-			if (field_count === 1) {
-				return function(token, data) {
-					return scoreValue(data[fields[0]], token);
-				};
-			}
-			return function(token, data) {
-				for (var i = 0, sum = 0; i < field_count; i++) {
-					sum += scoreValue(data[fields[i]], token);
-				}
-				return sum / field_count;
-			};
-		})();
-
-		if (!token_count) {
-			return function() { return 0; };
-		}
-		if (token_count === 1) {
-			return function(data) {
-				return scoreObject(tokens[0], data);
-			};
-		}
-		return function(data) {
-			for (var i = 0, sum = 0; i < token_count; i++) {
-				sum += scoreObject(tokens[i], data);
-			}
-			return sum / token_count;
-		};
-	};
-
-	/**
-	 * Parses a search query and returns an object
-	 * with tokens and fields ready to be populated
-	 * with results.
-	 *
-	 * @param {string} query
-	 * @param {object} options
-	 * @returns {object}
-	 */
-	Sifter.prototype.prepareSearch = function(query, options) {
-		if (typeof query === 'object') return query;
-		return {
-			options : extend({}, options),
-			query   : String(query || '').toLowerCase(),
-			tokens  : this.tokenize(query),
-			total   : 0,
-			items   : []
-		};
-	};
-
-	/**
-	 * Searches through all items and returns a sorted array of matches.
-	 *
-	 * The `options` parameter can contain:
-	 *
-	 *   - fields {string|array}
-	 *   - sort {string}
-	 *   - direction {string}
-	 *   - score {function}
-	 *   - limit {integer}
-	 *
-	 * Returns an object containing:
-	 *
-	 *   - options {object}
-	 *   - query {string}
-	 *   - tokens {array}
-	 *   - total {int}
-	 *   - items {array}
-	 *
-	 * @param {string} query
-	 * @param {object} options
-	 * @returns {object}
-	 */
-	Sifter.prototype.search = function(query, options) {
-		var self = this, value, score, search, calculateScore;
-
-		search  = this.prepareSearch(query, options);
-		options = search.options;
-		query   = search.query;
-
-		// generate result scoring function
-		if (!is_array(options.fields)) options.fields = [options.fields];
-		calculateScore = options.score || self.getScoreFunction(search);
-
-		// perform search and sort
-		if (query.length) {
-			self.iterator(self.items, function(item, id) {
-				score = calculateScore(item);
-				if (score > 0) {
-					search.items.push({'score': score, 'id': id});
-				}
-			});
-			search.items.sort(function(a, b) {
-				return b.score - a.score;
-			});
-		} else {
-			self.iterator(self.items, function(item, id) {
-				search.items.push({'score': 1, 'id': id});
-			});
-			if (options.sort) {
-				search.items.sort((function() {
-					var field = options.sort;
-					var multiplier = options.direction === 'desc' ? -1 : 1;
-					return function(a, b) {
-						return cmp(self.items[a.id][field], self.items[b.id][field]) * multiplier;
-					};
-				})());
-			}
-		}
-
-		// apply limits
-		search.total = search.items.length;
-		if (typeof options.limit === 'number') {
-			search.items = search.items.slice(0, options.limit);
-		}
-
-		return search;
-	};
-
-	// utilities
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-	var cmp = function(a, b) {
-		if (typeof a === 'number' && typeof b === 'number') {
-			return a > b ? 1 : (a < b ? -1 : 0);
-		}
-		a = String(a || '').toLowerCase();
-		b = String(b || '').toLowerCase();
-		if (a > b) return 1;
-		if (b > a) return -1;
-		return 0;
-	};
-
-	var extend = function(a, b) {
-		var i, n, k, object;
-		for (i = 1, n = arguments.length; i < n; i++) {
-			object = arguments[i];
-			if (!object) continue;
-			for (k in object) {
-				if (object.hasOwnProperty(k)) {
-					a[k] = object[k];
-				}
-			}
-		}
-		return a;
-	};
-
-	var trim = function(str) {
-		return (str + '').replace(/^\s+|\s+$|/g, '');
-	};
-
-	var escape_regex = function(str) {
-		return (str + '').replace(/([.?*+^$[\]\\(){}|-])/g, '\\$1');
-	};
-
-	var is_array = Array.isArray || ($ && $.isArray) || function(object) {
-		return Object.prototype.toString.call(object) === '[object Array]';
-	};
-
-	var DIACRITICS = {
-		'a': '[aÀÁÂÃÄÅàáâãäå]',
-		'c': '[cÇç]',
-		'e': '[eÈÉÊËèéêë]',
-		'i': '[iÌÍÎÏìíîï]',
-		'n': '[nÑñ]',
-		'o': '[oÒÓÔÕÕÖØòóôõöø]',
-		's': '[sŠš]',
-		'u': '[uÙÚÛÜùúûü]',
-		'y': '[yŸÿý]',
-		'z': '[zŽž]'
-	};
-
-	// export
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-	return Sifter;
-
-}));
-
-/**
- * microplugin.js
- * Copyright (c) 2013 Brian Reavis & contributors
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
- * file except in compliance with the License. You may obtain a copy of the License at:
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software distributed under
- * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
- * ANY KIND, either express or implied. See the License for the specific language
- * governing permissions and limitations under the License.
- *
- * @author Brian Reavis <brian@thirdroute.com>
- */
-
-(function(root, factory) {
-	if (typeof define === 'function' && define.amd) {
-		define(factory);
-	} else if (typeof exports === 'object') {
-		module.exports = factory();
-	} else {
-		root.MicroPlugin = factory();
-	}
-}(this, function() {
-	var MicroPlugin = {};
-
-	MicroPlugin.mixin = function(Interface) {
-		Interface.plugins = {};
-
-		/**
-		 * Initializes the listed plugins (with options).
-		 * Acceptable formats:
-		 *
-		 * List (without options):
-		 *   ['a', 'b', 'c']
-		 *
-		 * List (with options):
-		 *   [{'name': 'a', options: {}}, {'name': 'b', options: {}}]
-		 *
-		 * Hash (with options):
-		 *   {'a': { ... }, 'b': { ... }, 'c': { ... }}
-		 *
-		 * @param {mixed} plugins
-		 */
-		Interface.prototype.initializePlugins = function(plugins) {
-			var i, n, key;
-			var self  = this;
-			var queue = [];
-
-			self.plugins = {
-				names     : [],
-				settings  : {},
-				requested : {},
-				loaded    : {}
-			};
-
-			if (utils.isArray(plugins)) {
-				for (i = 0, n = plugins.length; i < n; i++) {
-					if (typeof plugins[i] === 'string') {
-						queue.push(plugins[i]);
-					} else {
-						self.plugins.settings[plugins[i].name] = plugins[i].options;
-						queue.push(plugins[i].name);
-					}
-				}
-			} else if (plugins) {
-				for (key in plugins) {
-					if (plugins.hasOwnProperty(key)) {
-						self.plugins.settings[key] = plugins[key];
-						queue.push(key);
-					}
-				}
-			}
-
-			while (queue.length) {
-				self.require(queue.shift());
-			}
-		};
-
-		Interface.prototype.loadPlugin = function(name) {
-			var self    = this;
-			var plugins = self.plugins;
-			var plugin  = Interface.plugins[name];
-
-			if (!Interface.plugins.hasOwnProperty(name)) {
-				throw new Error('Unable to find "' +  name + '" plugin');
-			}
-
-			plugins.requested[name] = true;
-			plugins.loaded[name] = plugin.fn.apply(self, [self.plugins.settings[name] || {}]);
-			plugins.names.push(name);
-		};
-
-		/**
-		 * Initializes a plugin.
-		 *
-		 * @param {string} name
-		 */
-		Interface.prototype.require = function(name) {
-			var self = this;
-			var plugins = self.plugins;
-
-			if (!self.plugins.loaded.hasOwnProperty(name)) {
-				if (plugins.requested[name]) {
-					throw new Error('Plugin has circular dependency ("' + name + '")');
-				}
-				self.loadPlugin(name);
-			}
-
-			return plugins.loaded[name];
-		};
-
-		/**
-		 * Registers a plugin.
-		 *
-		 * @param {string} name
-		 * @param {function} fn
-		 */
-		Interface.define = function(name, fn) {
-			Interface.plugins[name] = {
-				'name' : name,
-				'fn'   : fn
-			};
-		};
-	};
-
-	var utils = {
-		isArray: Array.isArray || function(vArg) {
-			return Object.prototype.toString.call(vArg) === '[object Array]';
-		}
-	};
-
-	return MicroPlugin;
-}));
-
-/**
- * selectize.js (v0.7.7)
- * Copyright (c) 2013 Brian Reavis & contributors
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
- * file except in compliance with the License. You may obtain a copy of the License at:
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software distributed under
- * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
- * ANY KIND, either express or implied. See the License for the specific language
- * governing permissions and limitations under the License.
- *
- * @author Brian Reavis <brian@thirdroute.com>
- */
-
-/*jshint curly:false */
-/*jshint browser:true */
-
-(function(root, factory) {
-	if (typeof define === 'function' && define.amd) {
-		define(['jquery','sifter','microplugin'], factory);
-	} else {
-		root.Selectize = factory(root.jQuery, root.Sifter, root.MicroPlugin);
-	}
-}(this, function($, Sifter, MicroPlugin) {
-	'use strict';
-
-	var highlight = function($element, pattern) {
-		if (typeof pattern === 'string' && !pattern.length) return;
-		var regex = (typeof pattern === 'string') ? new RegExp(pattern, 'i') : pattern;
-	
-		var highlight = function(node) {
-			var skip = 0;
-			if (node.nodeType === 3) {
-				var pos = node.data.search(regex);
-				if (pos >= 0 && node.data.length > 0) {
-					var match = node.data.match(regex);
-					var spannode = document.createElement('span');
-					spannode.className = 'highlight';
-					var middlebit = node.splitText(pos);
-					var endbit = middlebit.splitText(match[0].length);
-					var middleclone = middlebit.cloneNode(true);
-					spannode.appendChild(middleclone);
-					middlebit.parentNode.replaceChild(spannode, middlebit);
-					skip = 1;
-				}
-			} else if (node.nodeType === 1 && node.childNodes && !/(script|style)/i.test(node.tagName)) {
-				for (var i = 0; i < node.childNodes.length; ++i) {
-					i += highlight(node.childNodes[i]);
-				}
-			}
-			return skip;
-		};
-	
-		return $element.each(function() {
-			highlight(this);
-		});
-	};
-	
-	var MicroEvent = function() {};
-	MicroEvent.prototype = {
-		on: function(event, fct){
-			this._events = this._events || {};
-			this._events[event] = this._events[event] || [];
-			this._events[event].push(fct);
-		},
-		off: function(event, fct){
-			var n = arguments.length;
-			if (n === 0) return delete this._events;
-			if (n === 1) return delete this._events[event];
-	
-			this._events = this._events || {};
-			if (event in this._events === false) return;
-			this._events[event].splice(this._events[event].indexOf(fct), 1);
-		},
-		trigger: function(event /* , args... */){
-			this._events = this._events || {};
-			if (event in this._events === false) return;
-			for (var i = 0; i < this._events[event].length; i++){
-				this._events[event][i].apply(this, Array.prototype.slice.call(arguments, 1));
-			}
-		}
-	};
-	
-	/**
-	 * Mixin will delegate all MicroEvent.js function in the destination object.
-	 *
-	 * - MicroEvent.mixin(Foobar) will make Foobar able to use MicroEvent
-	 *
-	 * @param {object} the object which will support MicroEvent
-	 */
-	MicroEvent.mixin = function(destObject){
-		var props = ['on', 'off', 'trigger'];
-		for (var i = 0; i < props.length; i++){
-			destObject.prototype[props[i]] = MicroEvent.prototype[props[i]];
-		}
-	};
-	
-	var IS_MAC        = /Mac/.test(navigator.userAgent);
-	
-	var KEY_A         = 65;
-	var KEY_COMMA     = 188;
-	var KEY_RETURN    = 13;
-	var KEY_ESC       = 27;
-	var KEY_LEFT      = 37;
-	var KEY_UP        = 38;
-	var KEY_RIGHT     = 39;
-	var KEY_DOWN      = 40;
-	var KEY_BACKSPACE = 8;
-	var KEY_DELETE    = 46;
-	var KEY_SHIFT     = 16;
-	var KEY_CMD       = IS_MAC ? 91 : 17;
-	var KEY_CTRL      = IS_MAC ? 18 : 17;
-	var KEY_TAB       = 9;
-	
-	var TAG_SELECT    = 1;
-	var TAG_INPUT     = 2;
-	
-	var isset = function(object) {
-		return typeof object !== 'undefined';
-	};
-	
-	/**
-	 * Converts a scalar to its best string representation
-	 * for hash keys and HTML attribute values.
-	 *
-	 * Transformations:
-	 *   'str'     -> 'str'
-	 *   null      -> ''
-	 *   undefined -> ''
-	 *   true      -> '1'
-	 *   false     -> '0'
-	 *   0         -> '0'
-	 *   1         -> '1'
-	 *
-	 * @param {string} value
-	 * @returns {string}
-	 */
-	var hash_key = function(value) {
-		if (typeof value === 'undefined' || value === null) return '';
-		if (typeof value === 'boolean') return value ? '1' : '0';
-		return value + '';
-	};
-	
-	/**
-	 * Escapes a string for use within HTML.
-	 *
-	 * @param {string} str
-	 * @returns {string}
-	 */
-	var escape_html = function(str) {
-		return (str + '')
-			.replace(/&/g, '&amp;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;')
-			.replace(/"/g, '&quot;');
-	};
-	
-	var hook = {};
-	
-	/**
-	 * Wraps `method` on `self` so that `fn`
-	 * is invoked before the original method.
-	 *
-	 * @param {object} self
-	 * @param {string} method
-	 * @param {function} fn
-	 */
-	hook.before = function(self, method, fn) {
-		var original = self[method];
-		self[method] = function() {
-			fn.apply(self, arguments);
-			return original.apply(self, arguments);
-		};
-	};
-	
-	/**
-	 * Wraps `method` on `self` so that `fn`
-	 * is invoked after the original method.
-	 *
-	 * @param {object} self
-	 * @param {string} method
-	 * @param {function} fn
-	 */
-	hook.after = function(self, method, fn) {
-		var original = self[method];
-		self[method] = function() {
-			var result = original.apply(self, arguments);
-			fn.apply(self, arguments);
-			return result;
-		};
-	};
-	
-	/**
-	 * Builds a hash table out of an array of
-	 * objects, using the specified `key` within
-	 * each object.
-	 *
-	 * @param {string} key
-	 * @param {mixed} objects
-	 */
-	var build_hash_table = function(key, objects) {
-		if (!$.isArray(objects)) return objects;
-		var i, n, table = {};
-		for (i = 0, n = objects.length; i < n; i++) {
-			if (objects[i].hasOwnProperty(key)) {
-				table[objects[i][key]] = objects[i];
-			}
-		}
-		return table;
-	};
-	
-	/**
-	 * Wraps `fn` so that it can only be invoked once.
-	 *
-	 * @param {function} fn
-	 * @returns {function}
-	 */
-	var once = function(fn) {
-		var called = false;
-		return function() {
-			if (called) return;
-			called = true;
-			fn.apply(this, arguments);
-		};
-	};
-	
-	/**
-	 * Wraps `fn` so that it can only be called once
-	 * every `delay` milliseconds (invoked on the falling edge).
-	 *
-	 * @param {function} fn
-	 * @param {int} delay
-	 * @returns {function}
-	 */
-	var debounce = function(fn, delay) {
-		var timeout;
-		return function() {
-			var self = this;
-			var args = arguments;
-			window.clearTimeout(timeout);
-			timeout = window.setTimeout(function() {
-				fn.apply(self, args);
-			}, delay);
-		};
-	};
-	
-	/**
-	 * Debounce all fired events types listed in `types`
-	 * while executing the provided `fn`.
-	 *
-	 * @param {object} self
-	 * @param {array} types
-	 * @param {function} fn
-	 */
-	var debounce_events = function(self, types, fn) {
-		var type;
-		var trigger = self.trigger;
-		var event_args = {};
-	
-		// override trigger method
-		self.trigger = function() {
-			var type = arguments[0];
-			if (types.indexOf(type) !== -1) {
-				event_args[type] = arguments;
-			} else {
-				return trigger.apply(self, arguments);
-			}
-		};
-	
-		// invoke provided function
-		fn.apply(self, []);
-		self.trigger = trigger;
-	
-		// trigger queued events
-		for (type in event_args) {
-			if (event_args.hasOwnProperty(type)) {
-				trigger.apply(self, event_args[type]);
-			}
-		}
-	};
-	
-	/**
-	 * A workaround for http://bugs.jquery.com/ticket/6696
-	 *
-	 * @param {object} $parent - Parent element to listen on.
-	 * @param {string} event - Event name.
-	 * @param {string} selector - Descendant selector to filter by.
-	 * @param {function} fn - Event handler.
-	 */
-	var watchChildEvent = function($parent, event, selector, fn) {
-		$parent.on(event, selector, function(e) {
-			var child = e.target;
-			while (child && child.parentNode !== $parent[0]) {
-				child = child.parentNode;
-			}
-			e.currentTarget = child;
-			return fn.apply(this, [e]);
-		});
-	};
-	
-	/**
-	 * Determines the current selection within a text input control.
-	 * Returns an object containing:
-	 *   - start
-	 *   - length
-	 *
-	 * @param {object} input
-	 * @returns {object}
-	 */
-	var getSelection = function(input) {
-		var result = {};
-		if ('selectionStart' in input) {
-			result.start = input.selectionStart;
-			result.length = input.selectionEnd - result.start;
-		} else if (document.selection) {
-			input.focus();
-			var sel = document.selection.createRange();
-			var selLen = document.selection.createRange().text.length;
-			sel.moveStart('character', -input.value.length);
-			result.start = sel.text.length - selLen;
-			result.length = selLen;
-		}
-		return result;
-	};
-	
-	/**
-	 * Copies CSS properties from one element to another.
-	 *
-	 * @param {object} $from
-	 * @param {object} $to
-	 * @param {array} properties
-	 */
-	var transferStyles = function($from, $to, properties) {
-		var i, n, styles = {};
-		if (properties) {
-			for (i = 0, n = properties.length; i < n; i++) {
-				styles[properties[i]] = $from.css(properties[i]);
-			}
-		} else {
-			styles = $from.css();
-		}
-		$to.css(styles);
-	};
-	
-	/**
-	 * Measures the width of a string within a
-	 * parent element (in pixels).
-	 *
-	 * @param {string} str
-	 * @param {object} $parent
-	 * @returns {int}
-	 */
-	var measureString = function(str, $parent) {
-		var $test = $('<test>').css({
-			position: 'absolute',
-			top: -99999,
-			left: -99999,
-			width: 'auto',
-			padding: 0,
-			whiteSpace: 'nowrap'
-		}).text(str).appendTo('body');
-	
-		transferStyles($parent, $test, [
-			'letterSpacing',
-			'fontSize',
-			'fontFamily',
-			'fontWeight',
-			'textTransform'
-		]);
-	
-		var width = $test.width();
-		$test.remove();
-	
-		return width;
-	};
-	
-	/**
-	 * Sets up an input to grow horizontally as the user
-	 * types. If the value is changed manually, you can
-	 * trigger the "update" handler to resize:
-	 *
-	 * $input.trigger('update');
-	 *
-	 * @param {object} $input
-	 */
-	var autoGrow = function($input) {
-		var update = function(e) {
-			var value, keyCode, printable, placeholder, width;
-			var shift, character, selection;
-			e = e || window.event || {};
-	
-			if (e.metaKey || e.altKey) return;
-			if ($input.data('grow') === false) return;
-	
-			value = $input.val();
-			if (e.type && e.type.toLowerCase() === 'keydown') {
-				keyCode = e.keyCode;
-				printable = (
-					(keyCode >= 97 && keyCode <= 122) || // a-z
-					(keyCode >= 65 && keyCode <= 90)  || // A-Z
-					(keyCode >= 48 && keyCode <= 57)  || // 0-9
-					keyCode === 32 // space
-				);
-	
-				if (keyCode === KEY_DELETE || keyCode === KEY_BACKSPACE) {
-					selection = getSelection($input[0]);
-					if (selection.length) {
-						value = value.substring(0, selection.start) + value.substring(selection.start + selection.length);
-					} else if (keyCode === KEY_BACKSPACE && selection.start) {
-						value = value.substring(0, selection.start - 1) + value.substring(selection.start + 1);
-					} else if (keyCode === KEY_DELETE && typeof selection.start !== 'undefined') {
-						value = value.substring(0, selection.start) + value.substring(selection.start + 1);
-					}
-				} else if (printable) {
-					shift = e.shiftKey;
-					character = String.fromCharCode(e.keyCode);
-					if (shift) character = character.toUpperCase();
-					else character = character.toLowerCase();
-					value += character;
-				}
-			}
-	
-			placeholder = $input.attr('placeholder') || '';
-			if (!value.length && placeholder.length) {
-				value = placeholder;
-			}
-	
-			width = measureString(value, $input) + 4;
-			if (width !== $input.width()) {
-				$input.width(width);
-				$input.triggerHandler('resize');
-			}
-		};
-	
-		$input.on('keydown keyup update blur', update);
-		update();
-	};
-	
-	var Selectize = function($input, settings) {
-		var key, i, n, self = this;
-		$input[0].selectize = self;
-	
-		// setup default state
-		$.extend(self, {
-			settings         : settings,
-			$input           : $input,
-			tagType          : $input[0].tagName.toLowerCase() === 'select' ? TAG_SELECT : TAG_INPUT,
-	
-			eventNS          : '.selectize' + (++Selectize.count),
-			highlightedValue : null,
-			isOpen           : false,
-			isDisabled       : false,
-			isLocked         : false,
-			isFocused        : false,
-			isInputFocused   : false,
-			isInputHidden    : false,
-			isSetup          : false,
-			isShiftDown      : false,
-			isCmdDown        : false,
-			isCtrlDown       : false,
-			ignoreFocus      : false,
-			ignoreHover      : false,
-			hasOptions       : false,
-			currentResults   : null,
-			lastValue        : '',
-			caretPos         : 0,
-			loading          : 0,
-			loadedSearches   : {},
-	
-			$activeOption    : null,
-			$activeItems     : [],
-	
-			optgroups        : {},
-			options          : {},
-			userOptions      : {},
-			items            : [],
-			renderCache      : {},
-			onSearchChange   : debounce(self.onSearchChange, settings.loadThrottle)
-		});
-	
-		// search system
-		self.sifter = new Sifter(this.options, {diacritics: settings.diacritics});
-	
-		// build options table
-		$.extend(self.options, build_hash_table(settings.valueField, settings.options));
-		delete self.settings.options;
-	
-		// build optgroup table
-		$.extend(self.optgroups, build_hash_table(settings.optgroupValueField, settings.optgroups));
-		delete self.settings.optgroups;
-	
-		// option-dependent defaults
-		self.settings.mode = self.settings.mode || (self.settings.maxItems === 1 ? 'single' : 'multi');
-		if (typeof self.settings.hideSelected !== 'boolean') {
-			self.settings.hideSelected = self.settings.mode === 'multi';
-		}
-	
-		self.initializePlugins(self.settings.plugins);
-		self.setupCallbacks();
-		self.setupTemplates();
-		self.setup();
-	};
-	
-	// mixins
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	
-	MicroEvent.mixin(Selectize);
-	MicroPlugin.mixin(Selectize);
-	
-	// methods
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	
-	$.extend(Selectize.prototype, {
-	
-		/**
-		 * Creates all elements and sets up event bindings.
-		 */
-		setup: function() {
-			var self      = this;
-			var settings  = self.settings;
-			var eventNS   = self.eventNS;
-			var $window   = $(window);
-			var $document = $(document);
-	
-			var $wrapper;
-			var $control;
-			var $control_input;
-			var $dropdown;
-			var $dropdown_content;
-			var $dropdown_parent;
-			var inputMode;
-			var timeout_blur;
-			var timeout_focus;
-			var tab_index;
-			var classes;
-			var classes_plugins;
-	
-			inputMode         = self.settings.mode;
-			tab_index         = self.$input.attr('tabindex') || '';
-			classes           = self.$input.attr('class') || '';
-	
-			$wrapper          = $('<div>').addClass(settings.wrapperClass).addClass(classes).addClass(inputMode);
-			$control          = $('<div>').addClass(settings.inputClass).addClass('items').appendTo($wrapper);
-			$control_input    = $('<input type="text">').appendTo($control).attr('tabindex', tab_index);
-			$dropdown_parent  = $(settings.dropdownParent || $wrapper);
-			$dropdown         = $('<div>').addClass(settings.dropdownClass).addClass(classes).addClass(inputMode).hide().appendTo($dropdown_parent);
-			$dropdown_content = $('<div>').addClass(settings.dropdownContentClass).appendTo($dropdown);
-	
-			$wrapper.css({
-				width: self.$input[0].style.width
-			});
-	
-			if (self.plugins.names.length) {
-				classes_plugins = 'plugin-' + self.plugins.names.join(' plugin-');
-				$wrapper.addClass(classes_plugins);
-				$dropdown.addClass(classes_plugins);
-			}
-	
-			if ((settings.maxItems === null || settings.maxItems > 1) && self.tagType === TAG_SELECT) {
-				self.$input.attr('multiple', 'multiple');
-			}
-	
-			if (self.settings.placeholder) {
-				$control_input.attr('placeholder', settings.placeholder);
-			}
-	
-			self.$wrapper          = $wrapper;
-			self.$control          = $control;
-			self.$control_input    = $control_input;
-			self.$dropdown         = $dropdown;
-			self.$dropdown_content = $dropdown_content;
-	
-			$control.on('mousedown', function(e) {
-				if (!e.isDefaultPrevented()) {
-					window.setTimeout(function() {
-						self.focus(true);
-					}, 0);
-				}
-			});
-	
-			// necessary for mobile webkit devices (manual focus triggering
-			// is ignored unless invoked within a click event)
-			$control.on('click', function(e) {
-				if (!self.isInputFocused) {
-					self.focus(true);
-				}
-			});
-	
-			$dropdown.on('mouseenter', '[data-selectable]', function() { return self.onOptionHover.apply(self, arguments); });
-			$dropdown.on('mousedown', '[data-selectable]', function() { return self.onOptionSelect.apply(self, arguments); });
-			watchChildEvent($control, 'mousedown', '*:not(input)', function() { return self.onItemSelect.apply(self, arguments); });
-			autoGrow($control_input);
-	
-			$control_input.on({
-				mousedown : function(e) { e.stopPropagation(); },
-				keydown   : function() { return self.onKeyDown.apply(self, arguments); },
-				keyup     : function() { return self.onKeyUp.apply(self, arguments); },
-				keypress  : function() { return self.onKeyPress.apply(self, arguments); },
-				resize    : function() { self.positionDropdown.apply(self, []); },
-				blur      : function() { return self.onBlur.apply(self, arguments); },
-				focus     : function() { return self.onFocus.apply(self, arguments); }
-			});
-	
-			$document.on('keydown' + eventNS, function(e) {
-				self.isCmdDown = e[IS_MAC ? 'metaKey' : 'ctrlKey'];
-				self.isCtrlDown = e[IS_MAC ? 'altKey' : 'ctrlKey'];
-				self.isShiftDown = e.shiftKey;
-			});
-	
-			$document.on('keyup' + eventNS, function(e) {
-				if (e.keyCode === KEY_CTRL) self.isCtrlDown = false;
-				if (e.keyCode === KEY_SHIFT) self.isShiftDown = false;
-				if (e.keyCode === KEY_CMD) self.isCmdDown = false;
-			});
-	
-			$document.on('mousedown' + eventNS, function(e) {
-				if (self.isFocused) {
-					// prevent events on the dropdown scrollbar from causing the control to blur
-					if (e.target === self.$dropdown[0] || e.target.parentNode === self.$dropdown[0]) {
-						var ignoreFocus = self.ignoreFocus;
-						self.ignoreFocus = true;
-						window.setTimeout(function() {
-							self.ignoreFocus = ignoreFocus;
-							self.focus(false);
-						}, 0);
-						return;
-					}
-					// blur on click outside
-					if (!self.$control.has(e.target).length && e.target !== self.$control[0]) {
-						self.blur();
-					}
-				}
-			});
-	
-			$window.on(['scroll' + eventNS, 'resize' + eventNS].join(' '), function() {
-				if (self.isOpen) {
-					self.positionDropdown.apply(self, arguments);
-				}
-			});
-			$window.on('mousemove' + eventNS, function() {
-				self.ignoreHover = false;
-			});
-	
-			self.$input.attr('tabindex',-1).hide().after(self.$wrapper);
-	
-			if ($.isArray(settings.items)) {
-				self.setValue(settings.items);
-				delete settings.items;
-			}
-	
-			self.updateOriginalInput();
-			self.refreshItems();
-			self.refreshClasses();
-			self.updatePlaceholder();
-			self.isSetup = true;
-	
-			if (self.$input.is(':disabled')) {
-				self.disable();
-			}
-	
-			self.on('change', this.onChange);
-			self.trigger('initialize');
-	
-			// preload options
-			if (settings.preload) {
-				self.onSearchChange('');
-			}
-		},
-	
-		/**
-		 * Sets up default rendering functions.
-		 */
-		setupTemplates: function() {
-			var self = this;
-			var field_label = self.settings.labelField;
-			var field_optgroup = self.settings.optgroupLabelField;
-	
-			var templates = {
-				'optgroup': function(data) {
-					return '<div class="optgroup">' + data.html + '</div>';
-				},
-				'optgroup_header': function(data, escape) {
-					return '<div class="optgroup-header">' + escape(data[field_optgroup]) + '</div>';
-				},
-				'option': function(data, escape) {
-					return '<div class="option">' + escape(data[field_label]) + '</div>';
-				},
-				'item': function(data, escape) {
-					return '<div class="item">' + escape(data[field_label]) + '</div>';
-				},
-				'option_create': function(data, escape) {
-					return '<div class="create">Add <strong>' + escape(data.input) + '</strong>&hellip;</div>';
-				},
-			};
-	
-			self.settings.render = $.extend({}, templates, self.settings.render);
-		},
-	
-		/**
-		 * Maps fired events to callbacks provided
-		 * in the settings used when creating the control.
-		 */
-		setupCallbacks: function() {
-			var key, fn, callbacks = {
-				'initialize'     : 'onInitialize',
-				'change'         : 'onChange',
-				'item_add'       : 'onItemAdd',
-				'item_remove'    : 'onItemRemove',
-				'clear'          : 'onClear',
-				'option_add'     : 'onOptionAdd',
-				'option_remove'  : 'onOptionRemove',
-				'option_clear'   : 'onOptionClear',
-				'dropdown_open'  : 'onDropdownOpen',
-				'dropdown_close' : 'onDropdownClose',
-				'type'           : 'onType'
-			};
-	
-			for (key in callbacks) {
-				if (callbacks.hasOwnProperty(key)) {
-					fn = this.settings[callbacks[key]];
-					if (fn) this.on(key, fn);
-				}
-			}
-		},
-	
-		/**
-		 * Triggered when the value of the control has been changed.
-		 * This should propagate the event to the original DOM
-		 * input / select element.
-		 */
-		onChange: function() {
-			this.$input.trigger('change');
-		},
-	
-		/**
-		 * Triggered on <input> keypress.
-		 *
-		 * @param {object} e
-		 * @returns {boolean}
-		 */
-		onKeyPress: function(e) {
-			if (this.isLocked) return e && e.preventDefault();
-			var character = String.fromCharCode(e.keyCode || e.which);
-			if (this.settings.create && character === this.settings.delimiter) {
-				this.createItem();
-				e.preventDefault();
-				return false;
-			}
-		},
-	
-		/**
-		 * Triggered on <input> keydown.
-		 *
-		 * @param {object} e
-		 * @returns {boolean}
-		 */
-		onKeyDown: function(e) {
-			var isInput = e.target === this.$control_input[0];
-			var self = this;
-	
-			if (self.isLocked) {
-				if (e.keyCode !== KEY_TAB) {
-					e.preventDefault();
-				}
-				return;
-			}
-	
-			switch (e.keyCode) {
-				case KEY_A:
-					if (self.isCmdDown) {
-						self.selectAll();
-						return;
-					}
-					break;
-				case KEY_ESC:
-					self.blur();
-					return;
-				case KEY_DOWN:
-					if (!self.isOpen && self.hasOptions) {
-						self.open();
-					} else if (self.$activeOption) {
-						self.ignoreHover = true;
-						var $next = self.getAdjacentOption(self.$activeOption, 1);
-						if ($next.length) self.setActiveOption($next, true, true);
-					}
-					e.preventDefault();
-					return;
-				case KEY_UP:
-					if (self.$activeOption) {
-						self.ignoreHover = true;
-						var $prev = self.getAdjacentOption(self.$activeOption, -1);
-						if ($prev.length) self.setActiveOption($prev, true, true);
-					}
-					e.preventDefault();
-					return;
-				case KEY_RETURN:
-					if (self.$activeOption) {
-						self.onOptionSelect({currentTarget: self.$activeOption});
-					}
-					e.preventDefault();
-					return;
-				case KEY_LEFT:
-					self.advanceSelection(-1, e);
-					return;
-				case KEY_RIGHT:
-					self.advanceSelection(1, e);
-					return;
-				case KEY_TAB:
-					if (self.settings.create && $.trim(self.$control_input.val()).length) {
-						self.createItem();
-						e.preventDefault();
-					}
-					return;
-				case KEY_BACKSPACE:
-				case KEY_DELETE:
-					self.deleteSelection(e);
-					return;
-			}
-			if (self.isFull() || self.isInputHidden) {
-				e.preventDefault();
-				return;
-			}
-		},
-	
-		/**
-		 * Triggered on <input> keyup.
-		 *
-		 * @param {object} e
-		 * @returns {boolean}
-		 */
-		onKeyUp: function(e) {
-			var self = this;
-	
-			if (self.isLocked) return e && e.preventDefault();
-			var value = self.$control_input.val() || '';
-			if (self.lastValue !== value) {
-				self.lastValue = value;
-				self.onSearchChange(value);
-				self.refreshOptions();
-				self.trigger('type', value);
-			}
-		},
-	
-		/**
-		 * Invokes the user-provide option provider / loader.
-		 *
-		 * Note: this function is debounced in the Selectize
-		 * constructor (by `settings.loadDelay` milliseconds)
-		 *
-		 * @param {string} value
-		 */
-		onSearchChange: function(value) {
-			var self = this;
-			var fn = self.settings.load;
-			if (!fn) return;
-			if (self.loadedSearches.hasOwnProperty(value)) return;
-			self.loadedSearches[value] = true;
-			self.load(function(callback) {
-				fn.apply(self, [value, callback]);
-			});
-		},
-	
-		/**
-		 * Triggered on <input> focus.
-		 *
-		 * @param {object} e (optional)
-		 * @returns {boolean}
-		 */
-		onFocus: function(e) {
-			var self = this;
-	
-			self.isInputFocused = true;
-			self.isFocused = true;
-			if (self.isDisabled) {
-				self.blur();
-				e.preventDefault();
-				return false;
-			}
-	
-			if (self.ignoreFocus) return;
-			if (self.settings.preload === 'focus') self.onSearchChange('');
-	
-			self.showInput();
-			self.setActiveItem(null);
-			self.refreshOptions(!!self.settings.openOnFocus);
-			self.refreshClasses();
-		},
-	
-		/**
-		 * Triggered on <input> blur.
-		 *
-		 * @param {object} e
-		 * @returns {boolean}
-		 */
-		onBlur: function(e) {
-			var self = this;
-			self.isInputFocused = false;
-			if (self.ignoreFocus) return;
-	
-			self.close();
-			self.setTextboxValue('');
-			self.setActiveItem(null);
-			self.setActiveOption(null);
-			self.setCaret(self.items.length);
-			self.isFocused = false;
-			self.refreshClasses();
-		},
-	
-		/**
-		 * Triggered when the user rolls over
-		 * an option in the autocomplete dropdown menu.
-		 *
-		 * @param {object} e
-		 * @returns {boolean}
-		 */
-		onOptionHover: function(e) {
-			if (this.ignoreHover) return;
-			this.setActiveOption(e.currentTarget, false);
-		},
-	
-		/**
-		 * Triggered when the user clicks on an option
-		 * in the autocomplete dropdown menu.
-		 *
-		 * @param {object} e
-		 * @returns {boolean}
-		 */
-		onOptionSelect: function(e) {
-			var value, $target, $option, self = this;
-	
-			e.preventDefault && e.preventDefault();
-			e.stopPropagation && e.stopPropagation();
-			self.focus(false);
-	
-			$target = $(e.currentTarget);
-			if ($target.hasClass('create')) {
-				self.createItem();
-			} else {
-				value = $target.attr('data-value');
-				if (value) {
-					self.setTextboxValue('');
-					self.addItem(value);
-					if (!self.settings.hideSelected && e.type && /mouse/.test(e.type)) {
-						self.setActiveOption(self.getOption(value));
-					}
-				}
-			}
-		},
-	
-		/**
-		 * Triggered when the user clicks on an item
-		 * that has been selected.
-		 *
-		 * @param {object} e
-		 * @returns {boolean}
-		 */
-		onItemSelect: function(e) {
-			var self = this;
-	
-			if (self.settings.mode === 'multi') {
-				e.preventDefault();
-				self.setActiveItem(e.currentTarget, e);
-				self.focus(false);
-				self.hideInput();
-			}
-		},
-	
-		/**
-		 * Invokes the provided method that provides
-		 * results to a callback---which are then added
-		 * as options to the control.
-		 *
-		 * @param {function} fn
-		 */
-		load: function(fn) {
-			var self = this;
-			var $wrapper = self.$wrapper.addClass('loading');
-	
-			self.loading++;
-			fn.apply(self, [function(results) {
-				self.loading = Math.max(self.loading - 1, 0);
-				if (results && results.length) {
-					self.addOption(results);
-					self.refreshOptions(false);
-					if (self.isInputFocused) self.open();
-				}
-				if (!self.loading) {
-					$wrapper.removeClass('loading');
-				}
-				self.trigger('load', results);
-			}]);
-		},
-	
-		/**
-		 * Sets the input field of the control to the specified value.
-		 *
-		 * @param {string} value
-		 */
-		setTextboxValue: function(value) {
-			this.$control_input.val(value).triggerHandler('update');
-			this.lastValue = value;
-		},
-	
-		/**
-		 * Returns the value of the control. If multiple items
-		 * can be selected (e.g. <select multiple>), this returns
-		 * an array. If only one item can be selected, this
-		 * returns a string.
-		 *
-		 * @returns {mixed}
-		 */
-		getValue: function() {
-			if (this.tagType === TAG_SELECT && this.$input.attr('multiple')) {
-				return this.items;
-			} else {
-				return this.items.join(this.settings.delimiter);
-			}
-		},
-	
-		/**
-		 * Resets the selected items to the given value.
-		 *
-		 * @param {mixed} value
-		 */
-		setValue: function(value) {
-			debounce_events(this, ['change'], function() {
-				this.clear();
-				var items = $.isArray(value) ? value : [value];
-				for (var i = 0, n = items.length; i < n; i++) {
-					this.addItem(items[i]);
-				}
-			});
-		},
-	
-		/**
-		 * Sets the selected item.
-		 *
-		 * @param {object} $item
-		 * @param {object} e (optional)
-		 */
-		setActiveItem: function($item, e) {
-			var self = this;
-			var eventName;
-			var i, idx, begin, end, item, swap;
-			var $last;
-	
-			$item = $($item);
-	
-			// clear the active selection
-			if (!$item.length) {
-				$(self.$activeItems).removeClass('active');
-				self.$activeItems = [];
-				self.isFocused = self.isInputFocused;
-				return;
-			}
-	
-			// modify selection
-			eventName = e && e.type.toLowerCase();
-	
-			if (eventName === 'mousedown' && self.isShiftDown && self.$activeItems.length) {
-				$last = self.$control.children('.active:last');
-				begin = Array.prototype.indexOf.apply(self.$control[0].childNodes, [$last[0]]);
-				end   = Array.prototype.indexOf.apply(self.$control[0].childNodes, [$item[0]]);
-				if (begin > end) {
-					swap  = begin;
-					begin = end;
-					end   = swap;
-				}
-				for (i = begin; i <= end; i++) {
-					item = self.$control[0].childNodes[i];
-					if (self.$activeItems.indexOf(item) === -1) {
-						$(item).addClass('active');
-						self.$activeItems.push(item);
-					}
-				}
-				e.preventDefault();
-			} else if ((eventName === 'mousedown' && self.isCtrlDown) || (eventName === 'keydown' && this.isShiftDown)) {
-				if ($item.hasClass('active')) {
-					idx = self.$activeItems.indexOf($item[0]);
-					self.$activeItems.splice(idx, 1);
-					$item.removeClass('active');
-				} else {
-					self.$activeItems.push($item.addClass('active')[0]);
-				}
-			} else {
-				$(self.$activeItems).removeClass('active');
-				self.$activeItems = [$item.addClass('active')[0]];
-			}
-	
-			self.isFocused = !!self.$activeItems.length || self.isInputFocused;
-		},
-	
-		/**
-		 * Sets the selected item in the dropdown menu
-		 * of available options.
-		 *
-		 * @param {object} $object
-		 * @param {boolean} scroll
-		 * @param {boolean} animate
-		 */
-		setActiveOption: function($option, scroll, animate) {
-			var height_menu, height_item, y;
-			var scroll_top, scroll_bottom;
-			var self = this;
-	
-			if (self.$activeOption) self.$activeOption.removeClass('active');
-			self.$activeOption = null;
-	
-			$option = $($option);
-			if (!$option.length) return;
-	
-			self.$activeOption = $option.addClass('active');
-	
-			if (scroll || !isset(scroll)) {
-	
-				height_menu   = self.$dropdown_content.height();
-				height_item   = self.$activeOption.outerHeight(true);
-				scroll        = self.$dropdown_content.scrollTop() || 0;
-				y             = self.$activeOption.offset().top - self.$dropdown_content.offset().top + scroll;
-				scroll_top    = y;
-				scroll_bottom = y - height_menu + height_item;
-	
-				if (y + height_item > height_menu - scroll) {
-					self.$dropdown_content.stop().animate({scrollTop: scroll_bottom}, animate ? self.settings.scrollDuration : 0);
-				} else if (y < scroll) {
-					self.$dropdown_content.stop().animate({scrollTop: scroll_top}, animate ? self.settings.scrollDuration : 0);
-				}
-	
-			}
-		},
-	
-		/**
-		 * Selects all items (CTRL + A).
-		 */
-		selectAll: function() {
-			this.$activeItems = Array.prototype.slice.apply(this.$control.children(':not(input)').addClass('active'));
-			this.isFocused = true;
-			if (this.$activeItems.length) this.hideInput();
-		},
-	
-		/**
-		 * Hides the input element out of view, while
-		 * retaining its focus.
-		 */
-		hideInput: function() {
-			var self = this;
-	
-			self.close();
-			self.setTextboxValue('');
-			self.$control_input.css({opacity: 0, position: 'absolute', left: -10000});
-			self.isInputHidden = true;
-		},
-	
-		/**
-		 * Restores input visibility.
-		 */
-		showInput: function() {
-			this.$control_input.css({opacity: 1, position: 'relative', left: 0});
-			this.isInputHidden = false;
-		},
-	
-		/**
-		 * Gives the control focus. If "trigger" is falsy,
-		 * focus handlers won't be fired--causing the focus
-		 * to happen silently in the background.
-		 *
-		 * @param {boolean} trigger
-		 */
-		focus: function(trigger) {
-			var self = this;
-	
-			if (self.isDisabled) return;
-			self.ignoreFocus = true;
-			self.$control_input[0].focus();
-			self.isInputFocused = true;
-			window.setTimeout(function() {
-				self.ignoreFocus = false;
-				if (trigger) self.onFocus();
-			}, 0);
-		},
-	
-		/**
-		 * Forces the control out of focus.
-		 */
-		blur: function() {
-			this.$control_input.trigger('blur');
-		},
-	
-		/**
-		 * Returns a function that scores an object
-		 * to show how good of a match it is to the
-		 * provided query.
-		 *
-		 * @param {string} query
-		 * @param {object} options
-		 * @return {function}
-		 */
-		getScoreFunction: function(query) {
-			return this.sifter.getScoreFunction(query, this.getSearchOptions());
-		},
-	
-		/**
-		 * Returns search options for sifter (the system
-		 * for scoring and sorting results).
-		 *
-		 * @see https://github.com/brianreavis/sifter.js
-		 * @return {object}
-		 */
-		getSearchOptions: function() {
-			var settings = this.settings;
-			var fields = settings.searchField;
-	
-			return {
-				fields    : $.isArray(fields) ? fields : [fields],
-				sort      : settings.sortField,
-				direction : settings.sortDirection,
-			};
-		},
-	
-		/**
-		 * Searches through available options and returns
-		 * a sorted array of matches.
-		 *
-		 * Returns an object containing:
-		 *
-		 *   - query {string}
-		 *   - tokens {array}
-		 *   - total {int}
-		 *   - items {array}
-		 *
-		 * @param {string} query
-		 * @returns {object}
-		 */
-		search: function(query) {
-			var i, value, score, result, calculateScore;
-			var self     = this;
-			var settings = self.settings;
-			var options  = this.getSearchOptions();
-	
-			// validate user-provided result scoring function
-			if (settings.score) {
-				calculateScore = self.settings.score.apply(this, [query]);
-				if (typeof calculateScore !== 'function') {
-					throw new Error('Selectize "score" setting must be a function that returns a function');
-				}
-			}
-	
-			// perform search
-			if (query !== self.lastQuery) {
-				self.lastQuery = query;
-				result = self.sifter.search(query, $.extend(options, {score: calculateScore}));
-				self.currentResults = result;
-			} else {
-				result = $.extend(true, {}, self.currentResults);
-			}
-	
-			// filter out selected items
-			if (settings.hideSelected) {
-				for (i = result.items.length - 1; i >= 0; i--) {
-					if (self.items.indexOf(hash_key(result.items[i].id)) !== -1) {
-						result.items.splice(i, 1);
-					}
-				}
-			}
-	
-			return result;
-		},
-	
-		/**
-		 * Refreshes the list of available options shown
-		 * in the autocomplete dropdown menu.
-		 *
-		 * @param {boolean} triggerDropdown
-		 */
-		refreshOptions: function(triggerDropdown) {
-			if (typeof triggerDropdown === 'undefined') {
-				triggerDropdown = true;
-			}
-	
-			var self = this;
-			var i, n, groups, groups_order, option, optgroup, html, html_children;
-			var hasCreateOption;
-			var query = self.$control_input.val();
-			var results = self.search(query);
-			var $active, $create;
-			var $dropdown_content = self.$dropdown_content;
-	
-			// build markup
-			n = results.items.length;
-			if (typeof self.settings.maxOptions === 'number') {
-				n = Math.min(n, self.settings.maxOptions);
-			}
-	
-			// render and group available options individually
-			groups = {};
-	
-			if (self.settings.optgroupOrder) {
-				groups_order = self.settings.optgroupOrder;
-				for (i = 0; i < groups_order.length; i++) {
-					groups[groups_order[i]] = [];
-				}
-			} else {
-				groups_order = [];
-			}
-	
-			for (i = 0; i < n; i++) {
-				option = self.options[results.items[i].id];
-				optgroup = option[self.settings.optgroupField] || '';
-				if (!self.optgroups.hasOwnProperty(optgroup)) {
-					optgroup = '';
-				}
-				if (!groups.hasOwnProperty(optgroup)) {
-					groups[optgroup] = [];
-					groups_order.push(optgroup);
-				}
-				groups[optgroup].push(self.render('option', option));
-			}
-	
-			// render optgroup headers & join groups
-			html = [];
-			for (i = 0, n = groups_order.length; i < n; i++) {
-				optgroup = groups_order[i];
-				if (self.optgroups.hasOwnProperty(optgroup) && groups[optgroup].length) {
-					// render the optgroup header and options within it,
-					// then pass it to the wrapper template
-					html_children = self.render('optgroup_header', self.optgroups[optgroup]) || '';
-					html_children += groups[optgroup].join('');
-					html.push(self.render('optgroup', $.extend({}, self.optgroups[optgroup], {
-						html: html_children
-					})));
-				} else {
-					html.push(groups[optgroup].join(''));
-				}
-			}
-	
-			$dropdown_content.html(html.join(''));
-	
-			// highlight matching terms inline
-			if (self.settings.highlight && results.query.length && results.tokens.length) {
-				for (i = 0, n = results.tokens.length; i < n; i++) {
-					highlight($dropdown_content, results.tokens[i].regex);
-				}
-			}
-	
-			// add "selected" class to selected options
-			if (!self.settings.hideSelected) {
-				for (i = 0, n = self.items.length; i < n; i++) {
-					self.getOption(self.items[i]).addClass('selected');
-				}
-			}
-	
-			// add create option
-			hasCreateOption = self.settings.create && results.query.length;
-			if (hasCreateOption) {
-				$dropdown_content.prepend(self.render('option_create', {input: query}));
-				$create = $($dropdown_content[0].childNodes[0]);
-			}
-	
-			// activate
-			self.hasOptions = results.items.length > 0 || hasCreateOption;
-			if (self.hasOptions) {
-				if (results.items.length > 0) {
-					if ($create) {
-						$active = self.getAdjacentOption($create, 1);
-					} else {
-						$active = $dropdown_content.find("[data-selectable]").first();
-					}
-				} else {
-					$active = $create;
-				}
-				self.setActiveOption($active);
-				if (triggerDropdown && !self.isOpen) { self.open(); }
-			} else {
-				self.setActiveOption(null);
-				if (triggerDropdown && self.isOpen) { self.close(); }
-			}
-		},
-	
-		/**
-		 * Adds an available option. If it already exists,
-		 * nothing will happen. Note: this does not refresh
-		 * the options list dropdown (use `refreshOptions`
-		 * for that).
-		 *
-		 * Usage:
-		 *
-		 *   this.addOption(data)
-		 *
-		 * @param {object} data
-		 */
-		addOption: function(data) {
-			var i, n, optgroup, value, self = this;
-	
-			if ($.isArray(data)) {
-				for (i = 0, n = data.length; i < n; i++) {
-					self.addOption(data[i]);
-				}
-				return;
-			}
-	
-			value = hash_key(data[self.settings.valueField]);
-			if (!value || self.options.hasOwnProperty(value)) return;
-	
-			self.userOptions[value] = true;
-			self.options[value] = data;
-			self.lastQuery = null;
-			self.trigger('option_add', value, data);
-		},
-	
-		/**
-		 * Registers a new optgroup for options
-		 * to be bucketed into.
-		 *
-		 * @param {string} id
-		 * @param {object} data
-		 */
-		addOptionGroup: function(id, data) {
-			this.optgroups[id] = data;
-			this.trigger('optgroup_add', id, data);
-		},
-	
-		/**
-		 * Updates an option available for selection. If
-		 * it is visible in the selected items or options
-		 * dropdown, it will be re-rendered automatically.
-		 *
-		 * @param {string} value
-		 * @param {object} data
-		 */
-		updateOption: function(value, data) {
-			var self = this;
-			var $item, $item_new;
-			var value_new, index_item, cache_items, cache_options;
-	
-			value     = hash_key(value);
-			value_new = hash_key(data[self.settings.valueField]);
-	
-			// sanity checks
-			if (!self.options.hasOwnProperty(value)) return;
-			if (!value_new) throw new Error('Value must be set in option data');
-	
-			// update references
-			if (value_new !== value) {
-				delete self.options[value];
-				index_item = self.items.indexOf(value);
-				if (index_item !== -1) {
-					self.items.splice(index_item, 1, value_new);
-				}
-			}
-			self.options[value_new] = data;
-	
-			// invalidate render cache
-			cache_items = self.renderCache['item'];
-			cache_options = self.renderCache['option'];
-	
-			if (isset(cache_items)) {
-				delete cache_items[value];
-				delete cache_items[value_new];
-			}
-			if (isset(cache_options)) {
-				delete cache_options[value];
-				delete cache_options[value_new];
-			}
-	
-			// update the item if it's selected
-			if (self.items.indexOf(value_new) !== -1) {
-				$item = self.getItem(value);
-				$item_new = $(self.render('item', data));
-				if ($item.hasClass('active')) $item_new.addClass('active');
-				$item.replaceWith($item_new);
-			}
-	
-			// update dropdown contents
-			if (self.isOpen) {
-				self.refreshOptions(false);
-			}
-		},
-	
-		/**
-		 * Removes a single option.
-		 *
-		 * @param {string} value
-		 */
-		removeOption: function(value) {
-			var self = this;
-	
-			value = hash_key(value);
-			delete self.userOptions[value];
-			delete self.options[value];
-			self.lastQuery = null;
-			self.trigger('option_remove', value);
-			self.removeItem(value);
-		},
-	
-		/**
-		 * Clears all options.
-		 */
-		clearOptions: function() {
-			var self = this;
-	
-			self.loadedSearches = {};
-			self.userOptions = {};
-			self.options = self.sifter.items = {};
-			self.lastQuery = null;
-			self.trigger('option_clear');
-			self.clear();
-		},
-	
-		/**
-		 * Returns the jQuery element of the option
-		 * matching the given value.
-		 *
-		 * @param {string} value
-		 * @returns {object}
-		 */
-		getOption: function(value) {
-			return this.getElementWithValue(value, this.$dropdown_content.find('[data-selectable]'));
-		},
-	
-		/**
-		 * Returns the jQuery element of the next or
-		 * previous selectable option.
-		 *
-		 * @param {object} $option
-		 * @param {int} direction  can be 1 for next or -1 for previous
-		 * @return {object}
-		 */
-		getAdjacentOption: function($option, direction) {
-			var $options = this.$dropdown.find('[data-selectable]');
-			var index    = $options.index($option) + direction;
-	
-			return index >= 0 && index < $options.length ? $options.eq(index) : $();
-		},
-	
-		/**
-		 * Finds the first element with a "data-value" attribute
-		 * that matches the given value.
-		 *
-		 * @param {mixed} value
-		 * @param {object} $els
-		 * @return {object}
-		 */
-		getElementWithValue: function(value, $els) {
-			value = hash_key(value);
-	
-			if (value) {
-				for (var i = 0, n = $els.length; i < n; i++) {
-					if ($els[i].getAttribute('data-value') === value) {
-						return $($els[i]);
-					}
-				}
-			}
-	
-			return $();
-		},
-	
-		/**
-		 * Returns the jQuery element of the item
-		 * matching the given value.
-		 *
-		 * @param {string} value
-		 * @returns {object}
-		 */
-		getItem: function(value) {
-			return this.getElementWithValue(value, this.$control.children());
-		},
-	
-		/**
-		 * "Selects" an item. Adds it to the list
-		 * at the current caret position.
-		 *
-		 * @param {string} value
-		 */
-		addItem: function(value) {
-			debounce_events(this, ['change'], function() {
-				var $item, $option;
-				var self = this;
-				var inputMode = self.settings.mode;
-				var i, active, options, value_next;
-				value = hash_key(value);
-	
-				if (inputMode === 'single') self.clear();
-				if (inputMode === 'multi' && self.isFull()) return;
-				if (self.items.indexOf(value) !== -1) return;
-				if (!self.options.hasOwnProperty(value)) return;
-	
-				$item = $(self.render('item', self.options[value]));
-				self.items.splice(self.caretPos, 0, value);
-				self.insertAtCaret($item);
-				self.refreshClasses();
-	
-				if (self.isSetup) {
-					options = self.$dropdown_content.find('[data-selectable]');
-	
-					// update menu / remove the option
-					$option = self.getOption(value);
-					value_next = self.getAdjacentOption($option, 1).attr('data-value');
-					self.refreshOptions(self.isFocused && inputMode !== 'single');
-					if (value_next) {
-						self.setActiveOption(self.getOption(value_next));
-					}
-	
-					// hide the menu if the maximum number of items have been selected or no options are left
-					if (!options.length || (self.settings.maxItems !== null && self.items.length >= self.settings.maxItems)) {
-						self.close();
-					} else {
-						self.positionDropdown();
-					}
-	
-					// restore focus to input
-					if (self.isFocused) {
-						window.setTimeout(function() {
-							if (inputMode === 'single') {
-								self.blur();
-								self.focus(false);
-								self.hideInput();
-							} else {
-								self.focus(false);
-							}
-						}, 0);
-					}
-	
-					self.updatePlaceholder();
-					self.trigger('item_add', value, $item);
-					self.updateOriginalInput();
-				}
-			});
-		},
-	
-		/**
-		 * Removes the selected item matching
-		 * the provided value.
-		 *
-		 * @param {string} value
-		 */
-		removeItem: function(value) {
-			var self = this;
-			var $item, i, idx;
-	
-			$item = (typeof value === 'object') ? value : self.getItem(value);
-			value = hash_key($item.attr('data-value'));
-			i = self.items.indexOf(value);
-	
-			if (i !== -1) {
-				$item.remove();
-				if ($item.hasClass('active')) {
-					idx = self.$activeItems.indexOf($item[0]);
-					self.$activeItems.splice(idx, 1);
-				}
-	
-				self.items.splice(i, 1);
-				self.lastQuery = null;
-				if (!self.settings.persist && self.userOptions.hasOwnProperty(value)) {
-					self.removeOption(value);
-				}
-	
-				if (i < self.caretPos) {
-					self.setCaret(self.caretPos - 1);
-				}
-	
-				self.refreshClasses();
-				self.updatePlaceholder();
-				self.updateOriginalInput();
-				self.positionDropdown();
-				self.trigger('item_remove', value);
-			}
-		},
-	
-		/**
-		 * Invokes the `create` method provided in the
-		 * selectize options that should provide the data
-		 * for the new item, given the user input.
-		 *
-		 * Once this completes, it will be added
-		 * to the item list.
-		 */
-		createItem: function() {
-			var self  = this;
-			var input = $.trim(self.$control_input.val() || '');
-			var caret = self.caretPos;
-			if (!input.length) return;
-			self.lock();
-	
-			var setup = (typeof self.settings.create === 'function') ? this.settings.create : function(input) {
-				var data = {};
-				data[self.settings.labelField] = input;
-				data[self.settings.valueField] = input;
-				return data;
-			};
-	
-			var create = once(function(data) {
-				self.unlock();
-				self.focus(false);
-	
-				if (!data || typeof data !== 'object') return;
-				var value = hash_key(data[self.settings.valueField]);
-				if (!value) return;
-	
-				self.setTextboxValue('');
-				self.addOption(data);
-				self.setCaret(caret);
-				self.addItem(value);
-				self.refreshOptions(self.settings.mode !== 'single');
-				self.focus(false);
-			});
-	
-			var output = setup.apply(this, [input, create]);
-			if (typeof output !== 'undefined') {
-				create(output);
-			}
-		},
-	
-		/**
-		 * Re-renders the selected item lists.
-		 */
-		refreshItems: function() {
-			this.lastQuery = null;
-	
-			if (this.isSetup) {
-				for (var i = 0; i < this.items.length; i++) {
-					this.addItem(this.items);
-				}
-			}
-	
-			this.refreshClasses();
-			this.updateOriginalInput();
-		},
-	
-		/**
-		 * Updates all state-dependent CSS classes.
-		 */
-		refreshClasses: function() {
-			var self = this;
-			var isFull = self.isFull();
-			var isLocked = self.isLocked;
-			this.$control
-				.toggleClass('focus', self.isFocused)
-				.toggleClass('disabled', self.isDisabled)
-				.toggleClass('locked', isLocked)
-				.toggleClass('full', isFull).toggleClass('not-full', !isFull)
-				.toggleClass('dropdown-active', self.isOpen)
-				.toggleClass('has-options', !$.isEmptyObject(self.options))
-				.toggleClass('has-items', self.items.length > 0);
-			this.$control_input.data('grow', !isFull && !isLocked);
-		},
-	
-		/**
-		 * Determines whether or not more items can be added
-		 * to the control without exceeding the user-defined maximum.
-		 *
-		 * @returns {boolean}
-		 */
-		isFull: function() {
-			return this.settings.maxItems !== null && this.items.length >= this.settings.maxItems;
-		},
-	
-		/**
-		 * Refreshes the original <select> or <input>
-		 * element to reflect the current state.
-		 */
-		updateOriginalInput: function() {
-			var i, n, options, self = this;
-	
-			if (self.$input[0].tagName.toLowerCase() === 'select') {
-				options = [];
-				for (i = 0, n = self.items.length; i < n; i++) {
-					options.push('<option value="' + escape_html(self.items[i]) + '" selected="selected"></option>');
-				}
-				if (!options.length && !this.$input.attr('multiple')) {
-					options.push('<option value="" selected="selected"></option>');
-				}
-				self.$input.html(options.join(''));
-			} else {
-				self.$input.val(self.getValue());
-			}
-	
-			if (self.isSetup) {
-				self.trigger('change', self.$input.val());
-			}
-		},
-	
-		/**
-		 * Shows/hide the input placeholder depending
-		 * on if there items in the list already.
-		 */
-		updatePlaceholder: function() {
-			if (!this.settings.placeholder) return;
-			var $input = this.$control_input;
-	
-			if (this.items.length) {
-				$input.removeAttr('placeholder');
-			} else {
-				$input.attr('placeholder', this.settings.placeholder);
-			}
-			$input.triggerHandler('update');
-		},
-	
-		/**
-		 * Shows the autocomplete dropdown containing
-		 * the available options.
-		 */
-		open: function() {
-			var self = this;
-	
-			if (self.isLocked || self.isOpen || (self.settings.mode === 'multi' && self.isFull())) return;
-			self.focus(true);
-			self.isOpen = true;
-			self.refreshClasses();
-			self.$dropdown.css({visibility: 'hidden', display: 'block'});
-			self.positionDropdown();
-			self.$dropdown.css({visibility: 'visible'});
-			self.trigger('dropdown_open', this.$dropdown);
-		},
-	
-		/**
-		 * Closes the autocomplete dropdown menu.
-		 */
-		close: function() {
-			var self = this;
-	
-			if (!self.isOpen) return;
-			self.$dropdown.hide();
-			self.setActiveOption(null);
-			self.isOpen = false;
-			self.refreshClasses();
-			self.trigger('dropdown_close', self.$dropdown);
-		},
-	
-		/**
-		 * Calculates and applies the appropriate
-		 * position of the dropdown.
-		 */
-		positionDropdown: function() {
-			var $control = this.$control;
-			var offset = this.settings.dropdownParent === 'body' ? $control.offset() : $control.position();
-			offset.top += $control.outerHeight(true);
-	
-			this.$dropdown.css({
-				width : $control.outerWidth(),
-				top   : offset.top,
-				left  : offset.left
-			});
-		},
-	
-		/**
-		 * Resets / clears all selected items
-		 * from the control.
-		 */
-		clear: function() {
-			var self = this;
-	
-			if (!self.items.length) return;
-			self.$control.children(':not(input)').remove();
-			self.items = [];
-			self.setCaret(0);
-			self.updatePlaceholder();
-			self.updateOriginalInput();
-			self.refreshClasses();
-			self.showInput();
-			self.trigger('clear');
-		},
-	
-		/**
-		 * A helper method for inserting an element
-		 * at the current caret position.
-		 *
-		 * @param {object} $el
-		 */
-		insertAtCaret: function($el) {
-			var caret = Math.min(this.caretPos, this.items.length);
-			if (caret === 0) {
-				this.$control.prepend($el);
-			} else {
-				$(this.$control[0].childNodes[caret]).before($el);
-			}
-			this.setCaret(caret + 1);
-		},
-	
-		/**
-		 * Removes the current selected item(s).
-		 *
-		 * @param {object} e (optional)
-		 * @returns {boolean}
-		 */
-		deleteSelection: function(e) {
-			var i, n, direction, selection, values, caret, option_select, $option_select, $tail;
-			var self = this;
-	
-			direction = (e && e.keyCode === KEY_BACKSPACE) ? -1 : 1;
-			selection = getSelection(self.$control_input[0]);
-	
-			if (self.$activeOption && !self.settings.hideSelected) {
-				option_select = self.getAdjacentOption(self.$activeOption, -1).attr('data-value');
-			}
-	
-			// determine items that will be removed
-			values = [];
-	
-			if (self.$activeItems.length) {
-				$tail = self.$control.children('.active:' + (direction > 0 ? 'last' : 'first'));
-				caret = self.$control.children(':not(input)').index($tail);
-				if (direction > 0) { caret++; }
-	
-				for (i = 0, n = self.$activeItems.length; i < n; i++) {
-					values.push($(self.$activeItems[i]).attr('data-value'));
-				}
-				if (e) {
-					e.preventDefault();
-					e.stopPropagation();
-				}
-			} else if ((self.isFocused || self.settings.mode === 'single') && self.items.length) {
-				if (direction < 0 && selection.start === 0 && selection.length === 0) {
-					values.push(self.items[self.caretPos - 1]);
-				} else if (direction > 0 && selection.start === self.$control_input.val().length) {
-					values.push(self.items[self.caretPos]);
-				}
-			}
-	
-			// allow the callback to abort
-			if (!values.length || (typeof self.settings.onDelete === 'function' && self.settings.onDelete.apply(self, [values]) === false)) {
-				return false;
-			}
-	
-			// perform removal
-			if (typeof caret !== 'undefined') {
-				self.setCaret(caret);
-			}
-			while (values.length) {
-				self.removeItem(values.pop());
-			}
-	
-			self.showInput();
-			self.refreshOptions(true);
-	
-			// select previous option
-			if (option_select) {
-				$option_select = self.getOption(option_select);
-				if ($option_select.length) {
-					self.setActiveOption($option_select);
-				}
-			}
-	
-			return true;
-		},
-	
-		/**
-		 * Selects the previous / next item (depending
-		 * on the `direction` argument).
-		 *
-		 * > 0 - right
-		 * < 0 - left
-		 *
-		 * @param {int} direction
-		 * @param {object} e (optional)
-		 */
-		advanceSelection: function(direction, e) {
-			var tail, selection, idx, valueLength, cursorAtEdge, $tail;
-			var self = this;
-	
-			if (direction === 0) return;
-	
-			tail = direction > 0 ? 'last' : 'first';
-			selection = getSelection(self.$control_input[0]);
-	
-			if (self.isInputFocused && !self.isInputHidden) {
-				valueLength = self.$control_input.val().length;
-				cursorAtEdge = direction < 0
-					? selection.start === 0 && selection.length === 0
-					: selection.start === valueLength;
-	
-				if (cursorAtEdge && !valueLength) {
-					self.advanceCaret(direction, e);
-				}
-			} else {
-				$tail = self.$control.children('.active:' + tail);
-				if ($tail.length) {
-					idx = self.$control.children(':not(input)').index($tail);
-					self.setActiveItem(null);
-					self.setCaret(direction > 0 ? idx + 1 : idx);
-					self.showInput();
-				}
-			}
-		},
-	
-		/**
-		 * Moves the caret left / right.
-		 *
-		 * @param {int} direction
-		 * @param {object} e (optional)
-		 */
-		advanceCaret: function(direction, e) {
-			if (direction === 0) return;
-			var self = this;
-			var fn = direction > 0 ? 'next' : 'prev';
-			if (self.isShiftDown) {
-				var $adj = self.$control_input[fn]();
-				if ($adj.length) {
-					self.hideInput();
-					self.setActiveItem($adj);
-					e && e.preventDefault();
-				}
-			} else {
-				self.setCaret(self.caretPos + direction);
-			}
-		},
-	
-		/**
-		 * Moves the caret to the specified index.
-		 *
-		 * @param {int} i
-		 */
-		setCaret: function(i) {
-			var self = this;
-	
-			if (self.settings.mode === 'single') {
-				i = self.items.length;
-			} else {
-				i = Math.max(0, Math.min(self.items.length, i));
-			}
-	
-			// the input must be moved by leaving it in place and moving the
-			// siblings, due to the fact that focus cannot be restored once lost
-			// on mobile webkit devices
-			var j, n, fn, $children, $child;
-			$children = self.$control.children(':not(input)');
-			for (j = 0, n = $children.length; j < n; j++) {
-				$child = $($children[j]).detach();
-				if (j <  i) {
-					self.$control_input.before($child);
-				} else {
-					self.$control.append($child);
-				}
-			}
-	
-			self.caretPos = i;
-		},
-	
-		/**
-		 * Disables user input on the control. Used while
-		 * items are being asynchronously created.
-		 */
-		lock: function() {
-			this.close();
-			this.isLocked = true;
-			this.refreshClasses();
-		},
-	
-		/**
-		 * Re-enables user input on the control.
-		 */
-		unlock: function() {
-			this.isLocked = false;
-			this.refreshClasses();
-		},
-	
-		/**
-		 * Disables user input on the control completely.
-		 * While disabled, it cannot receive focus.
-		 */
-		disable: function() {
-			var self = this;
-			self.$input.prop('disabled', true);
-			self.isDisabled = true;
-			self.lock();
-		},
-	
-		/**
-		 * Enables the control so that it can respond
-		 * to focus and user input.
-		 */
-		enable: function() {
-			var self = this;
-			self.$input.prop('disabled', false);
-			self.isDisabled = false;
-			self.unlock();
-		},
-	
-		/**
-		 * Completely destroys the control and
-		 * unbinds all event listeners so that it can
-		 * be garbage collected.
-		 */
-		destroy: function() {
-			var self = this;
-			var eventNS = self.eventNS;
-	
-			self.trigger('destroy');
-			self.off();
-			self.$wrapper.remove();
-			self.$dropdown.remove();
-			self.$input.show();
-	
-			$(window).off(eventNS);
-			$(document).off(eventNS);
-			$(document.body).off(eventNS);
-	
-			delete self.$input[0].selectize;
-		},
-	
-		/**
-		 * A helper method for rendering "item" and
-		 * "option" templates, given the data.
-		 *
-		 * @param {string} templateName
-		 * @param {object} data
-		 * @returns {string}
-		 */
-		render: function(templateName, data) {
-			var value, id, label;
-			var html = '';
-			var cache = false;
-			var self = this;
-			var regex_tag = /^[\t ]*<([a-z][a-z0-9\-_]*(?:\:[a-z][a-z0-9\-_]*)?)/i;
-	
-			if (templateName === 'option' || templateName === 'item') {
-				value = hash_key(data[self.settings.valueField]);
-				cache = !!value;
-			}
-	
-			// pull markup from cache if it exists
-			if (cache) {
-				if (!isset(self.renderCache[templateName])) {
-					self.renderCache[templateName] = {};
-				}
-				if (self.renderCache[templateName].hasOwnProperty(value)) {
-					return self.renderCache[templateName][value];
-				}
-			}
-	
-			// render markup
-			html = self.settings.render[templateName].apply(this, [data, escape_html]);
-	
-			// add mandatory attributes
-			if (templateName === 'option' || templateName === 'option_create') {
-				html = html.replace(regex_tag, '<$1 data-selectable');
-			}
-			if (templateName === 'optgroup') {
-				id = data[self.settings.optgroupValueField] || '';
-				html = html.replace(regex_tag, '<$1 data-group="' + escape_html(id) + '"');
-			}
-			if (templateName === 'option' || templateName === 'item') {
-				html = html.replace(regex_tag, '<$1 data-value="' + escape_html(value || '') + '"');
-			}
-	
-			// update cache
-			if (cache) {
-				self.renderCache[templateName][value] = html;
-			}
-	
-			return html;
-		}
-	
-	});
-	
-	Selectize.count = 0;
-	Selectize.defaults = {
-		plugins: [],
-		delimiter: ',',
-		persist: true,
-		diacritics: true,
-		create: false,
-		highlight: true,
-		openOnFocus: true,
-		maxOptions: 1000,
-		maxItems: null,
-		hideSelected: null,
-		preload: false,
-	
-		scrollDuration: 60,
-		loadThrottle: 300,
-	
-		dataAttr: 'data-data',
-		optgroupField: 'optgroup',
-		sortField: '$order',
-		sortDirection: 'asc',
-		valueField: 'value',
-		labelField: 'text',
-		optgroupLabelField: 'label',
-		optgroupValueField: 'value',
-		optgroupOrder: null,
-		searchField: ['text'],
-	
-		mode: null,
-		wrapperClass: 'selectize-control',
-		inputClass: 'selectize-input',
-		dropdownClass: 'selectize-dropdown',
-		dropdownContentClass: 'selectize-dropdown-content',
-	
-		dropdownParent: null,
-	
-		/*
-		load            : null, // function(query, callback) { ... }
-		score           : null, // function(search) { ... }
-		onInitialize    : null, // function() { ... }
-		onChange        : null, // function(value) { ... }
-		onItemAdd       : null, // function(value, $item) { ... }
-		onItemRemove    : null, // function(value) { ... }
-		onClear         : null, // function() { ... }
-		onOptionAdd     : null, // function(value, data) { ... }
-		onOptionRemove  : null, // function(value) { ... }
-		onOptionClear   : null, // function() { ... }
-		onDropdownOpen  : null, // function($dropdown) { ... }
-		onDropdownClose : null, // function($dropdown) { ... }
-		onType          : null, // function(str) { ... }
-		onDelete        : null, // function(values) { ... }
-		*/
-	
-		render: {
-			/*
-			item: null,
-			optgroup: null,
-			optgroup_header: null,
-			option: null,
-			option_create: null
-			*/
-		}
-	};
-	
-	$.fn.selectize = function(settings) {
-		settings = settings || {};
-	
-		var defaults = $.fn.selectize.defaults;
-		var dataAttr = settings.dataAttr || defaults.dataAttr;
-	
-		/**
-		 * Initializes selectize from a <input type="text"> element.
-		 *
-		 * @param {object} $input
-		 * @param {object} settings
-		 */
-		var init_textbox = function($input, settings_element) {
-			var i, n, values, value = $.trim($input.val() || '');
-			if (!value.length) return;
-	
-			values = value.split(settings.delimiter || defaults.delimiter);
-			for (i = 0, n = values.length; i < n; i++) {
-				settings_element.options[values[i]] = {
-					'text'  : values[i],
-					'value' : values[i]
-				};
-			}
-	
-			settings_element.items = values;
-		};
-	
-		/**
-		 * Initializes selectize from a <select> element.
-		 *
-		 * @param {object} $input
-		 * @param {object} settings
-		 */
-		var init_select = function($input, settings_element) {
-			var i, n, tagName;
-			var $children;
-			var order = 0;
-			settings_element.maxItems = !!$input.attr('multiple') ? null : 1;
-	
-			var readData = function($el) {
-				var data = dataAttr && $el.attr(dataAttr);
-				if (typeof data === 'string' && data.length) {
-					return JSON.parse(data);
-				}
-				return null;
-			};
-	
-			var addOption = function($option, group) {
-				var value, option;
-	
-				$option = $($option);
-	
-				value = $option.attr('value') || '';
-				if (!value.length) return;
-	
-				option = readData($option) || {
-					'text'     : $option.text(),
-					'value'    : value,
-					'optgroup' : group
-				};
-	
-				option.$order = ++order;
-				settings_element.options[value] = option;
-	
-				if ($option.is(':selected')) {
-					settings_element.items.push(value);
-				}
-			};
-	
-			var addGroup = function($optgroup) {
-				var i, n, $options = $('option', $optgroup);
-				$optgroup = $($optgroup);
-	
-				var id = $optgroup.attr('label');
-				if (id && id.length) {
-					settings_element.optgroups[id] = readData($optgroup) || {
-						'label': id
-					};
-				}
-	
-				for (i = 0, n = $options.length; i < n; i++) {
-					addOption($options[i], id);
-				}
-			};
-	
-			$children = $input.children();
-			for (i = 0, n = $children.length; i < n; i++) {
-				tagName = $children[i].tagName.toLowerCase();
-				if (tagName === 'optgroup') {
-					addGroup($children[i]);
-				} else if (tagName === 'option') {
-					addOption($children[i]);
-				}
-			}
-		};
-	
-		return this.each(function() {
-			var instance;
-			var $input = $(this);
-			var tag_name = $input[0].tagName.toLowerCase();
-			var settings_element = {
-				'placeholder' : $input.children('option[value=""]').text() || $input.attr('placeholder'),
-				'options'     : {},
-				'optgroups'   : {},
-				'items'       : []
-			};
-	
-			if (tag_name === 'select') {
-				init_select($input, settings_element);
-			} else {
-				init_textbox($input, settings_element);
-			}
-	
-			instance = new Selectize($input, $.extend(true, {}, defaults, settings_element, settings));
-			$input.data('selectize', instance);
-			$input.addClass('selectized');
-		});
-	};
-	
-	$.fn.selectize.defaults = Selectize.defaults;
-	
-	Selectize.define('drag_drop', function(options) {
-		if (!$.fn.sortable) throw new Error('The "drag_drop" plugin requires jQuery UI "sortable".');
-		if (this.settings.mode !== 'multi') return;
-		var self = this;
-	
-		this.setup = (function() {
-			var original = self.setup;
-			return function() {
-				original.apply(this, arguments);
-	
-				var $control = this.$control.sortable({
-					items: '[data-value]',
-					forcePlaceholderSize: true,
-					start: function(e, ui) {
-						ui.placeholder.css('width', ui.helper.css('width'));
-						$control.css({overflow: 'visible'});
-					},
-					stop: function() {
-						$control.css({overflow: 'hidden'});
-						var active = this.$activeItems ? this.$activeItems.slice() : null;
-						var values = [];
-						$control.children('[data-value]').each(function() {
-							values.push($(this).attr('data-value'));
-						});
-						self.setValue(values);
-						self.setActiveItem(active);
-					}
-				});
-			};
-		})();
-	
-	});
-	
-	Selectize.define('dropdown_header', function(options) {
-		var self = this;
-	
-		options = $.extend({
-			title         : 'Untitled',
-			headerClass   : 'selectize-dropdown-header',
-			titleRowClass : 'selectize-dropdown-header-title',
-			labelClass    : 'selectize-dropdown-header-label',
-			closeClass    : 'selectize-dropdown-header-close',
-	
-			html: function(data) {
-				return (
-					'<div class="' + data.headerClass + '">' +
-						'<div class="' + data.titleRowClass + '">' +
-							'<span class="' + data.labelClass + '">' + data.title + '</span>' +
-							'<a href="javascript:void(0)" class="' + data.closeClass + '">&times;</a>' +
-						'</div>' +
-					'</div>'
-				);
-			}
-		}, options);
-	
-		self.setup = (function() {
-			var original = self.setup;
-			return function() {
-				original.apply(self, arguments);
-				self.$dropdown_header = $(options.html(options));
-				self.$dropdown.prepend(self.$dropdown_header);
-			};
-		})();
-	
-	});
-	
-	Selectize.define('optgroup_columns', function(options) {
-		var self = this;
-	
-		options = $.extend({
-			equalizeWidth  : true,
-			equalizeHeight : true
-		}, options);
-	
-		this.getAdjacentOption = function($option, direction) {
-			var $options = $option.closest('[data-group]').find('[data-selectable]');
-			var index    = $options.index($option) + direction;
-	
-			return index >= 0 && index < $options.length ? $options.eq(index) : $();
-		};
-	
-		this.onKeyDown = (function() {
-			var original = self.onKeyDown;
-			return function(e) {
-				var index, $option, $options, $optgroup;
-	
-				if (this.isOpen && (e.keyCode === KEY_LEFT || e.keyCode === KEY_RIGHT)) {
-					self.ignoreHover = true;
-					$optgroup = this.$activeOption.closest('[data-group]');
-					index = $optgroup.find('[data-selectable]').index(this.$activeOption);
-	
-					if(e.keyCode === KEY_LEFT) {
-						$optgroup = $optgroup.prev('[data-group]');
-					} else {
-						$optgroup = $optgroup.next('[data-group]');
-					}
-	
-					$options = $optgroup.find('[data-selectable]');
-					$option  = $options.eq(Math.min($options.length - 1, index));
-					if ($option.length) {
-						this.setActiveOption($option);
-					}
-					return;
-				}
-	
-				return original.apply(this, arguments);
-			};
-		})();
-	
-		var equalizeSizes = function() {
-			var i, n, height_max, width, width_last, width_parent, $optgroups;
-	
-			$optgroups = $('[data-group]', self.$dropdown_content);
-			n = $optgroups.length;
-			if (!n || !self.$dropdown_content.width()) return;
-	
-			if (options.equalizeHeight) {
-				height_max = 0;
-				for (i = 0; i < n; i++) {
-					height_max = Math.max(height_max, $optgroups.eq(i).height());
-				}
-				$optgroups.css({height: height_max});
-			}
-	
-			if (options.equalizeWidth) {
-				width_parent = self.$dropdown_content.innerWidth();
-				width = Math.round(width_parent / n);
-				$optgroups.css({width: width});
-				if (n > 1) {
-					width_last = width_parent - width * (n - 1);
-					$optgroups.eq(n - 1).css({width: width_last});
-				}
-			}
-		};
-	
-		if (options.equalizeHeight || options.equalizeWidth) {
-			hook.after(this, 'positionDropdown', equalizeSizes);
-			hook.after(this, 'refreshOptions', equalizeSizes);
-		}
-	
-	
-	});
-	
-	Selectize.define('remove_button', function(options) {
-		if (this.settings.mode === 'single') return;
-	
-		options = $.extend({
-			label     : '&times;',
-			title     : 'Remove',
-			className : 'remove',
-			append    : true,
-		}, options);
-	
-		var self = this;
-		var html = '<a href="javascript:void(0)" class="' + options.className + '" tabindex="-1" title="' + escape_html(options.title) + '">' + options.label + '</a>';
-	
-		/**
-		 * Appends an element as a child (with raw HTML).
-		 *
-		 * @param {string} html_container
-		 * @param {string} html_element
-		 * @return {string}
-		 */
-		var append = function(html_container, html_element) {
-			var pos = html_container.search(/(<\/[^>]+>\s*)$/);
-			return html_container.substring(0, pos) + html_element + html_container.substring(pos);
-		};
-	
-		this.setup = (function() {
-			var original = self.setup;
-			return function() {
-				// override the item rendering method to add the button to each
-				if (options.append) {
-					var render_item = self.settings.render.item;
-					self.settings.render.item = function(data) {
-						return append(render_item.apply(this, arguments), html);
-					};
-				}
-	
-				original.apply(this, arguments);
-	
-				// add event listener
-				this.$control.on('click', '.' + options.className, function(e) {
-					e.preventDefault();
-					var $item = $(e.target).parent();
-					self.setActiveItem($item);
-					if (self.deleteSelection()) {
-						self.setCaret(self.items.length);
-					}
-				});
-	
-			};
-		})();
-	
-	});
-	
-	Selectize.define('restore_on_backspace', function(options) {
-		var self = this;
-	
-		options.text = options.text || function(option) {
-			return option[this.settings.labelField];
-		};
-	
-		this.onKeyDown = (function(e) {
-			var original = self.onKeyDown;
-			return function(e) {
-				var index, option;
-				if (e.keyCode === KEY_BACKSPACE && this.$control_input.val() === '' && !this.$activeItems.length) {
-					index = this.caretPos - 1;
-					if (index >= 0 && index < this.items.length) {
-						option = this.options[this.items[index]];
-						if (this.deleteSelection(e)) {
-							this.setTextboxValue(options.text.apply(this, [option]));
-							this.refreshOptions(true);
-						}
-						e.preventDefault();
-						return;
-					}
-				}
-				return original.apply(this, arguments);
-			};
-		})();
-	});
-
-	return Selectize;
-}));
-/*
- * ----------------------------- JSTORAGE -------------------------------------
- * Simple local storage wrapper to save data on the browser side, supporting
- * all major browsers - IE6+, Firefox2+, Safari4+, Chrome4+ and Opera 10.5+
- *
- * Copyright (c) 2010 - 2012 Andris Reinman, andris.reinman@gmail.com
- * Project homepage: www.jstorage.info
- *
- * Licensed under MIT-style license:
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
- (function(){
-    var
-        /* jStorage version */
-        JSTORAGE_VERSION = "0.4.4",
-
-        /* detect a dollar object or create one if not found */
-        $ = window.jQuery || window.$ || (window.$ = {}),
-
-        /* check for a JSON handling support */
-        JSON = {
-            parse:
-                window.JSON && (window.JSON.parse || window.JSON.decode) ||
-                String.prototype.evalJSON && function(str){return String(str).evalJSON();} ||
-                $.parseJSON ||
-                $.evalJSON,
-            stringify:
-                Object.toJSON ||
-                window.JSON && (window.JSON.stringify || window.JSON.encode) ||
-                $.toJSON
-        };
-
-    // Break if no JSON support was found
-    if(!('parse' in JSON) || !('stringify' in JSON)){
-        throw new Error("No JSON support found, include //cdnjs.cloudflare.com/ajax/libs/json2/20110223/json2.js to page");
-    }
-
-    var
-        /* This is the object, that holds the cached values */
-        _storage = {__jstorage_meta:{CRC32:{}}},
-
-        /* Actual browser storage (localStorage or globalStorage['domain']) */
-        _storage_service = {jStorage:"{}"},
-
-        /* DOM element for older IE versions, holds userData behavior */
-        _storage_elm = null,
-
-        /* How much space does the storage take */
-        _storage_size = 0,
-
-        /* which backend is currently used */
-        _backend = false,
-
-        /* onchange observers */
-        _observers = {},
-
-        /* timeout to wait after onchange event */
-        _observer_timeout = false,
-
-        /* last update time */
-        _observer_update = 0,
-
-        /* pubsub observers */
-        _pubsub_observers = {},
-
-        /* skip published items older than current timestamp */
-        _pubsub_last = +new Date(),
-
-        /* Next check for TTL */
-        _ttl_timeout,
-
-        /**
-         * XML encoding and decoding as XML nodes can't be JSON'ized
-         * XML nodes are encoded and decoded if the node is the value to be saved
-         * but not if it's as a property of another object
-         * Eg. -
-         *   $.jStorage.set("key", xmlNode);        // IS OK
-         *   $.jStorage.set("key", {xml: xmlNode}); // NOT OK
-         */
-        _XMLService = {
-
-            /**
-             * Validates a XML node to be XML
-             * based on jQuery.isXML function
-             */
-            isXML: function(elm){
-                var documentElement = (elm ? elm.ownerDocument || elm : 0).documentElement;
-                return documentElement ? documentElement.nodeName !== "HTML" : false;
-            },
-
-            /**
-             * Encodes a XML node to string
-             * based on http://www.mercurytide.co.uk/news/article/issues-when-working-ajax/
-             */
-            encode: function(xmlNode) {
-                if(!this.isXML(xmlNode)){
-                    return false;
-                }
-                try{ // Mozilla, Webkit, Opera
-                    return new XMLSerializer().serializeToString(xmlNode);
-                }catch(E1) {
-                    try {  // IE
-                        return xmlNode.xml;
-                    }catch(E2){}
-                }
-                return false;
-            },
-
-            /**
-             * Decodes a XML node from string
-             * loosely based on http://outwestmedia.com/jquery-plugins/xmldom/
-             */
-            decode: function(xmlString){
-                var dom_parser = ("DOMParser" in window && (new DOMParser()).parseFromString) ||
-                        (window.ActiveXObject && function(_xmlString) {
-                    var xml_doc = new ActiveXObject('Microsoft.XMLDOM');
-                    xml_doc.async = 'false';
-                    xml_doc.loadXML(_xmlString);
-                    return xml_doc;
-                }),
-                resultXML;
-                if(!dom_parser){
-                    return false;
-                }
-                resultXML = dom_parser.call("DOMParser" in window && (new DOMParser()) || window, xmlString, 'text/xml');
-                return this.isXML(resultXML)?resultXML:false;
-            }
-        };
-
-
-    ////////////////////////// PRIVATE METHODS ////////////////////////
-
-    /**
-     * Initialization function. Detects if the browser supports DOM Storage
-     * or userData behavior and behaves accordingly.
-     */
-    function _init(){
-        /* Check if browser supports localStorage */
-        var localStorageReallyWorks = false;
-        if("localStorage" in window){
-            try {
-                window.localStorage.setItem('_tmptest', 'tmpval');
-                localStorageReallyWorks = true;
-                window.localStorage.removeItem('_tmptest');
-            } catch(BogusQuotaExceededErrorOnIos5) {
-                // Thanks be to iOS5 Private Browsing mode which throws
-                // QUOTA_EXCEEDED_ERRROR DOM Exception 22.
-            }
-        }
-
-        if(localStorageReallyWorks){
-            try {
-                if(window.localStorage) {
-                    _storage_service = window.localStorage;
-                    _backend = "localStorage";
-                    _observer_update = _storage_service.jStorage_update;
-                }
-            } catch(E3) {/* Firefox fails when touching localStorage and cookies are disabled */}
-        }
-        /* Check if browser supports globalStorage */
-        else if("globalStorage" in window){
-            try {
-                if(window.globalStorage) {
-					if(window.location.hostname == 'localhost'){
-						_storage_service = window.globalStorage['localhost.localdomain'];
-					}
-					else{
-						_storage_service = window.globalStorage[window.location.hostname];
-					}
-                    _backend = "globalStorage";
-                    _observer_update = _storage_service.jStorage_update;
-                }
-            } catch(E4) {/* Firefox fails when touching localStorage and cookies are disabled */}
-        }
-        /* Check if browser supports userData behavior */
-        else {
-            _storage_elm = document.createElement('link');
-            if(_storage_elm.addBehavior){
-
-                /* Use a DOM element to act as userData storage */
-                _storage_elm.style.behavior = 'url(#default#userData)';
-
-                /* userData element needs to be inserted into the DOM! */
-                document.getElementsByTagName('head')[0].appendChild(_storage_elm);
-
-                try{
-                    _storage_elm.load("jStorage");
-                }catch(E){
-                    // try to reset cache
-                    _storage_elm.setAttribute("jStorage", "{}");
-                    _storage_elm.save("jStorage");
-                    _storage_elm.load("jStorage");
-                }
-
-                var data = "{}";
-                try{
-                    data = _storage_elm.getAttribute("jStorage");
-                }catch(E5){}
-
-                try{
-                    _observer_update = _storage_elm.getAttribute("jStorage_update");
-                }catch(E6){}
-
-                _storage_service.jStorage = data;
-                _backend = "userDataBehavior";
-            }else{
-                _storage_elm = null;
-                return;
-            }
-        }
-
-        // Load data from storage
-        _load_storage();
-
-        // remove dead keys
-        _handleTTL();
-
-        // start listening for changes
-        _setupObserver();
-
-        // initialize publish-subscribe service
-        _handlePubSub();
-
-        // handle cached navigation
-        if("addEventListener" in window){
-            window.addEventListener("pageshow", function(event){
-                if(event.persisted){
-                    _storageObserver();
-                }
-            }, false);
-        }
-    }
-
-    /**
-     * Reload data from storage when needed
-     */
-    function _reloadData(){
-        var data = "{}";
-
-        if(_backend == "userDataBehavior"){
-            _storage_elm.load("jStorage");
-
-            try{
-                data = _storage_elm.getAttribute("jStorage");
-            }catch(E5){}
-
-            try{
-                _observer_update = _storage_elm.getAttribute("jStorage_update");
-            }catch(E6){}
-
-            _storage_service.jStorage = data;
-        }
-
-        _load_storage();
-
-        // remove dead keys
-        _handleTTL();
-
-        _handlePubSub();
-    }
-
-    /**
-     * Sets up a storage change observer
-     */
-    function _setupObserver(){
-        if(_backend == "localStorage" || _backend == "globalStorage"){
-            if("addEventListener" in window){
-                window.addEventListener("storage", _storageObserver, false);
-            }else{
-                document.attachEvent("onstorage", _storageObserver);
-            }
-        }else if(_backend == "userDataBehavior"){
-            setInterval(_storageObserver, 1000);
-        }
-    }
-
-    /**
-     * Fired on any kind of data change, needs to check if anything has
-     * really been changed
-     */
-    function _storageObserver(){
-        var updateTime;
-        // cumulate change notifications with timeout
-        clearTimeout(_observer_timeout);
-        _observer_timeout = setTimeout(function(){
-
-            if(_backend == "localStorage" || _backend == "globalStorage"){
-                updateTime = _storage_service.jStorage_update;
-            }else if(_backend == "userDataBehavior"){
-                _storage_elm.load("jStorage");
-                try{
-                    updateTime = _storage_elm.getAttribute("jStorage_update");
-                }catch(E5){}
-            }
-
-            if(updateTime && updateTime != _observer_update){
-                _observer_update = updateTime;
-                _checkUpdatedKeys();
-            }
-
-        }, 25);
-    }
-
-    /**
-     * Reloads the data and checks if any keys are changed
-     */
-    function _checkUpdatedKeys(){
-        var oldCrc32List = JSON.parse(JSON.stringify(_storage.__jstorage_meta.CRC32)),
-            newCrc32List;
-
-        _reloadData();
-        newCrc32List = JSON.parse(JSON.stringify(_storage.__jstorage_meta.CRC32));
-
-        var key,
-            updated = [],
-            removed = [];
-
-        for(key in oldCrc32List){
-            if(oldCrc32List.hasOwnProperty(key)){
-                if(!newCrc32List[key]){
-                    removed.push(key);
-                    continue;
-                }
-                if(oldCrc32List[key] != newCrc32List[key] && String(oldCrc32List[key]).substr(0,2) == "2."){
-                    updated.push(key);
-                }
-            }
-        }
-
-        for(key in newCrc32List){
-            if(newCrc32List.hasOwnProperty(key)){
-                if(!oldCrc32List[key]){
-                    updated.push(key);
-                }
-            }
-        }
-
-        _fireObservers(updated, "updated");
-        _fireObservers(removed, "deleted");
-    }
-
-    /**
-     * Fires observers for updated keys
-     *
-     * @param {Array|String} keys Array of key names or a key
-     * @param {String} action What happened with the value (updated, deleted, flushed)
-     */
-    function _fireObservers(keys, action){
-        keys = [].concat(keys || []);
-        if(action == "flushed"){
-            keys = [];
-            for(var key in _observers){
-                if(_observers.hasOwnProperty(key)){
-                    keys.push(key);
-                }
-            }
-            action = "deleted";
-        }
-        for(var i=0, len = keys.length; i<len; i++){
-            if(_observers[keys[i]]){
-                for(var j=0, jlen = _observers[keys[i]].length; j<jlen; j++){
-                    _observers[keys[i]][j](keys[i], action);
-                }
-            }
-            if(_observers["*"]){
-                for(var j=0, jlen = _observers["*"].length; j<jlen; j++){
-                    _observers["*"][j](keys[i], action);
-                }
-            }
-        }
-    }
-
-    /**
-     * Publishes key change to listeners
-     */
-    function _publishChange(){
-        var updateTime = (+new Date()).toString();
-
-        if(_backend == "localStorage" || _backend == "globalStorage"){
-            try {
-                _storage_service.jStorage_update = updateTime;
-            } catch (E8) {
-                // safari private mode has been enabled after the jStorage initialization
-                _backend = false;
-            }
-        }else if(_backend == "userDataBehavior"){
-            _storage_elm.setAttribute("jStorage_update", updateTime);
-            _storage_elm.save("jStorage");
-        }
-
-        _storageObserver();
-    }
-
-    /**
-     * Loads the data from the storage based on the supported mechanism
-     */
-    function _load_storage(){
-        /* if jStorage string is retrieved, then decode it */
-        if(_storage_service.jStorage){
-            try{
-                _storage = JSON.parse(String(_storage_service.jStorage));
-            }catch(E6){_storage_service.jStorage = "{}";}
-        }else{
-            _storage_service.jStorage = "{}";
-        }
-        _storage_size = _storage_service.jStorage?String(_storage_service.jStorage).length:0;
-
-        if(!_storage.__jstorage_meta){
-            _storage.__jstorage_meta = {};
-        }
-        if(!_storage.__jstorage_meta.CRC32){
-            _storage.__jstorage_meta.CRC32 = {};
-        }
-    }
-
-    /**
-     * This functions provides the "save" mechanism to store the jStorage object
-     */
-    function _save(){
-        _dropOldEvents(); // remove expired events
-        try{
-            _storage_service.jStorage = JSON.stringify(_storage);
-            // If userData is used as the storage engine, additional
-            if(_storage_elm) {
-                _storage_elm.setAttribute("jStorage",_storage_service.jStorage);
-                _storage_elm.save("jStorage");
-            }
-            _storage_size = _storage_service.jStorage?String(_storage_service.jStorage).length:0;
-        }catch(E7){/* probably cache is full, nothing is saved this way*/}
-    }
-
-    /**
-     * Function checks if a key is set and is string or numberic
-     *
-     * @param {String} key Key name
-     */
-    function _checkKey(key){
-        if(!key || (typeof key != "string" && typeof key != "number")){
-            throw new TypeError('Key name must be string or numeric');
-        }
-        if(key == "__jstorage_meta"){
-            throw new TypeError('Reserved key name');
-        }
-        return true;
-    }
-
-    /**
-     * Removes expired keys
-     */
-    function _handleTTL(){
-        var curtime, i, TTL, CRC32, nextExpire = Infinity, changed = false, deleted = [];
-
-        clearTimeout(_ttl_timeout);
-
-        if(!_storage.__jstorage_meta || typeof _storage.__jstorage_meta.TTL != "object"){
-            // nothing to do here
-            return;
-        }
-
-        curtime = +new Date();
-        TTL = _storage.__jstorage_meta.TTL;
-
-        CRC32 = _storage.__jstorage_meta.CRC32;
-        for(i in TTL){
-            if(TTL.hasOwnProperty(i)){
-                if(TTL[i] <= curtime){
-                    delete TTL[i];
-                    delete CRC32[i];
-                    delete _storage[i];
-                    changed = true;
-                    deleted.push(i);
-                }else if(TTL[i] < nextExpire){
-                    nextExpire = TTL[i];
-                }
-            }
-        }
-
-        // set next check
-        if(nextExpire != Infinity){
-            _ttl_timeout = setTimeout(_handleTTL, nextExpire - curtime);
-        }
-
-        // save changes
-        if(changed){
-            _save();
-            _publishChange();
-            _fireObservers(deleted, "deleted");
-        }
-    }
-
-    /**
-     * Checks if there's any events on hold to be fired to listeners
-     */
-    function _handlePubSub(){
-        var i, len;
-        if(!_storage.__jstorage_meta.PubSub){
-            return;
-        }
-        var pubelm,
-            _pubsubCurrent = _pubsub_last;
-
-        for(i=len=_storage.__jstorage_meta.PubSub.length-1; i>=0; i--){
-            pubelm = _storage.__jstorage_meta.PubSub[i];
-            if(pubelm[0] > _pubsub_last){
-                _pubsubCurrent = pubelm[0];
-                _fireSubscribers(pubelm[1], pubelm[2]);
-            }
-        }
-
-        _pubsub_last = _pubsubCurrent;
-    }
-
-    /**
-     * Fires all subscriber listeners for a pubsub channel
-     *
-     * @param {String} channel Channel name
-     * @param {Mixed} payload Payload data to deliver
-     */
-    function _fireSubscribers(channel, payload){
-        if(_pubsub_observers[channel]){
-            for(var i=0, len = _pubsub_observers[channel].length; i<len; i++){
-                // send immutable data that can't be modified by listeners
-                _pubsub_observers[channel][i](channel, JSON.parse(JSON.stringify(payload)));
-            }
-        }
-    }
-
-    /**
-     * Remove old events from the publish stream (at least 2sec old)
-     */
-    function _dropOldEvents(){
-        if(!_storage.__jstorage_meta.PubSub){
-            return;
-        }
-
-        var retire = +new Date() - 2000;
-
-        for(var i=0, len = _storage.__jstorage_meta.PubSub.length; i<len; i++){
-            if(_storage.__jstorage_meta.PubSub[i][0] <= retire){
-                // deleteCount is needed for IE6
-                _storage.__jstorage_meta.PubSub.splice(i, _storage.__jstorage_meta.PubSub.length - i);
-                break;
-            }
-        }
-
-        if(!_storage.__jstorage_meta.PubSub.length){
-            delete _storage.__jstorage_meta.PubSub;
-        }
-
-    }
-
-    /**
-     * Publish payload to a channel
-     *
-     * @param {String} channel Channel name
-     * @param {Mixed} payload Payload to send to the subscribers
-     */
-    function _publish(channel, payload){
-        if(!_storage.__jstorage_meta){
-            _storage.__jstorage_meta = {};
-        }
-        if(!_storage.__jstorage_meta.PubSub){
-            _storage.__jstorage_meta.PubSub = [];
-        }
-
-        _storage.__jstorage_meta.PubSub.unshift([+new Date, channel, payload]);
-
-        _save();
-        _publishChange();
-    }
-
-
-    /**
-     * JS Implementation of MurmurHash2
-     *
-     *  SOURCE: https://github.com/garycourt/murmurhash-js (MIT licensed)
-     *
-     * @author <a href="mailto:gary.court@gmail.com">Gary Court</a>
-     * @see http://github.com/garycourt/murmurhash-js
-     * @author <a href="mailto:aappleby@gmail.com">Austin Appleby</a>
-     * @see http://sites.google.com/site/murmurhash/
-     *
-     * @param {string} str ASCII only
-     * @param {number} seed Positive integer only
-     * @return {number} 32-bit positive integer hash
-     */
-
-    function murmurhash2_32_gc(str, seed) {
-        var
-            l = str.length,
-            h = seed ^ l,
-            i = 0,
-            k;
-
-        while (l >= 4) {
-            k =
-                ((str.charCodeAt(i) & 0xff)) |
-                ((str.charCodeAt(++i) & 0xff) << 8) |
-                ((str.charCodeAt(++i) & 0xff) << 16) |
-                ((str.charCodeAt(++i) & 0xff) << 24);
-
-            k = (((k & 0xffff) * 0x5bd1e995) + ((((k >>> 16) * 0x5bd1e995) & 0xffff) << 16));
-            k ^= k >>> 24;
-            k = (((k & 0xffff) * 0x5bd1e995) + ((((k >>> 16) * 0x5bd1e995) & 0xffff) << 16));
-
-            h = (((h & 0xffff) * 0x5bd1e995) + ((((h >>> 16) * 0x5bd1e995) & 0xffff) << 16)) ^ k;
-
-            l -= 4;
-            ++i;
-        }
-
-        switch (l) {
-            case 3: h ^= (str.charCodeAt(i + 2) & 0xff) << 16;
-            case 2: h ^= (str.charCodeAt(i + 1) & 0xff) << 8;
-            case 1: h ^= (str.charCodeAt(i) & 0xff);
-                h = (((h & 0xffff) * 0x5bd1e995) + ((((h >>> 16) * 0x5bd1e995) & 0xffff) << 16));
-        }
-
-        h ^= h >>> 13;
-        h = (((h & 0xffff) * 0x5bd1e995) + ((((h >>> 16) * 0x5bd1e995) & 0xffff) << 16));
-        h ^= h >>> 15;
-
-        return h >>> 0;
-    }
-
-    ////////////////////////// PUBLIC INTERFACE /////////////////////////
-
-    $.jStorage = {
-        /* Version number */
-        version: JSTORAGE_VERSION,
-
-        /**
-         * Sets a key's value.
-         *
-         * @param {String} key Key to set. If this value is not set or not
-         *              a string an exception is raised.
-         * @param {Mixed} value Value to set. This can be any value that is JSON
-         *              compatible (Numbers, Strings, Objects etc.).
-         * @param {Object} [options] - possible options to use
-         * @param {Number} [options.TTL] - optional TTL value
-         * @return {Mixed} the used value
-         */
-        set: function(key, value, options){
-            _checkKey(key);
-
-            options = options || {};
-
-            // undefined values are deleted automatically
-            if(typeof value == "undefined"){
-                this.deleteKey(key);
-                return value;
-            }
-
-            if(_XMLService.isXML(value)){
-                value = {_is_xml:true,xml:_XMLService.encode(value)};
-            }else if(typeof value == "function"){
-                return undefined; // functions can't be saved!
-            }else if(value && typeof value == "object"){
-                // clone the object before saving to _storage tree
-                value = JSON.parse(JSON.stringify(value));
-            }
-
-            _storage[key] = value;
-
-            _storage.__jstorage_meta.CRC32[key] = "2." + murmurhash2_32_gc(JSON.stringify(value), 0x9747b28c);
-
-            this.setTTL(key, options.TTL || 0); // also handles saving and _publishChange
-
-            _fireObservers(key, "updated");
-            return value;
-        },
-
-        /**
-         * Looks up a key in cache
-         *
-         * @param {String} key - Key to look up.
-         * @param {mixed} def - Default value to return, if key didn't exist.
-         * @return {Mixed} the key value, default value or null
-         */
-        get: function(key, def){
-            _checkKey(key);
-            if(key in _storage){
-                if(_storage[key] && typeof _storage[key] == "object" && _storage[key]._is_xml) {
-                    return _XMLService.decode(_storage[key].xml);
-                }else{
-                    return _storage[key];
-                }
-            }
-            return typeof(def) == 'undefined' ? null : def;
-        },
-
-        /**
-         * Deletes a key from cache.
-         *
-         * @param {String} key - Key to delete.
-         * @return {Boolean} true if key existed or false if it didn't
-         */
-        deleteKey: function(key){
-            _checkKey(key);
-            if(key in _storage){
-                delete _storage[key];
-                // remove from TTL list
-                if(typeof _storage.__jstorage_meta.TTL == "object" &&
-                  key in _storage.__jstorage_meta.TTL){
-                    delete _storage.__jstorage_meta.TTL[key];
-                }
-
-                delete _storage.__jstorage_meta.CRC32[key];
-
-                _save();
-                _publishChange();
-                _fireObservers(key, "deleted");
-                return true;
-            }
-            return false;
-        },
-
-        /**
-         * Sets a TTL for a key, or remove it if ttl value is 0 or below
-         *
-         * @param {String} key - key to set the TTL for
-         * @param {Number} ttl - TTL timeout in milliseconds
-         * @return {Boolean} true if key existed or false if it didn't
-         */
-        setTTL: function(key, ttl){
-            var curtime = +new Date();
-            _checkKey(key);
-            ttl = Number(ttl) || 0;
-            if(key in _storage){
-
-                if(!_storage.__jstorage_meta.TTL){
-                    _storage.__jstorage_meta.TTL = {};
-                }
-
-                // Set TTL value for the key
-                if(ttl>0){
-                    _storage.__jstorage_meta.TTL[key] = curtime + ttl;
-                }else{
-                    delete _storage.__jstorage_meta.TTL[key];
-                }
-
-                _save();
-
-                _handleTTL();
-
-                _publishChange();
-                return true;
-            }
-            return false;
-        },
-
-        /**
-         * Gets remaining TTL (in milliseconds) for a key or 0 when no TTL has been set
-         *
-         * @param {String} key Key to check
-         * @return {Number} Remaining TTL in milliseconds
-         */
-        getTTL: function(key){
-            var curtime = +new Date(), ttl;
-            _checkKey(key);
-            if(key in _storage && _storage.__jstorage_meta.TTL && _storage.__jstorage_meta.TTL[key]){
-                ttl = _storage.__jstorage_meta.TTL[key] - curtime;
-                return ttl || 0;
-            }
-            return 0;
-        },
-
-        /**
-         * Deletes everything in cache.
-         *
-         * @return {Boolean} Always true
-         */
-        flush: function(){
-            _storage = {__jstorage_meta:{CRC32:{}}};
-            _save();
-            _publishChange();
-            _fireObservers(null, "flushed");
-            return true;
-        },
-
-        /**
-         * Returns a read-only copy of _storage
-         *
-         * @return {Object} Read-only copy of _storage
-        */
-        storageObj: function(){
-            function F() {}
-            F.prototype = _storage;
-            return new F();
-        },
-
-        /**
-         * Returns an index of all used keys as an array
-         * ['key1', 'key2',..'keyN']
-         *
-         * @return {Array} Used keys
-        */
-        index: function(){
-            var index = [], i;
-            for(i in _storage){
-                if(_storage.hasOwnProperty(i) && i != "__jstorage_meta"){
-                    index.push(i);
-                }
-            }
-            return index;
-        },
-
-        /**
-         * How much space in bytes does the storage take?
-         *
-         * @return {Number} Storage size in chars (not the same as in bytes,
-         *                  since some chars may take several bytes)
-         */
-        storageSize: function(){
-            return _storage_size;
-        },
-
-        /**
-         * Which backend is currently in use?
-         *
-         * @return {String} Backend name
-         */
-        currentBackend: function(){
-            return _backend;
-        },
-
-        /**
-         * Test if storage is available
-         *
-         * @return {Boolean} True if storage can be used
-         */
-        storageAvailable: function(){
-            return !!_backend;
-        },
-
-        /**
-         * Register change listeners
-         *
-         * @param {String} key Key name
-         * @param {Function} callback Function to run when the key changes
-         */
-        listenKeyChange: function(key, callback){
-            _checkKey(key);
-            if(!_observers[key]){
-                _observers[key] = [];
-            }
-            _observers[key].push(callback);
-        },
-
-        /**
-         * Remove change listeners
-         *
-         * @param {String} key Key name to unregister listeners against
-         * @param {Function} [callback] If set, unregister the callback, if not - unregister all
-         */
-        stopListening: function(key, callback){
-            _checkKey(key);
-
-            if(!_observers[key]){
-                return;
-            }
-
-            if(!callback){
-                delete _observers[key];
-                return;
-            }
-
-            for(var i = _observers[key].length - 1; i>=0; i--){
-                if(_observers[key][i] == callback){
-                    _observers[key].splice(i,1);
-                }
-            }
-        },
-
-        /**
-         * Subscribe to a Publish/Subscribe event stream
-         *
-         * @param {String} channel Channel name
-         * @param {Function} callback Function to run when the something is published to the channel
-         */
-        subscribe: function(channel, callback){
-            channel = (channel || "").toString();
-            if(!channel){
-                throw new TypeError('Channel not defined');
-            }
-            if(!_pubsub_observers[channel]){
-                _pubsub_observers[channel] = [];
-            }
-            _pubsub_observers[channel].push(callback);
-        },
-
-        /**
-         * Publish data to an event stream
-         *
-         * @param {String} channel Channel name
-         * @param {Mixed} payload Payload to deliver
-         */
-        publish: function(channel, payload){
-            channel = (channel || "").toString();
-            if(!channel){
-                throw new TypeError('Channel not defined');
-            }
-
-            _publish(channel, payload);
-        },
-
-        /**
-         * Reloads the data from browser storage
-         */
-        reInit: function(){
-            _reloadData();
-        }
-    };
-
-    // Initialize jStorage
-    _init();
-
-})();
 
 /*
  * qTip2 - Pretty powerful tooltips - v2.0.1-105
@@ -25749,3 +25948,1833 @@ jQuery.fn.slugIt = function(options) {
 
   return this;
 }
+
+;(function(){
+
+/**
+ * Require the module at `name`.
+ *
+ * @param {String} name
+ * @return {Object} exports
+ * @api public
+ */
+
+function require(name) {
+  var module = require.modules[name];
+  if (!module) throw new Error('failed to require "' + name + '"');
+
+  if (!('exports' in module) && typeof module.definition === 'function') {
+    module.client = module.component = true;
+    module.definition.call(this, module.exports = {}, module);
+    delete module.definition;
+  }
+
+  return module.exports;
+}
+
+/**
+ * Registered modules.
+ */
+
+require.modules = {};
+
+/**
+ * Register module at `name` with callback `definition`.
+ *
+ * @param {String} name
+ * @param {Function} definition
+ * @api private
+ */
+
+require.register = function (name, definition) {
+  require.modules[name] = {
+    definition: definition
+  };
+};
+
+/**
+ * Define a module's exports immediately with `exports`.
+ *
+ * @param {String} name
+ * @param {Generic} exports
+ * @api private
+ */
+
+require.define = function (name, exports) {
+  require.modules[name] = {
+    exports: exports
+  };
+};
+require.register("component~emitter@1.1.2", function (exports, module) {
+
+/**
+ * Expose `Emitter`.
+ */
+
+module.exports = Emitter;
+
+/**
+ * Initialize a new `Emitter`.
+ *
+ * @api public
+ */
+
+function Emitter(obj) {
+  if (obj) return mixin(obj);
+};
+
+/**
+ * Mixin the emitter properties.
+ *
+ * @param {Object} obj
+ * @return {Object}
+ * @api private
+ */
+
+function mixin(obj) {
+  for (var key in Emitter.prototype) {
+    obj[key] = Emitter.prototype[key];
+  }
+  return obj;
+}
+
+/**
+ * Listen on the given `event` with `fn`.
+ *
+ * @param {String} event
+ * @param {Function} fn
+ * @return {Emitter}
+ * @api public
+ */
+
+Emitter.prototype.on =
+Emitter.prototype.addEventListener = function(event, fn){
+  this._callbacks = this._callbacks || {};
+  (this._callbacks[event] = this._callbacks[event] || [])
+    .push(fn);
+  return this;
+};
+
+/**
+ * Adds an `event` listener that will be invoked a single
+ * time then automatically removed.
+ *
+ * @param {String} event
+ * @param {Function} fn
+ * @return {Emitter}
+ * @api public
+ */
+
+Emitter.prototype.once = function(event, fn){
+  var self = this;
+  this._callbacks = this._callbacks || {};
+
+  function on() {
+    self.off(event, on);
+    fn.apply(this, arguments);
+  }
+
+  on.fn = fn;
+  this.on(event, on);
+  return this;
+};
+
+/**
+ * Remove the given callback for `event` or all
+ * registered callbacks.
+ *
+ * @param {String} event
+ * @param {Function} fn
+ * @return {Emitter}
+ * @api public
+ */
+
+Emitter.prototype.off =
+Emitter.prototype.removeListener =
+Emitter.prototype.removeAllListeners =
+Emitter.prototype.removeEventListener = function(event, fn){
+  this._callbacks = this._callbacks || {};
+
+  // all
+  if (0 == arguments.length) {
+    this._callbacks = {};
+    return this;
+  }
+
+  // specific event
+  var callbacks = this._callbacks[event];
+  if (!callbacks) return this;
+
+  // remove all handlers
+  if (1 == arguments.length) {
+    delete this._callbacks[event];
+    return this;
+  }
+
+  // remove specific handler
+  var cb;
+  for (var i = 0; i < callbacks.length; i++) {
+    cb = callbacks[i];
+    if (cb === fn || cb.fn === fn) {
+      callbacks.splice(i, 1);
+      break;
+    }
+  }
+  return this;
+};
+
+/**
+ * Emit `event` with the given args.
+ *
+ * @param {String} event
+ * @param {Mixed} ...
+ * @return {Emitter}
+ */
+
+Emitter.prototype.emit = function(event){
+  this._callbacks = this._callbacks || {};
+  var args = [].slice.call(arguments, 1)
+    , callbacks = this._callbacks[event];
+
+  if (callbacks) {
+    callbacks = callbacks.slice(0);
+    for (var i = 0, len = callbacks.length; i < len; ++i) {
+      callbacks[i].apply(this, args);
+    }
+  }
+
+  return this;
+};
+
+/**
+ * Return array of callbacks for `event`.
+ *
+ * @param {String} event
+ * @return {Array}
+ * @api public
+ */
+
+Emitter.prototype.listeners = function(event){
+  this._callbacks = this._callbacks || {};
+  return this._callbacks[event] || [];
+};
+
+/**
+ * Check if this emitter has `event` handlers.
+ *
+ * @param {String} event
+ * @return {Boolean}
+ * @api public
+ */
+
+Emitter.prototype.hasListeners = function(event){
+  return !! this.listeners(event).length;
+};
+
+});
+
+require.register("dropzone", function (exports, module) {
+
+
+/**
+ * Exposing dropzone
+ */
+module.exports = require("dropzone/lib/dropzone.js");
+
+});
+
+require.register("dropzone/lib/dropzone.js", function (exports, module) {
+
+/*
+ *
+ * More info at [www.dropzonejs.com](http://www.dropzonejs.com)
+ * 
+ * Copyright (c) 2012, Matias Meno  
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ */
+
+(function() {
+  var Dropzone, Em, camelize, contentLoaded, detectVerticalSquash, drawImageIOSFix, noop, without,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    __slice = [].slice;
+
+  Em = typeof Emitter !== "undefined" && Emitter !== null ? Emitter : require("component~emitter@1.1.2");
+
+  noop = function() {};
+
+  Dropzone = (function(_super) {
+    var extend;
+
+    __extends(Dropzone, _super);
+
+
+    /*
+    This is a list of all available events you can register on a dropzone object.
+    
+    You can register an event handler like this:
+    
+        dropzone.on("dragEnter", function() { });
+     */
+
+    Dropzone.prototype.events = ["drop", "dragstart", "dragend", "dragenter", "dragover", "dragleave", "addedfile", "removedfile", "thumbnail", "error", "errormultiple", "processing", "processingmultiple", "uploadprogress", "totaluploadprogress", "sending", "sendingmultiple", "success", "successmultiple", "canceled", "canceledmultiple", "complete", "completemultiple", "reset", "maxfilesexceeded", "maxfilesreached"];
+
+    Dropzone.prototype.defaultOptions = {
+      url: null,
+      method: "post",
+      withCredentials: false,
+      parallelUploads: 2,
+      uploadMultiple: false,
+      maxFilesize: 256,
+      paramName: "file",
+      createImageThumbnails: true,
+      maxThumbnailFilesize: 10,
+      thumbnailWidth: 100,
+      thumbnailHeight: 100,
+      maxFiles: null,
+      params: {},
+      clickable: true,
+      ignoreHiddenFiles: true,
+      acceptedFiles: null,
+      acceptedMimeTypes: null,
+      autoProcessQueue: true,
+      addRemoveLinks: false,
+      previewsContainer: null,
+      dictDefaultMessage: "Drop files here to upload",
+      dictFallbackMessage: "Your browser does not support drag'n'drop file uploads.",
+      dictFallbackText: "Please use the fallback form below to upload your files like in the olden days.",
+      dictFileTooBig: "File is too big ({{filesize}}MiB). Max filesize: {{maxFilesize}}MiB.",
+      dictInvalidFileType: "You can't upload files of this type.",
+      dictResponseError: "Server responded with {{statusCode}} code.",
+      dictCancelUpload: "Cancel upload",
+      dictCancelUploadConfirmation: "Are you sure you want to cancel this upload?",
+      dictRemoveFile: "Remove file",
+      dictRemoveFileConfirmation: null,
+      dictMaxFilesExceeded: "You can not upload any more files.",
+      accept: function(file, done) {
+        return done();
+      },
+      init: function() {
+        return noop;
+      },
+      forceFallback: false,
+      fallback: function() {
+        var child, messageElement, span, _i, _len, _ref;
+        this.element.className = "" + this.element.className + " dz-browser-not-supported";
+        _ref = this.element.getElementsByTagName("div");
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          child = _ref[_i];
+          if (/(^| )dz-message($| )/.test(child.className)) {
+            messageElement = child;
+            child.className = "dz-message";
+            continue;
+          }
+        }
+        if (!messageElement) {
+          messageElement = Dropzone.createElement("<div class=\"dz-message\"><span></span></div>");
+          this.element.appendChild(messageElement);
+        }
+        span = messageElement.getElementsByTagName("span")[0];
+        if (span) {
+          span.textContent = this.options.dictFallbackMessage;
+        }
+        return this.element.appendChild(this.getFallbackForm());
+      },
+      resize: function(file) {
+        var info, srcRatio, trgRatio;
+        info = {
+          srcX: 0,
+          srcY: 0,
+          srcWidth: file.width,
+          srcHeight: file.height
+        };
+        srcRatio = file.width / file.height;
+        trgRatio = this.options.thumbnailWidth / this.options.thumbnailHeight;
+        if (file.height < this.options.thumbnailHeight || file.width < this.options.thumbnailWidth) {
+          info.trgHeight = info.srcHeight;
+          info.trgWidth = info.srcWidth;
+        } else {
+          if (srcRatio > trgRatio) {
+            info.srcHeight = file.height;
+            info.srcWidth = info.srcHeight * trgRatio;
+          } else {
+            info.srcWidth = file.width;
+            info.srcHeight = info.srcWidth / trgRatio;
+          }
+        }
+        info.srcX = (file.width - info.srcWidth) / 2;
+        info.srcY = (file.height - info.srcHeight) / 2;
+        return info;
+      },
+
+      /*
+      Those functions register themselves to the events on init and handle all
+      the user interface specific stuff. Overwriting them won't break the upload
+      but can break the way it's displayed.
+      You can overwrite them if you don't like the default behavior. If you just
+      want to add an additional event handler, register it on the dropzone object
+      and don't overwrite those options.
+       */
+      drop: function(e) {
+        return this.element.classList.remove("dz-drag-hover");
+      },
+      dragstart: noop,
+      dragend: function(e) {
+        return this.element.classList.remove("dz-drag-hover");
+      },
+      dragenter: function(e) {
+        return this.element.classList.add("dz-drag-hover");
+      },
+      dragover: function(e) {
+        return this.element.classList.add("dz-drag-hover");
+      },
+      dragleave: function(e) {
+        return this.element.classList.remove("dz-drag-hover");
+      },
+      paste: noop,
+      reset: function() {
+        return this.element.classList.remove("dz-started");
+      },
+      addedfile: function(file) {
+        var node, removeFileEvent, removeLink, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2, _results;
+        if (this.element === this.previewsContainer) {
+          this.element.classList.add("dz-started");
+        }
+        file.previewElement = Dropzone.createElement(this.options.previewTemplate.trim());
+        file.previewTemplate = file.previewElement;
+        this.previewsContainer.appendChild(file.previewElement);
+        _ref = file.previewElement.querySelectorAll("[data-dz-name]");
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          node = _ref[_i];
+          node.textContent = file.name;
+        }
+        _ref1 = file.previewElement.querySelectorAll("[data-dz-size]");
+        for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+          node = _ref1[_j];
+          node.innerHTML = this.filesize(file.size);
+        }
+        if (this.options.addRemoveLinks) {
+          file._removeLink = Dropzone.createElement("<a class=\"dz-remove\" href=\"javascript:undefined;\" data-dz-remove>" + this.options.dictRemoveFile + "</a>");
+          file.previewElement.appendChild(file._removeLink);
+        }
+        removeFileEvent = (function(_this) {
+          return function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (file.status === Dropzone.UPLOADING) {
+              return Dropzone.confirm(_this.options.dictCancelUploadConfirmation, function() {
+                return _this.removeFile(file);
+              });
+            } else {
+              if (_this.options.dictRemoveFileConfirmation) {
+                return Dropzone.confirm(_this.options.dictRemoveFileConfirmation, function() {
+                  return _this.removeFile(file);
+                });
+              } else {
+                return _this.removeFile(file);
+              }
+            }
+          };
+        })(this);
+        _ref2 = file.previewElement.querySelectorAll("[data-dz-remove]");
+        _results = [];
+        for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+          removeLink = _ref2[_k];
+          _results.push(removeLink.addEventListener("click", removeFileEvent));
+        }
+        return _results;
+      },
+      removedfile: function(file) {
+        var _ref;
+        if ((_ref = file.previewElement) != null) {
+          _ref.parentNode.removeChild(file.previewElement);
+        }
+        return this._updateMaxFilesReachedClass();
+      },
+      thumbnail: function(file, dataUrl) {
+        var thumbnailElement, _i, _len, _ref, _results;
+        file.previewElement.classList.remove("dz-file-preview");
+        file.previewElement.classList.add("dz-image-preview");
+        _ref = file.previewElement.querySelectorAll("[data-dz-thumbnail]");
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          thumbnailElement = _ref[_i];
+          thumbnailElement.alt = file.name;
+          _results.push(thumbnailElement.src = dataUrl);
+        }
+        return _results;
+      },
+      error: function(file, message) {
+        var node, _i, _len, _ref, _results;
+        file.previewElement.classList.add("dz-error");
+        if (typeof message !== "String" && message.error) {
+          message = message.error;
+        }
+        _ref = file.previewElement.querySelectorAll("[data-dz-errormessage]");
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          node = _ref[_i];
+          _results.push(node.textContent = message);
+        }
+        return _results;
+      },
+      errormultiple: noop,
+      processing: function(file) {
+        file.previewElement.classList.add("dz-processing");
+        if (file._removeLink) {
+          return file._removeLink.textContent = this.options.dictCancelUpload;
+        }
+      },
+      processingmultiple: noop,
+      uploadprogress: function(file, progress, bytesSent) {
+        var node, _i, _len, _ref, _results;
+        _ref = file.previewElement.querySelectorAll("[data-dz-uploadprogress]");
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          node = _ref[_i];
+          _results.push(node.style.width = "" + progress + "%");
+        }
+        return _results;
+      },
+      totaluploadprogress: noop,
+      sending: noop,
+      sendingmultiple: noop,
+      success: function(file) {
+        return file.previewElement.classList.add("dz-success");
+      },
+      successmultiple: noop,
+      canceled: function(file) {
+        return this.emit("error", file, "Upload canceled.");
+      },
+      canceledmultiple: noop,
+      complete: function(file) {
+        if (file._removeLink) {
+          return file._removeLink.textContent = this.options.dictRemoveFile;
+        }
+      },
+      completemultiple: noop,
+      maxfilesexceeded: noop,
+      maxfilesreached: noop,
+      previewTemplate: "<div class=\"dz-preview dz-file-preview\">\n  <div class=\"dz-details\">\n    <div class=\"dz-filename\"><span data-dz-name></span></div>\n    <div class=\"dz-size\" data-dz-size></div>\n    <img data-dz-thumbnail />\n  </div>\n  <div class=\"dz-progress\"><span class=\"dz-upload\" data-dz-uploadprogress></span></div>\n  <div class=\"dz-success-mark\"><span>✔</span></div>\n  <div class=\"dz-error-mark\"><span>✘</span></div>\n  <div class=\"dz-error-message\"><span data-dz-errormessage></span></div>\n</div>"
+    };
+
+    extend = function() {
+      var key, object, objects, target, val, _i, _len;
+      target = arguments[0], objects = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+      for (_i = 0, _len = objects.length; _i < _len; _i++) {
+        object = objects[_i];
+        for (key in object) {
+          val = object[key];
+          target[key] = val;
+        }
+      }
+      return target;
+    };
+
+    function Dropzone(element, options) {
+      var elementOptions, fallback, _ref;
+      this.element = element;
+      this.version = Dropzone.version;
+      this.defaultOptions.previewTemplate = this.defaultOptions.previewTemplate.replace(/\n*/g, "");
+      this.clickableElements = [];
+      this.listeners = [];
+      this.files = [];
+      if (typeof this.element === "string") {
+        this.element = document.querySelector(this.element);
+      }
+      if (!(this.element && (this.element.nodeType != null))) {
+        throw new Error("Invalid dropzone element.");
+      }
+      if (this.element.dropzone) {
+        throw new Error("Dropzone already attached.");
+      }
+      Dropzone.instances.push(this);
+      this.element.dropzone = this;
+      elementOptions = (_ref = Dropzone.optionsForElement(this.element)) != null ? _ref : {};
+      this.options = extend({}, this.defaultOptions, elementOptions, options != null ? options : {});
+      if (this.options.forceFallback || !Dropzone.isBrowserSupported()) {
+        return this.options.fallback.call(this);
+      }
+      if (this.options.url == null) {
+        this.options.url = this.element.getAttribute("action");
+      }
+      if (!this.options.url) {
+        throw new Error("No URL provided.");
+      }
+      if (this.options.acceptedFiles && this.options.acceptedMimeTypes) {
+        throw new Error("You can't provide both 'acceptedFiles' and 'acceptedMimeTypes'. 'acceptedMimeTypes' is deprecated.");
+      }
+      if (this.options.acceptedMimeTypes) {
+        this.options.acceptedFiles = this.options.acceptedMimeTypes;
+        delete this.options.acceptedMimeTypes;
+      }
+      this.options.method = this.options.method.toUpperCase();
+      if ((fallback = this.getExistingFallback()) && fallback.parentNode) {
+        fallback.parentNode.removeChild(fallback);
+      }
+      if (this.options.previewsContainer) {
+        this.previewsContainer = Dropzone.getElement(this.options.previewsContainer, "previewsContainer");
+      } else {
+        this.previewsContainer = this.element;
+      }
+      if (this.options.clickable) {
+        if (this.options.clickable === true) {
+          this.clickableElements = [this.element];
+        } else {
+          this.clickableElements = Dropzone.getElements(this.options.clickable, "clickable");
+        }
+      }
+      this.init();
+    }
+
+    Dropzone.prototype.getAcceptedFiles = function() {
+      var file, _i, _len, _ref, _results;
+      _ref = this.files;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        file = _ref[_i];
+        if (file.accepted) {
+          _results.push(file);
+        }
+      }
+      return _results;
+    };
+
+    Dropzone.prototype.getRejectedFiles = function() {
+      var file, _i, _len, _ref, _results;
+      _ref = this.files;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        file = _ref[_i];
+        if (!file.accepted) {
+          _results.push(file);
+        }
+      }
+      return _results;
+    };
+
+    Dropzone.prototype.getQueuedFiles = function() {
+      var file, _i, _len, _ref, _results;
+      _ref = this.files;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        file = _ref[_i];
+        if (file.status === Dropzone.QUEUED) {
+          _results.push(file);
+        }
+      }
+      return _results;
+    };
+
+    Dropzone.prototype.getUploadingFiles = function() {
+      var file, _i, _len, _ref, _results;
+      _ref = this.files;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        file = _ref[_i];
+        if (file.status === Dropzone.UPLOADING) {
+          _results.push(file);
+        }
+      }
+      return _results;
+    };
+
+    Dropzone.prototype.init = function() {
+      var eventName, noPropagation, setupHiddenFileInput, _i, _len, _ref, _ref1;
+      if (this.element.tagName === "form") {
+        this.element.setAttribute("enctype", "multipart/form-data");
+      }
+      if (this.element.classList.contains("dropzone") && !this.element.querySelector(".dz-message")) {
+        this.element.appendChild(Dropzone.createElement("<div class=\"dz-default dz-message\"><span>" + this.options.dictDefaultMessage + "</span></div>"));
+      }
+      if (this.clickableElements.length) {
+        setupHiddenFileInput = (function(_this) {
+          return function() {
+            if (_this.hiddenFileInput) {
+              document.body.removeChild(_this.hiddenFileInput);
+            }
+            _this.hiddenFileInput = document.createElement("input");
+            _this.hiddenFileInput.setAttribute("type", "file");
+            if ((_this.options.maxFiles == null) || _this.options.maxFiles > 1) {
+              _this.hiddenFileInput.setAttribute("multiple", "multiple");
+            }
+            _this.hiddenFileInput.className = "dz-hidden-input";
+            if (_this.options.acceptedFiles != null) {
+              _this.hiddenFileInput.setAttribute("accept", _this.options.acceptedFiles);
+            }
+            _this.hiddenFileInput.style.visibility = "hidden";
+            _this.hiddenFileInput.style.position = "absolute";
+            _this.hiddenFileInput.style.top = "0";
+            _this.hiddenFileInput.style.left = "0";
+            _this.hiddenFileInput.style.height = "0";
+            _this.hiddenFileInput.style.width = "0";
+            document.body.appendChild(_this.hiddenFileInput);
+            return _this.hiddenFileInput.addEventListener("change", function() {
+              var file, files, _i, _len;
+              files = _this.hiddenFileInput.files;
+              if (files.length) {
+                for (_i = 0, _len = files.length; _i < _len; _i++) {
+                  file = files[_i];
+                  _this.addFile(file);
+                }
+              }
+              return setupHiddenFileInput();
+            });
+          };
+        })(this);
+        setupHiddenFileInput();
+      }
+      this.URL = (_ref = window.URL) != null ? _ref : window.webkitURL;
+      _ref1 = this.events;
+      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+        eventName = _ref1[_i];
+        this.on(eventName, this.options[eventName]);
+      }
+      this.on("uploadprogress", (function(_this) {
+        return function() {
+          return _this.updateTotalUploadProgress();
+        };
+      })(this));
+      this.on("removedfile", (function(_this) {
+        return function() {
+          return _this.updateTotalUploadProgress();
+        };
+      })(this));
+      this.on("canceled", (function(_this) {
+        return function(file) {
+          return _this.emit("complete", file);
+        };
+      })(this));
+      this.on("complete", (function(_this) {
+        return function(file) {
+          if (_this.getUploadingFiles().length === 0 && _this.getQueuedFiles().length === 0) {
+            return setTimeout((function() {
+              return _this.emit("queuecomplete");
+            }), 0);
+          }
+        };
+      })(this));
+      noPropagation = function(e) {
+        e.stopPropagation();
+        if (e.preventDefault) {
+          return e.preventDefault();
+        } else {
+          return e.returnValue = false;
+        }
+      };
+      this.listeners = [
+        {
+          element: this.element,
+          events: {
+            "dragstart": (function(_this) {
+              return function(e) {
+                return _this.emit("dragstart", e);
+              };
+            })(this),
+            "dragenter": (function(_this) {
+              return function(e) {
+                noPropagation(e);
+                return _this.emit("dragenter", e);
+              };
+            })(this),
+            "dragover": (function(_this) {
+              return function(e) {
+                var efct;
+                try {
+                  efct = e.dataTransfer.effectAllowed;
+                } catch (_error) {}
+                e.dataTransfer.dropEffect = 'move' === efct || 'linkMove' === efct ? 'move' : 'copy';
+                noPropagation(e);
+                return _this.emit("dragover", e);
+              };
+            })(this),
+            "dragleave": (function(_this) {
+              return function(e) {
+                return _this.emit("dragleave", e);
+              };
+            })(this),
+            "drop": (function(_this) {
+              return function(e) {
+                noPropagation(e);
+                return _this.drop(e);
+              };
+            })(this),
+            "dragend": (function(_this) {
+              return function(e) {
+                return _this.emit("dragend", e);
+              };
+            })(this)
+          }
+        }
+      ];
+      this.clickableElements.forEach((function(_this) {
+        return function(clickableElement) {
+          return _this.listeners.push({
+            element: clickableElement,
+            events: {
+              "click": function(evt) {
+                if ((clickableElement !== _this.element) || (evt.target === _this.element || Dropzone.elementInside(evt.target, _this.element.querySelector(".dz-message")))) {
+                  return _this.hiddenFileInput.click();
+                }
+              }
+            }
+          });
+        };
+      })(this));
+      this.enable();
+      return this.options.init.call(this);
+    };
+
+    Dropzone.prototype.destroy = function() {
+      var _ref;
+      this.disable();
+      this.removeAllFiles(true);
+      if ((_ref = this.hiddenFileInput) != null ? _ref.parentNode : void 0) {
+        this.hiddenFileInput.parentNode.removeChild(this.hiddenFileInput);
+        this.hiddenFileInput = null;
+      }
+      delete this.element.dropzone;
+      return Dropzone.instances.splice(Dropzone.instances.indexOf(this), 1);
+    };
+
+    Dropzone.prototype.updateTotalUploadProgress = function() {
+      var acceptedFiles, file, totalBytes, totalBytesSent, totalUploadProgress, _i, _len, _ref;
+      totalBytesSent = 0;
+      totalBytes = 0;
+      acceptedFiles = this.getAcceptedFiles();
+      if (acceptedFiles.length) {
+        _ref = this.getAcceptedFiles();
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          file = _ref[_i];
+          totalBytesSent += file.upload.bytesSent;
+          totalBytes += file.upload.total;
+        }
+        totalUploadProgress = 100 * totalBytesSent / totalBytes;
+      } else {
+        totalUploadProgress = 100;
+      }
+      return this.emit("totaluploadprogress", totalUploadProgress, totalBytes, totalBytesSent);
+    };
+
+    Dropzone.prototype.getFallbackForm = function() {
+      var existingFallback, fields, fieldsString, form;
+      if (existingFallback = this.getExistingFallback()) {
+        return existingFallback;
+      }
+      fieldsString = "<div class=\"dz-fallback\">";
+      if (this.options.dictFallbackText) {
+        fieldsString += "<p>" + this.options.dictFallbackText + "</p>";
+      }
+      fieldsString += "<input type=\"file\" name=\"" + this.options.paramName + (this.options.uploadMultiple ? "[]" : "") + "\" " + (this.options.uploadMultiple ? 'multiple="multiple"' : void 0) + " /><input type=\"submit\" value=\"Upload!\"></div>";
+      fields = Dropzone.createElement(fieldsString);
+      if (this.element.tagName !== "FORM") {
+        form = Dropzone.createElement("<form action=\"" + this.options.url + "\" enctype=\"multipart/form-data\" method=\"" + this.options.method + "\"></form>");
+        form.appendChild(fields);
+      } else {
+        this.element.setAttribute("enctype", "multipart/form-data");
+        this.element.setAttribute("method", this.options.method);
+      }
+      return form != null ? form : fields;
+    };
+
+    Dropzone.prototype.getExistingFallback = function() {
+      var fallback, getFallback, tagName, _i, _len, _ref;
+      getFallback = function(elements) {
+        var el, _i, _len;
+        for (_i = 0, _len = elements.length; _i < _len; _i++) {
+          el = elements[_i];
+          if (/(^| )fallback($| )/.test(el.className)) {
+            return el;
+          }
+        }
+      };
+      _ref = ["div", "form"];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        tagName = _ref[_i];
+        if (fallback = getFallback(this.element.getElementsByTagName(tagName))) {
+          return fallback;
+        }
+      }
+    };
+
+    Dropzone.prototype.setupEventListeners = function() {
+      var elementListeners, event, listener, _i, _len, _ref, _results;
+      _ref = this.listeners;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        elementListeners = _ref[_i];
+        _results.push((function() {
+          var _ref1, _results1;
+          _ref1 = elementListeners.events;
+          _results1 = [];
+          for (event in _ref1) {
+            listener = _ref1[event];
+            _results1.push(elementListeners.element.addEventListener(event, listener, false));
+          }
+          return _results1;
+        })());
+      }
+      return _results;
+    };
+
+    Dropzone.prototype.removeEventListeners = function() {
+      var elementListeners, event, listener, _i, _len, _ref, _results;
+      _ref = this.listeners;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        elementListeners = _ref[_i];
+        _results.push((function() {
+          var _ref1, _results1;
+          _ref1 = elementListeners.events;
+          _results1 = [];
+          for (event in _ref1) {
+            listener = _ref1[event];
+            _results1.push(elementListeners.element.removeEventListener(event, listener, false));
+          }
+          return _results1;
+        })());
+      }
+      return _results;
+    };
+
+    Dropzone.prototype.disable = function() {
+      var file, _i, _len, _ref, _results;
+      this.clickableElements.forEach(function(element) {
+        return element.classList.remove("dz-clickable");
+      });
+      this.removeEventListeners();
+      _ref = this.files;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        file = _ref[_i];
+        _results.push(this.cancelUpload(file));
+      }
+      return _results;
+    };
+
+    Dropzone.prototype.enable = function() {
+      this.clickableElements.forEach(function(element) {
+        return element.classList.add("dz-clickable");
+      });
+      return this.setupEventListeners();
+    };
+
+    Dropzone.prototype.filesize = function(size) {
+      var string;
+      if (size >= 1024 * 1024 * 1024 * 1024 / 10) {
+        size = size / (1024 * 1024 * 1024 * 1024 / 10);
+        string = "TiB";
+      } else if (size >= 1024 * 1024 * 1024 / 10) {
+        size = size / (1024 * 1024 * 1024 / 10);
+        string = "GiB";
+      } else if (size >= 1024 * 1024 / 10) {
+        size = size / (1024 * 1024 / 10);
+        string = "MiB";
+      } else if (size >= 1024 / 10) {
+        size = size / (1024 / 10);
+        string = "KiB";
+      } else {
+        size = size * 10;
+        string = "b";
+      }
+      return "<strong>" + (Math.round(size) / 10) + "</strong> " + string;
+    };
+
+    Dropzone.prototype._updateMaxFilesReachedClass = function() {
+      if ((this.options.maxFiles != null) && this.getAcceptedFiles().length >= this.options.maxFiles) {
+        if (this.getAcceptedFiles().length === this.options.maxFiles) {
+          this.emit('maxfilesreached', this.files);
+        }
+        return this.element.classList.add("dz-max-files-reached");
+      } else {
+        return this.element.classList.remove("dz-max-files-reached");
+      }
+    };
+
+    Dropzone.prototype.drop = function(e) {
+      var files, items;
+      if (!e.dataTransfer) {
+        return;
+      }
+      this.emit("drop", e);
+      files = e.dataTransfer.files;
+      if (files.length) {
+        items = e.dataTransfer.items;
+        if (items && items.length && (items[0].webkitGetAsEntry != null)) {
+          this._addFilesFromItems(items);
+        } else {
+          this.handleFiles(files);
+        }
+      }
+    };
+
+    Dropzone.prototype.paste = function(e) {
+      var items, _ref;
+      if ((e != null ? (_ref = e.clipboardData) != null ? _ref.items : void 0 : void 0) == null) {
+        return;
+      }
+      this.emit("paste", e);
+      items = e.clipboardData.items;
+      if (items.length) {
+        return this._addFilesFromItems(items);
+      }
+    };
+
+    Dropzone.prototype.handleFiles = function(files) {
+      var file, _i, _len, _results;
+      _results = [];
+      for (_i = 0, _len = files.length; _i < _len; _i++) {
+        file = files[_i];
+        _results.push(this.addFile(file));
+      }
+      return _results;
+    };
+
+    Dropzone.prototype._addFilesFromItems = function(items) {
+      var entry, item, _i, _len, _results;
+      _results = [];
+      for (_i = 0, _len = items.length; _i < _len; _i++) {
+        item = items[_i];
+        if ((item.webkitGetAsEntry != null) && (entry = item.webkitGetAsEntry())) {
+          if (entry.isFile) {
+            _results.push(this.addFile(item.getAsFile()));
+          } else if (entry.isDirectory) {
+            _results.push(this._addFilesFromDirectory(entry, entry.name));
+          } else {
+            _results.push(void 0);
+          }
+        } else if (item.getAsFile != null) {
+          if ((item.kind == null) || item.kind === "file") {
+            _results.push(this.addFile(item.getAsFile()));
+          } else {
+            _results.push(void 0);
+          }
+        } else {
+          _results.push(void 0);
+        }
+      }
+      return _results;
+    };
+
+    Dropzone.prototype._addFilesFromDirectory = function(directory, path) {
+      var dirReader, entriesReader;
+      dirReader = directory.createReader();
+      entriesReader = (function(_this) {
+        return function(entries) {
+          var entry, _i, _len;
+          for (_i = 0, _len = entries.length; _i < _len; _i++) {
+            entry = entries[_i];
+            if (entry.isFile) {
+              entry.file(function(file) {
+                if (_this.options.ignoreHiddenFiles && file.name.substring(0, 1) === '.') {
+                  return;
+                }
+                file.fullPath = "" + path + "/" + file.name;
+                return _this.addFile(file);
+              });
+            } else if (entry.isDirectory) {
+              _this._addFilesFromDirectory(entry, "" + path + "/" + entry.name);
+            }
+          }
+        };
+      })(this);
+      return dirReader.readEntries(entriesReader, function(error) {
+        return typeof console !== "undefined" && console !== null ? typeof console.log === "function" ? console.log(error) : void 0 : void 0;
+      });
+    };
+
+    Dropzone.prototype.accept = function(file, done) {
+      if (file.size > this.options.maxFilesize * 1024 * 1024) {
+        return done(this.options.dictFileTooBig.replace("{{filesize}}", Math.round(file.size / 1024 / 10.24) / 100).replace("{{maxFilesize}}", this.options.maxFilesize));
+      } else if (!Dropzone.isValidFile(file, this.options.acceptedFiles)) {
+        return done(this.options.dictInvalidFileType);
+      } else if ((this.options.maxFiles != null) && this.getAcceptedFiles().length >= this.options.maxFiles) {
+        done(this.options.dictMaxFilesExceeded.replace("{{maxFiles}}", this.options.maxFiles));
+        return this.emit("maxfilesexceeded", file);
+      } else {
+        return this.options.accept.call(this, file, done);
+      }
+    };
+
+    Dropzone.prototype.addFile = function(file) {
+      file.upload = {
+        progress: 0,
+        total: file.size,
+        bytesSent: 0
+      };
+      this.files.push(file);
+      file.status = Dropzone.ADDED;
+      this.emit("addedfile", file);
+      this._enqueueThumbnail(file);
+      return this.accept(file, (function(_this) {
+        return function(error) {
+          if (error) {
+            file.accepted = false;
+            _this._errorProcessing([file], error);
+          } else {
+            _this.enqueueFile(file);
+          }
+          return _this._updateMaxFilesReachedClass();
+        };
+      })(this));
+    };
+
+    Dropzone.prototype.enqueueFiles = function(files) {
+      var file, _i, _len;
+      for (_i = 0, _len = files.length; _i < _len; _i++) {
+        file = files[_i];
+        this.enqueueFile(file);
+      }
+      return null;
+    };
+
+    Dropzone.prototype.enqueueFile = function(file) {
+      file.accepted = true;
+      if (file.status === Dropzone.ADDED) {
+        file.status = Dropzone.QUEUED;
+        if (this.options.autoProcessQueue) {
+          return setTimeout(((function(_this) {
+            return function() {
+              return _this.processQueue();
+            };
+          })(this)), 0);
+        }
+      } else {
+        throw new Error("This file can't be queued because it has already been processed or was rejected.");
+      }
+    };
+
+    Dropzone.prototype._thumbnailQueue = [];
+
+    Dropzone.prototype._processingThumbnail = false;
+
+    Dropzone.prototype._enqueueThumbnail = function(file) {
+      if (this.options.createImageThumbnails && file.type.match(/image.*/) && file.size <= this.options.maxThumbnailFilesize * 1024 * 1024) {
+        this._thumbnailQueue.push(file);
+        return setTimeout(((function(_this) {
+          return function() {
+            return _this._processThumbnailQueue();
+          };
+        })(this)), 0);
+      }
+    };
+
+    Dropzone.prototype._processThumbnailQueue = function() {
+      if (this._processingThumbnail || this._thumbnailQueue.length === 0) {
+        return;
+      }
+      this._processingThumbnail = true;
+      return this.createThumbnail(this._thumbnailQueue.shift(), (function(_this) {
+        return function() {
+          _this._processingThumbnail = false;
+          return _this._processThumbnailQueue();
+        };
+      })(this));
+    };
+
+    Dropzone.prototype.removeFile = function(file) {
+      if (file.status === Dropzone.UPLOADING) {
+        this.cancelUpload(file);
+      }
+      this.files = without(this.files, file);
+      this.emit("removedfile", file);
+      if (this.files.length === 0) {
+        return this.emit("reset");
+      }
+    };
+
+    Dropzone.prototype.removeAllFiles = function(cancelIfNecessary) {
+      var file, _i, _len, _ref;
+      if (cancelIfNecessary == null) {
+        cancelIfNecessary = false;
+      }
+      _ref = this.files.slice();
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        file = _ref[_i];
+        if (file.status !== Dropzone.UPLOADING || cancelIfNecessary) {
+          this.removeFile(file);
+        }
+      }
+      return null;
+    };
+
+    Dropzone.prototype.createThumbnail = function(file, callback) {
+      var fileReader;
+      fileReader = new FileReader;
+      fileReader.onload = (function(_this) {
+        return function() {
+          var img;
+          img = document.createElement("img");
+          img.onload = function() {
+            var canvas, ctx, resizeInfo, thumbnail, _ref, _ref1, _ref2, _ref3;
+            file.width = img.width;
+            file.height = img.height;
+            resizeInfo = _this.options.resize.call(_this, file);
+            if (resizeInfo.trgWidth == null) {
+              resizeInfo.trgWidth = _this.options.thumbnailWidth;
+            }
+            if (resizeInfo.trgHeight == null) {
+              resizeInfo.trgHeight = _this.options.thumbnailHeight;
+            }
+            canvas = document.createElement("canvas");
+            ctx = canvas.getContext("2d");
+            canvas.width = resizeInfo.trgWidth;
+            canvas.height = resizeInfo.trgHeight;
+            drawImageIOSFix(ctx, img, (_ref = resizeInfo.srcX) != null ? _ref : 0, (_ref1 = resizeInfo.srcY) != null ? _ref1 : 0, resizeInfo.srcWidth, resizeInfo.srcHeight, (_ref2 = resizeInfo.trgX) != null ? _ref2 : 0, (_ref3 = resizeInfo.trgY) != null ? _ref3 : 0, resizeInfo.trgWidth, resizeInfo.trgHeight);
+            thumbnail = canvas.toDataURL("image/png");
+            _this.emit("thumbnail", file, thumbnail);
+            if (callback != null) {
+              return callback();
+            }
+          };
+          return img.src = fileReader.result;
+        };
+      })(this);
+      return fileReader.readAsDataURL(file);
+    };
+
+    Dropzone.prototype.processQueue = function() {
+      var i, parallelUploads, processingLength, queuedFiles;
+      parallelUploads = this.options.parallelUploads;
+      processingLength = this.getUploadingFiles().length;
+      i = processingLength;
+      if (processingLength >= parallelUploads) {
+        return;
+      }
+      queuedFiles = this.getQueuedFiles();
+      if (!(queuedFiles.length > 0)) {
+        return;
+      }
+      if (this.options.uploadMultiple) {
+        return this.processFiles(queuedFiles.slice(0, parallelUploads - processingLength));
+      } else {
+        while (i < parallelUploads) {
+          if (!queuedFiles.length) {
+            return;
+          }
+          this.processFile(queuedFiles.shift());
+          i++;
+        }
+      }
+    };
+
+    Dropzone.prototype.processFile = function(file) {
+      return this.processFiles([file]);
+    };
+
+    Dropzone.prototype.processFiles = function(files) {
+      var file, _i, _len;
+      for (_i = 0, _len = files.length; _i < _len; _i++) {
+        file = files[_i];
+        file.processing = true;
+        file.status = Dropzone.UPLOADING;
+        this.emit("processing", file);
+      }
+      if (this.options.uploadMultiple) {
+        this.emit("processingmultiple", files);
+      }
+      return this.uploadFiles(files);
+    };
+
+    Dropzone.prototype._getFilesWithXhr = function(xhr) {
+      var file, files;
+      return files = (function() {
+        var _i, _len, _ref, _results;
+        _ref = this.files;
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          file = _ref[_i];
+          if (file.xhr === xhr) {
+            _results.push(file);
+          }
+        }
+        return _results;
+      }).call(this);
+    };
+
+    Dropzone.prototype.cancelUpload = function(file) {
+      var groupedFile, groupedFiles, _i, _j, _len, _len1, _ref;
+      if (file.status === Dropzone.UPLOADING) {
+        groupedFiles = this._getFilesWithXhr(file.xhr);
+        for (_i = 0, _len = groupedFiles.length; _i < _len; _i++) {
+          groupedFile = groupedFiles[_i];
+          groupedFile.status = Dropzone.CANCELED;
+        }
+        file.xhr.abort();
+        for (_j = 0, _len1 = groupedFiles.length; _j < _len1; _j++) {
+          groupedFile = groupedFiles[_j];
+          this.emit("canceled", groupedFile);
+        }
+        if (this.options.uploadMultiple) {
+          this.emit("canceledmultiple", groupedFiles);
+        }
+      } else if ((_ref = file.status) === Dropzone.ADDED || _ref === Dropzone.QUEUED) {
+        file.status = Dropzone.CANCELED;
+        this.emit("canceled", file);
+        if (this.options.uploadMultiple) {
+          this.emit("canceledmultiple", [file]);
+        }
+      }
+      if (this.options.autoProcessQueue) {
+        return this.processQueue();
+      }
+    };
+
+    Dropzone.prototype.uploadFile = function(file) {
+      return this.uploadFiles([file]);
+    };
+
+    Dropzone.prototype.uploadFiles = function(files) {
+      var file, formData, handleError, headerName, headerValue, headers, input, inputName, inputType, key, option, progressObj, response, updateProgress, value, xhr, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _m, _ref, _ref1, _ref2, _ref3, _ref4;
+      xhr = new XMLHttpRequest();
+      for (_i = 0, _len = files.length; _i < _len; _i++) {
+        file = files[_i];
+        file.xhr = xhr;
+      }
+      xhr.open(this.options.method, this.options.url, true);
+      xhr.withCredentials = !!this.options.withCredentials;
+      response = null;
+      handleError = (function(_this) {
+        return function() {
+          var _j, _len1, _results;
+          _results = [];
+          for (_j = 0, _len1 = files.length; _j < _len1; _j++) {
+            file = files[_j];
+            _results.push(_this._errorProcessing(files, response || _this.options.dictResponseError.replace("{{statusCode}}", xhr.status), xhr));
+          }
+          return _results;
+        };
+      })(this);
+      updateProgress = (function(_this) {
+        return function(e) {
+          var allFilesFinished, progress, _j, _k, _l, _len1, _len2, _len3, _results;
+          if (e != null) {
+            progress = 100 * e.loaded / e.total;
+            for (_j = 0, _len1 = files.length; _j < _len1; _j++) {
+              file = files[_j];
+              file.upload = {
+                progress: progress,
+                total: e.total,
+                bytesSent: e.loaded
+              };
+            }
+          } else {
+            allFilesFinished = true;
+            progress = 100;
+            for (_k = 0, _len2 = files.length; _k < _len2; _k++) {
+              file = files[_k];
+              if (!(file.upload.progress === 100 && file.upload.bytesSent === file.upload.total)) {
+                allFilesFinished = false;
+              }
+              file.upload.progress = progress;
+              file.upload.bytesSent = file.upload.total;
+            }
+            if (allFilesFinished) {
+              return;
+            }
+          }
+          _results = [];
+          for (_l = 0, _len3 = files.length; _l < _len3; _l++) {
+            file = files[_l];
+            _results.push(_this.emit("uploadprogress", file, progress, file.upload.bytesSent));
+          }
+          return _results;
+        };
+      })(this);
+      xhr.onload = (function(_this) {
+        return function(e) {
+          var _ref;
+          if (files[0].status === Dropzone.CANCELED) {
+            return;
+          }
+          if (xhr.readyState !== 4) {
+            return;
+          }
+          response = xhr.responseText;
+          if (xhr.getResponseHeader("content-type") && ~xhr.getResponseHeader("content-type").indexOf("application/json")) {
+            try {
+              response = JSON.parse(response);
+            } catch (_error) {
+              e = _error;
+              response = "Invalid JSON response from server.";
+            }
+          }
+          updateProgress();
+          if (!((200 <= (_ref = xhr.status) && _ref < 300))) {
+            return handleError();
+          } else {
+            return _this._finished(files, response, e);
+          }
+        };
+      })(this);
+      xhr.onerror = (function(_this) {
+        return function() {
+          if (files[0].status === Dropzone.CANCELED) {
+            return;
+          }
+          return handleError();
+        };
+      })(this);
+      progressObj = (_ref = xhr.upload) != null ? _ref : xhr;
+      progressObj.onprogress = updateProgress;
+      headers = {
+        "Accept": "application/json",
+        "Cache-Control": "no-cache",
+        "X-Requested-With": "XMLHttpRequest"
+      };
+      if (this.options.headers) {
+        extend(headers, this.options.headers);
+      }
+      for (headerName in headers) {
+        headerValue = headers[headerName];
+        xhr.setRequestHeader(headerName, headerValue);
+      }
+      formData = new FormData();
+      if (this.options.params) {
+        _ref1 = this.options.params;
+        for (key in _ref1) {
+          value = _ref1[key];
+          formData.append(key, value);
+        }
+      }
+      for (_j = 0, _len1 = files.length; _j < _len1; _j++) {
+        file = files[_j];
+        this.emit("sending", file, xhr, formData);
+      }
+      if (this.options.uploadMultiple) {
+        this.emit("sendingmultiple", files, xhr, formData);
+      }
+      if (this.element.tagName === "FORM") {
+        _ref2 = this.element.querySelectorAll("input, textarea, select, button");
+        for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+          input = _ref2[_k];
+          inputName = input.getAttribute("name");
+          inputType = input.getAttribute("type");
+          if (input.tagName === "SELECT" && input.hasAttribute("multiple")) {
+            _ref3 = input.options;
+            for (_l = 0, _len3 = _ref3.length; _l < _len3; _l++) {
+              option = _ref3[_l];
+              if (option.selected) {
+                formData.append(inputName, option.value);
+              }
+            }
+          } else if (!inputType || ((_ref4 = inputType.toLowerCase()) !== "checkbox" && _ref4 !== "radio") || input.checked) {
+            formData.append(inputName, input.value);
+          }
+        }
+      }
+      for (_m = 0, _len4 = files.length; _m < _len4; _m++) {
+        file = files[_m];
+        formData.append("" + this.options.paramName + (this.options.uploadMultiple ? "[]" : ""), file, file.name);
+      }
+      return xhr.send(formData);
+    };
+
+    Dropzone.prototype._finished = function(files, responseText, e) {
+      var file, _i, _len;
+      for (_i = 0, _len = files.length; _i < _len; _i++) {
+        file = files[_i];
+        file.status = Dropzone.SUCCESS;
+        this.emit("success", file, responseText, e);
+        this.emit("complete", file);
+      }
+      if (this.options.uploadMultiple) {
+        this.emit("successmultiple", files, responseText, e);
+        this.emit("completemultiple", files);
+      }
+      if (this.options.autoProcessQueue) {
+        return this.processQueue();
+      }
+    };
+
+    Dropzone.prototype._errorProcessing = function(files, message, xhr) {
+      var file, _i, _len;
+      for (_i = 0, _len = files.length; _i < _len; _i++) {
+        file = files[_i];
+        file.status = Dropzone.ERROR;
+        this.emit("error", file, message, xhr);
+        this.emit("complete", file);
+      }
+      if (this.options.uploadMultiple) {
+        this.emit("errormultiple", files, message, xhr);
+        this.emit("completemultiple", files);
+      }
+      if (this.options.autoProcessQueue) {
+        return this.processQueue();
+      }
+    };
+
+    return Dropzone;
+
+  })(Em);
+
+  Dropzone.version = "3.8.5";
+
+  Dropzone.options = {};
+
+  Dropzone.optionsForElement = function(element) {
+    if (element.getAttribute("id")) {
+      return Dropzone.options[camelize(element.getAttribute("id"))];
+    } else {
+      return void 0;
+    }
+  };
+
+  Dropzone.instances = [];
+
+  Dropzone.forElement = function(element) {
+    if (typeof element === "string") {
+      element = document.querySelector(element);
+    }
+    if ((element != null ? element.dropzone : void 0) == null) {
+      throw new Error("No Dropzone found for given element. This is probably because you're trying to access it before Dropzone had the time to initialize. Use the `init` option to setup any additional observers on your Dropzone.");
+    }
+    return element.dropzone;
+  };
+
+  Dropzone.autoDiscover = true;
+
+  Dropzone.discover = function() {
+    var checkElements, dropzone, dropzones, _i, _len, _results;
+    if (document.querySelectorAll) {
+      dropzones = document.querySelectorAll(".dropzone");
+    } else {
+      dropzones = [];
+      checkElements = function(elements) {
+        var el, _i, _len, _results;
+        _results = [];
+        for (_i = 0, _len = elements.length; _i < _len; _i++) {
+          el = elements[_i];
+          if (/(^| )dropzone($| )/.test(el.className)) {
+            _results.push(dropzones.push(el));
+          } else {
+            _results.push(void 0);
+          }
+        }
+        return _results;
+      };
+      checkElements(document.getElementsByTagName("div"));
+      checkElements(document.getElementsByTagName("form"));
+    }
+    _results = [];
+    for (_i = 0, _len = dropzones.length; _i < _len; _i++) {
+      dropzone = dropzones[_i];
+      if (Dropzone.optionsForElement(dropzone) !== false) {
+        _results.push(new Dropzone(dropzone));
+      } else {
+        _results.push(void 0);
+      }
+    }
+    return _results;
+  };
+
+  Dropzone.blacklistedBrowsers = [/opera.*Macintosh.*version\/12/i];
+
+  Dropzone.isBrowserSupported = function() {
+    var capableBrowser, regex, _i, _len, _ref;
+    capableBrowser = true;
+    if (window.File && window.FileReader && window.FileList && window.Blob && window.FormData && document.querySelector) {
+      if (!("classList" in document.createElement("a"))) {
+        capableBrowser = false;
+      } else {
+        _ref = Dropzone.blacklistedBrowsers;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          regex = _ref[_i];
+          if (regex.test(navigator.userAgent)) {
+            capableBrowser = false;
+            continue;
+          }
+        }
+      }
+    } else {
+      capableBrowser = false;
+    }
+    return capableBrowser;
+  };
+
+  without = function(list, rejectedItem) {
+    var item, _i, _len, _results;
+    _results = [];
+    for (_i = 0, _len = list.length; _i < _len; _i++) {
+      item = list[_i];
+      if (item !== rejectedItem) {
+        _results.push(item);
+      }
+    }
+    return _results;
+  };
+
+  camelize = function(str) {
+    return str.replace(/[\-_](\w)/g, function(match) {
+      return match.charAt(1).toUpperCase();
+    });
+  };
+
+  Dropzone.createElement = function(string) {
+    var div;
+    div = document.createElement("div");
+    div.innerHTML = string;
+    return div.childNodes[0];
+  };
+
+  Dropzone.elementInside = function(element, container) {
+    if (element === container) {
+      return true;
+    }
+    while (element = element.parentNode) {
+      if (element === container) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  Dropzone.getElement = function(el, name) {
+    var element;
+    if (typeof el === "string") {
+      element = document.querySelector(el);
+    } else if (el.nodeType != null) {
+      element = el;
+    }
+    if (element == null) {
+      throw new Error("Invalid `" + name + "` option provided. Please provide a CSS selector or a plain HTML element.");
+    }
+    return element;
+  };
+
+  Dropzone.getElements = function(els, name) {
+    var e, el, elements, _i, _j, _len, _len1, _ref;
+    if (els instanceof Array) {
+      elements = [];
+      try {
+        for (_i = 0, _len = els.length; _i < _len; _i++) {
+          el = els[_i];
+          elements.push(this.getElement(el, name));
+        }
+      } catch (_error) {
+        e = _error;
+        elements = null;
+      }
+    } else if (typeof els === "string") {
+      elements = [];
+      _ref = document.querySelectorAll(els);
+      for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+        el = _ref[_j];
+        elements.push(el);
+      }
+    } else if (els.nodeType != null) {
+      elements = [els];
+    }
+    if (!((elements != null) && elements.length)) {
+      throw new Error("Invalid `" + name + "` option provided. Please provide a CSS selector, a plain HTML element or a list of those.");
+    }
+    return elements;
+  };
+
+  Dropzone.confirm = function(question, accepted, rejected) {
+    if (window.confirm(question)) {
+      return accepted();
+    } else if (rejected != null) {
+      return rejected();
+    }
+  };
+
+  Dropzone.isValidFile = function(file, acceptedFiles) {
+    var baseMimeType, mimeType, validType, _i, _len;
+    if (!acceptedFiles) {
+      return true;
+    }
+    acceptedFiles = acceptedFiles.split(",");
+    mimeType = file.type;
+    baseMimeType = mimeType.replace(/\/.*$/, "");
+    for (_i = 0, _len = acceptedFiles.length; _i < _len; _i++) {
+      validType = acceptedFiles[_i];
+      validType = validType.trim();
+      if (validType.charAt(0) === ".") {
+        if (file.name.toLowerCase().indexOf(validType.toLowerCase(), file.name.length - validType.length) !== -1) {
+          return true;
+        }
+      } else if (/\/\*$/.test(validType)) {
+        if (baseMimeType === validType.replace(/\/.*$/, "")) {
+          return true;
+        }
+      } else {
+        if (mimeType === validType) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  if (typeof jQuery !== "undefined" && jQuery !== null) {
+    jQuery.fn.dropzone = function(options) {
+      return this.each(function() {
+        return new Dropzone(this, options);
+      });
+    };
+  }
+
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = Dropzone;
+  } else {
+    window.Dropzone = Dropzone;
+  }
+
+  Dropzone.ADDED = "added";
+
+  Dropzone.QUEUED = "queued";
+
+  Dropzone.ACCEPTED = Dropzone.QUEUED;
+
+  Dropzone.UPLOADING = "uploading";
+
+  Dropzone.PROCESSING = Dropzone.UPLOADING;
+
+  Dropzone.CANCELED = "canceled";
+
+  Dropzone.ERROR = "error";
+
+  Dropzone.SUCCESS = "success";
+
+
+  /*
+  
+  Bugfix for iOS 6 and 7
+  Source: http://stackoverflow.com/questions/11929099/html5-canvas-drawimage-ratio-bug-ios
+  based on the work of https://github.com/stomita/ios-imagefile-megapixel
+   */
+
+  detectVerticalSquash = function(img) {
+    var alpha, canvas, ctx, data, ey, ih, iw, py, ratio, sy;
+    iw = img.naturalWidth;
+    ih = img.naturalHeight;
+    canvas = document.createElement("canvas");
+    canvas.width = 1;
+    canvas.height = ih;
+    ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+    data = ctx.getImageData(0, 0, 1, ih).data;
+    sy = 0;
+    ey = ih;
+    py = ih;
+    while (py > sy) {
+      alpha = data[(py - 1) * 4 + 3];
+      if (alpha === 0) {
+        ey = py;
+      } else {
+        sy = py;
+      }
+      py = (ey + sy) >> 1;
+    }
+    ratio = py / ih;
+    if (ratio === 0) {
+      return 1;
+    } else {
+      return ratio;
+    }
+  };
+
+  drawImageIOSFix = function(ctx, img, sx, sy, sw, sh, dx, dy, dw, dh) {
+    var vertSquashRatio;
+    vertSquashRatio = detectVerticalSquash(img);
+    return ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh / vertSquashRatio);
+  };
+
+
+  /*
+   * contentloaded.js
+   *
+   * Author: Diego Perini (diego.perini at gmail.com)
+   * Summary: cross-browser wrapper for DOMContentLoaded
+   * Updated: 20101020
+   * License: MIT
+   * Version: 1.2
+   *
+   * URL:
+   * http://javascript.nwbox.com/ContentLoaded/
+   * http://javascript.nwbox.com/ContentLoaded/MIT-LICENSE
+   */
+
+  contentLoaded = function(win, fn) {
+    var add, doc, done, init, poll, pre, rem, root, top;
+    done = false;
+    top = true;
+    doc = win.document;
+    root = doc.documentElement;
+    add = (doc.addEventListener ? "addEventListener" : "attachEvent");
+    rem = (doc.addEventListener ? "removeEventListener" : "detachEvent");
+    pre = (doc.addEventListener ? "" : "on");
+    init = function(e) {
+      if (e.type === "readystatechange" && doc.readyState !== "complete") {
+        return;
+      }
+      (e.type === "load" ? win : doc)[rem](pre + e.type, init, false);
+      if (!done && (done = true)) {
+        return fn.call(win, e.type || e);
+      }
+    };
+    poll = function() {
+      var e;
+      try {
+        root.doScroll("left");
+      } catch (_error) {
+        e = _error;
+        setTimeout(poll, 50);
+        return;
+      }
+      return init("poll");
+    };
+    if (doc.readyState !== "complete") {
+      if (doc.createEventObject && root.doScroll) {
+        try {
+          top = !win.frameElement;
+        } catch (_error) {}
+        if (top) {
+          poll();
+        }
+      }
+      doc[add](pre + "DOMContentLoaded", init, false);
+      doc[add](pre + "readystatechange", init, false);
+      return win[add](pre + "load", init, false);
+    }
+  };
+
+  Dropzone._autoDiscoverFunction = function() {
+    if (Dropzone.autoDiscover) {
+      return Dropzone.discover();
+    }
+  };
+
+  contentLoaded(window, Dropzone._autoDiscoverFunction);
+
+}).call(this);
+
+});
+
+if (typeof exports == "object") {
+  module.exports = require("dropzone");
+} else if (typeof define == "function" && define.amd) {
+  define([], function(){ return require("dropzone"); });
+} else {
+  this["Dropzone"] = require("dropzone");
+}
+})()

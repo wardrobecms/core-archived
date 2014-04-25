@@ -21,7 +21,7 @@
       "click .icon-tags" : "toggleTags"
       "click .icon-user" : "showUsers"
       "click .icon-ellipsis-horizontal" : "insertReadMore"
-      "click input[type=radio]" : "changeBtn"
+      "click .js-status" : "setStatus"
       "keyup #title" : "localStorage"
       "change #js-user" : "localStorage"
 
@@ -49,7 +49,6 @@
     onShow: ->
       @setUpEditor()
       @setupUsers()
-      @setupCalendar()
       @setupFilm()
       @localStorage()
       @_triggerActive()
@@ -175,29 +174,6 @@
 
       @tagsShown = !@tagsShown
 
-    # Setup the date selection which is inside a qtip
-    setupCalendar: ->
-      @$(".icon-calendar").qtip
-        show:
-          event: "click"
-        content:
-          text: $("#date-form").html()
-        position:
-          at: "right center"
-          my: "left center"
-          viewport: $(window) # Keep the tooltip on-screen at all times
-          effect: false
-        events:
-          render: (event, api) ->
-            $(".js-date").each ->
-              $(this).val $("#publish_date").val()
-            $(".js-setdate").click (e) ->
-              e.preventDefault()
-              pubDate = $(e.currentTarget).parent().find('input').val()
-              $("#publish_date").val pubDate
-              $('.icon-calendar').qtip "hide"
-        hide: "unfocus"
-
     setupFilm: ->
       @$(".icon-film").qtip
         show:
@@ -251,7 +227,7 @@
       @processFormSubmit
         title: @$('#title').val()
         slug: @$('#slug').val()
-        active: @$('input[type=radio]:checked').val()
+        active: @$('#active').val()
         content: @editor.codemirror.getValue()
         tags: @$("#js-tags").val()
         user_id: @$("#js-user").val()
@@ -281,12 +257,15 @@
         @collapse @$toggle
 
     # Toggle the save button text based on status
-    changeBtn: (e) ->
+    setStatus: (e) ->
+      e.preventDefault()
       @localStorage()
-      if e.currentTarget.value is "1"
+      if $(e.currentTarget).data('action') is "publish"
         @$(".publish").text Lang.post_publish
+        @$(".js-active").val 1
       else
         @$(".publish").text Lang.post_save
+        @$(".js-active").val 0
 
     # Setup the image uploading into the content editor.
     imageUpload: (editor) ->

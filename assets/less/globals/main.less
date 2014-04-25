@@ -1,18 +1,59 @@
-html, body {
-	height: 100%;
-}
 body {
-	margin: 0;
-	padding: 0;
-	position: relative;
+  margin-bottom: 30px;
+}
+
+.no-posts {
+  text-align: center;
+  h3 {
+    margin-bottom: 30px;
+  }
+}
+
+
+table {
+  tr:hover {
+    .actions {
+      display: block;
+    }
+  }
+  td {
+    position: relative;
+    border-top: none;
+    border-bottom: 1px solid #ddd;
+  }
+  td.title {
+    width: 70%;
+  }
+}
+
+.actions {
+  position: absolute;
+  left: -48px;
+  height: 38px;
+  top: -1px;
+  padding: 7px 0 0 2px;
+  background: @table-bg-hover;
+  border-top-left-radius: 5px;
+  border-bottom-left-radius: 5px;
+  display: none;
+  border-top: 1px solid @table-border-color;
+  border-left: 1px solid @table-border-color;
+  border-bottom: 1px solid @table-border-color;
+  a {
+    padding: 0px 5px;
+    margin-top: 3px;
+  }
+  i {
+    padding-top: 11px;
+  }
+}
+
+form.post {
+  margin-top: 20px;
 }
 
 #js-alert {
-	position: absolute;
-	right: 10px;
-	top: 65px;
-	min-width: 200px;
-	margin-bottom: 0;
+	padding-bottom: 1px;
 }
 #js-errors {
 	max-width: 80%;

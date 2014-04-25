@@ -97,17 +97,17 @@ this["JST"]["header/list/templates/header.html"] = function(obj) {
 obj || (obj = {});
 var __t, __p = '', __e = _.escape;
 with (obj) {
-__p += '<nav>\n  <ul>\n    <li><a class="write" href="#"><i class="icon-plus"></i> ' +
+__p += '<div class="row">\n  <nav class="col-xs-12">\n    <ul>\n      <li><a class="write" href="#"><i class="icon-plus"></i> ' +
 ((__t = ( Lang.write )) == null ? '' : __t) +
-'</a></li>\n    <li><a class="posts" href="#post"><i class="icon-list"></i> ' +
+'</a></li>\n      <li><a class="posts" href="#post"><i class="icon-list"></i> ' +
 ((__t = ( Lang.posts )) == null ? '' : __t) +
-'</a></li>\n    <li><a class="accounts" href="#accounts"><i class="icon-user"></i> ' +
+'</a></li>\n      <li><a class="accounts" href="#accounts"><i class="icon-user"></i> ' +
 ((__t = ( Lang.accounts )) == null ? '' : __t) +
-'</a></li>\n    <li><a href="' +
+'</a></li>\n      <li><a href="' +
 ((__t = ( logoutUrl() )) == null ? '' : __t) +
 '"><i class="icon-off"></i> ' +
 ((__t = ( Lang.logout )) == null ? '' : __t) +
-'</a></li>\n  </ul>\n</nav>\n';
+'</a></li>\n    </ul>\n  </nav>\n</div>\n';
 
 }
 return __p
@@ -117,29 +117,35 @@ this["JST"]["post/_base/templates/form.html"] = function(obj) {
 obj || (obj = {});
 var __t, __p = '', __e = _.escape;
 with (obj) {
-__p += '<form class="form-horizontal">\n  <input type="hidden" name="publish_date" id="publish_date" value="">\n  <div id="js-errors" class="hide">\n    <div class="alert alert-error">\n      <button type="button" class="close" data-dismiss="alert">×</button>\n      <span></span>\n    </div>\n  </div>\n  <div id="write">\n    <div class="actions">\n      <a data-toggle="modal" href="#myModal" class="options pull-right"><i class="icon-cog"></i></a>\n      <div class="btn-group pull-right">\n        <button type="button" class="btn btn-success publish">' +
+__p += '<form role="form" class="post" id="post-form" method="post" action="/wardrobe/posts/edit/{{ $post->id }}">\n  <input type="hidden" name="publish_date" id="publish_date" value="">\n  <input type="hidden" name="active" id="active" class="js-active" value="1">\n\n  <div class="field pull-right" style="margin-top: -20px;">\n    <div class="btn-group pull-right">\n      <button class="btn btn-sm btn-primary publish">' +
 ((__t = ( submitBtnText() )) == null ? '' : __t) +
-'</button>\n        <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown">\n          <span class="caret"></span>\n        </button>\n        <ul class="dropdown-menu" role="menu">\n          <li><a href="#">Action</a></li>\n          <li><a href="#">Another action</a></li>\n          <li><a href="#">Something else here</a></li>\n          <li class="divider"></li>\n          <li><a href="' +
+'</button>\n      <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown">\n        <span class="caret"></span>\n        <span class="sr-only">Toggle Dropdown</span>\n      </button>\n      <ul class="dropdown-menu" role="menu">\n        <li><a href="#" class="js-status" data-action="publish">' +
+((__t = ( Lang.post_publish )) == null ? '' : __t) +
+'</a></li>\n        <li><a href="#" class="js-status" data-action="draft">' +
+((__t = ( Lang.post_save )) == null ? '' : __t) +
+'</a></li>\n        <li class="divider"></li>\n        <li><a href="' +
 ((__t = ( previewUrl() )) == null ? '' : __t) +
 '" target="_blank" class="preview">' +
 ((__t = ( Lang.post_preview )) == null ? '' : __t) +
-'</a></li>\n        </ul>\n      </div>\n    </div>\n\n    <div class="info">\n      <div class="field">\n        <input type="text" style="width: 50%" name="title" id="title" value="" placeholder="' +
+' <i class="icon-external-link"></i></a></li>\n      </ul>\n    </div>\n  </div>\n\n  <div class="form-group">\n    <label for="title">' +
 ((__t = ( Lang.post_title )) == null ? '' : __t) +
-'">\n      </div>\n      <div class="field tags-bar">\n        <i class="icon-tags" title="Tags"></i>\n        <input type="text" id="js-tags" name="tags" class="tags" style="width: 90%" value="" placeholder="' +
-((__t = ( Lang.post_tags )) == null ? '' : __t) +
-'">\n      </div>\n    </div>\n    <div class="content-area">\n      <textarea name="content" id="content" placeholder="' +
-((__t = ( Lang.post_content )) == null ? '' : __t) +
-'"></textarea>\n    </div>\n  </div>\n\n  <!-- Modal -->\n  <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">\n    <div class="modal-dialog">\n      <div class="modal-content">\n        <div class="modal-header">\n          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>\n          <h4 class="modal-title">Modal title</h4>\n        </div>\n        <div class="modal-body form-horizontal">\n          <div class="form-group">\n            <label for="slug">URI Slug</label>\n            <input type="text" style="width: 50%" name="slug" id="slug" value="" placeholder="' +
+'</label>\n    <input type="text" class="form-control input-lg" name="title" id="title" placeholder="' +
+((__t = ( Lang.post_title )) == null ? '' : __t) +
+'">\n  </div>\n  <div class="form-group">\n    <label for="slug">' +
 ((__t = ( Lang.post_slug )) == null ? '' : __t) +
-'">\n          </div>\n          <div class="form-group">\n            <label for="js-user">Author</label>\n            <select id="js-user" name="user_id"></select>\n          </div>\n          <div class="form-group">\n            <label for="publish">Publish Date</label>\n            <input type="text" style="width: 50%" name="publish" id="publish" value="" placeholder="Publish Date">\n          </div>\n          <div class="form-group">\n            <label for="status">Post Status</label>\n            <label class="radio-inline">\n              <input type="radio" name="active" class="js-active" value="1" checked> ' +
-((__t = ( Lang.post_published )) == null ? '' : __t) +
-'\n            </label>\n            <label class="radio-inline">\n              <input type="radio" name="active" class="js-active" value="0"> ' +
-((__t = ( Lang.post_draft )) == null ? '' : __t) +
-'\n            </label>\n          </div>\n        </div>\n        <div class="modal-footer">\n          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>\n          <button type="button" class="btn btn-primary">Save changes</button>\n        </div>\n      </div><!-- /.modal-content -->\n    </div><!-- /.modal-dialog -->\n  </div><!-- /.modal -->\n</form>\n\n<div id="date-form" style="display: none">\n  <form class="form-inline">\n    <label for="date">' +
+'</label>\n    <input type="text" name="slug" id="slug" class="form-control" placeholder="' +
+((__t = ( Lang.post_slug )) == null ? '' : __t) +
+'">\n  </div>\n  <div class="form-group author">\n    <label for="js-user">' +
+((__t = ( Lang.post_author )) == null ? '' : __t) +
+'</label>\n    <select id="js-user" class="form-control" name="user_id"></select>\n  </div>\n  <div class="form-group">\n    <label for="date">' +
 ((__t = ( Lang.post_publish_date )) == null ? '' : __t) +
-'</label><br>\n    <input type="text" name="date" class="js-date" id="date" value="" placeholder="Next Thursday 10am">\n    <button class="btn btn-default js-setdate btn-xs">' +
-((__t = ( Lang.post_publish_date_set )) == null ? '' : __t) +
-'</button>\n  </form>\n</div>\n\n<div id="film-form" style="display: none">\n  <form class="form-inline">\n    <label for="date">Video URL</label><br>\n    <input type="text" name="date" class="js-film" id="film" value="" placeholder="http://youtube.com/">\n    <button class="btn btn-default js-submitfilm btn-xs">' +
+'</label>\n    <input type="text" name="date" class="form-control js-date" id="date" value="" placeholder="now">\n  </div>\n  <div class="form-group">\n    <label for="tags">' +
+((__t = ( Lang.post_tags )) == null ? '' : __t) +
+'</label>\n    <input type="text" id="js-tags" name="tags" class="tags" style="width: 100%" value="" placeholder="' +
+((__t = ( Lang.post_tags )) == null ? '' : __t) +
+'">\n  </div>\n  <div class="content-area">\n    <textarea name="content" id="content" placeholder="' +
+((__t = ( Lang.post_content )) == null ? '' : __t) +
+'"></textarea>\n  </div>\n</form>\n\n<div id="film-form" style="display: none">\n  <form class="form-inline">\n    <label for="date">Video URL</label><br>\n    <input type="text" name="date" class="form-control js-film" id="film" value="" placeholder="http://youtube.com/">\n    <button class="btn btn-default js-submitfilm btn-sm">' +
 ((__t = ( Lang.post_publish_date_set )) == null ? '' : __t) +
 '</button>\n  </form>\n</div>\n\n';
 
@@ -151,9 +157,7 @@ this["JST"]["post/list/templates/empty.html"] = function(obj) {
 obj || (obj = {});
 var __t, __p = '', __e = _.escape;
 with (obj) {
-__p += '<td colspan="4">' +
-((__t = ( Lang.posts_none )) == null ? '' : __t) +
-'</td>';
+__p += '<div class="well no-posts">\n  <h3>You do not have any drafts.</h3>\n  <p class="lead">\n    quotes go here.\n  </p>\n\n  <a href="#" class="btn btn-default btn-lg">Start Writing</a>\n</div>';
 
 }
 return __p
@@ -163,13 +167,11 @@ this["JST"]["post/list/templates/grid.html"] = function(obj) {
 obj || (obj = {});
 var __t, __p = '', __e = _.escape;
 with (obj) {
-__p += '<form class="filter form-inline hidden-xs" role="form">\n  <div class="form-group">\n    <input type="text" class="form-control filter" id="js-filter" name="filter" placeholder="Filter">\n  </div>\n  <div class="form-group">\n    <select name="active" class="form-control" id="js-sort">\n      <option value="">Any Status</option>\n      <option value="1">Active</option>\n      <option value="0">Draft</option>\n    </select>\n  </div>\n</form>\n<table class="table center-col">\n\t<thead>\n\t\t<tr>\n\t\t\t<th>' +
+__p += '<div class="page-header">\n  <ul class="nav nav-pills pull-right">\n    <li class="active js-filter" data-type="draft"><a href="#post/draft"><i class="icon-edit"></i> &nbsp; Drafts</a></li>\n    <li class="js-filter" data-type="scheduled"><a href="#post/scheduled"><i class="icon-calendar"></i> &nbsp; Scheduled</a></li>\n    <li class="js-filter" data-type="published"><a href="#post/published"><i class="icon-laptop"></i> &nbsp; Published</a></li>\n  </ul>\n  <h1>Your Posts </h1>\n</div>\n\n<form class="filter form-inline hidden-xs hide" role="form">\n  <div class="form-group">\n    <input type="text" class="form-control filter" id="js-filter" name="filter" placeholder="Filter">\n  </div>\n</form>\n<table class="table table-hover">\n\t<thead>\n\t\t<tr>\n\t\t\t<th>' +
 ((__t = ( Lang.post_title )) == null ? '' : __t) +
 '</th>\n\t\t\t<th>' +
-((__t = ( Lang.post_status )) == null ? '' : __t) +
-'</th>\n\t\t\t<th>' +
 ((__t = ( Lang.post_published )) == null ? '' : __t) +
-'</th>\n\t\t\t<th></th>\n\t\t</tr>\n\t</thead>\n\t<tbody></tbody>\n</table>\n';
+'</th>\n\t\t</tr>\n\t</thead>\n\t<tbody></tbody>\n</table>\n\n<div class="well no-posts hide">\n  <h3>You do not have any <span>draft</span> posts.</h3>\n  <p class="lead js-quote"></p>\n  <a href="#" class="btn btn-default btn-lg">Start Writing</a>\n</div>\n';
 
 }
 return __p
@@ -179,17 +181,15 @@ this["JST"]["post/list/templates/item.html"] = function(obj) {
 obj || (obj = {});
 var __t, __p = '', __e = _.escape;
 with (obj) {
-__p += '<td class="title">\n  <img src="" class="avatar img-polaroid" width="18" height="18">\n  <a href="#" class="details">' +
+__p += '<td class="title">\n  <div class="actions">\n    <a href="#" class="delete" title="' +
+((__t = ( Lang.post_delete )) == null ? '' : __t) +
+'"><i class="icon-trash"></i></a>\n    <a href="#" target="_blank" title="Preview" class="preview"><i class="icon-zoom-in"></i></a>\n  </div>\n  <a href="#" class="details">' +
 ((__t = ( title )) == null ? '' : __t) +
-'</a>\n</td>\n<td class="status">' +
-((__t = ( status() )) == null ? '' : __t) +
-'</td>\n<td class="date js-format-date" data-date="' +
+'</a>\n</td>\n<td class="date js-format-date" data-date="' +
 ((__t = ( publish_date )) == null ? '' : __t) +
 '">' +
 ((__t = ( publish_date )) == null ? '' : __t) +
-'</td>\n<td class="actions">\n  <a href="#" target="_blank" title="Preview" class="preview"><i class="icon-zoom-in"></i></a>\n  <a href="#" class="delete" title="' +
-((__t = ( Lang.post_delete )) == null ? '' : __t) +
-'"><i class="icon-trash"></i></a>\n</td>\n';
+'</td>\n';
 
 }
 return __p
@@ -1467,7 +1467,7 @@ this.Wardrobe.module("HeaderApp.List", function(List, App, Backbone, Marionette,
 
     Header.prototype.template = "header/list/templates/header";
 
-    Header.prototype.tagName = "header";
+    Header.prototype.className = "container";
 
     Header.prototype.events = {
       "click .write": "newPost",
@@ -1536,7 +1536,7 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
       "click .icon-tags": "toggleTags",
       "click .icon-user": "showUsers",
       "click .icon-ellipsis-horizontal": "insertReadMore",
-      "click input[type=radio]": "changeBtn",
+      "click .js-status": "setStatus",
       "keyup #title": "localStorage",
       "change #js-user": "localStorage"
     };
@@ -1573,7 +1573,6 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
       var _this = this;
       this.setUpEditor();
       this.setupUsers();
-      this.setupCalendar();
       this.setupFilm();
       this.localStorage();
       this._triggerActive();
@@ -1721,38 +1720,6 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
       return this.tagsShown = !this.tagsShown;
     };
 
-    PostView.prototype.setupCalendar = function() {
-      return this.$(".icon-calendar").qtip({
-        show: {
-          event: "click"
-        },
-        content: {
-          text: $("#date-form").html()
-        },
-        position: {
-          at: "right center",
-          my: "left center",
-          viewport: $(window),
-          effect: false
-        },
-        events: {
-          render: function(event, api) {
-            $(".js-date").each(function() {
-              return $(this).val($("#publish_date").val());
-            });
-            return $(".js-setdate").click(function(e) {
-              var pubDate;
-              e.preventDefault();
-              pubDate = $(e.currentTarget).parent().find('input').val();
-              $("#publish_date").val(pubDate);
-              return $('.icon-calendar').qtip("hide");
-            });
-          }
-        },
-        hide: "unfocus"
-      });
-    };
-
     PostView.prototype.setupFilm = function() {
       var _this = this;
       return this.$(".icon-film").qtip({
@@ -1819,7 +1786,7 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
       return this.processFormSubmit({
         title: this.$('#title').val(),
         slug: this.$('#slug').val(),
-        active: this.$('input[type=radio]:checked').val(),
+        active: this.$('#active').val(),
         content: this.editor.codemirror.getValue(),
         tags: this.$("#js-tags").val(),
         user_id: this.$("#js-user").val(),
@@ -1854,12 +1821,15 @@ this.Wardrobe.module("Views", function(Views, App, Backbone, Marionette, $, _) {
       }
     };
 
-    PostView.prototype.changeBtn = function(e) {
+    PostView.prototype.setStatus = function(e) {
+      e.preventDefault();
       this.localStorage();
-      if (e.currentTarget.value === "1") {
-        return this.$(".publish").text(Lang.post_publish);
+      if ($(e.currentTarget).data('action') === "publish") {
+        this.$(".publish").text(Lang.post_publish);
+        return this.$(".js-active").val(1);
       } else {
-        return this.$(".publish").text(Lang.post_save);
+        this.$(".publish").text(Lang.post_save);
+        return this.$(".js-active").val(0);
       }
     };
 
@@ -2036,15 +2006,15 @@ this.Wardrobe.module("PostApp.List", function(List, App, Backbone, Marionette, $
     PostItem.prototype.attributes = function() {
       if (this.model.get("active") === "1" && this.model.get("publish_date") > moment().format('YYYY-MM-DD HH:mm:ss')) {
         return {
-          "class": "post-item post-" + this.model.id + " success"
+          "class": "post-item scheduled post-" + this.model.id
         };
       } else if (this.model.get("active") === "1") {
         return {
-          "class": "post-item post-" + this.model.id
+          "class": "post-item active post-" + this.model.id
         };
       } else {
         return {
-          "class": "post-item draft post-" + this.model.id + " warning"
+          "class": "post-item draft post-" + this.model.id
         };
       }
     };
@@ -2132,46 +2102,70 @@ this.Wardrobe.module("PostApp.List", function(List, App, Backbone, Marionette, $
 
     Posts.prototype.itemViewContainer = "tbody";
 
-    Posts.prototype.className = "span12";
-
     Posts.prototype.events = {
-      "keyup #js-filter": "filter",
-      "change #js-sort": "sort"
+      "click .js-filter": "filterPosts",
+      "keyup #js-filter": "search"
+    };
+
+    Posts.prototype.onCompositeCollectionRendered = function() {
+      return this.doFilter("draft");
+    };
+
+    Posts.prototype.showEmpty = function(type) {
+      var quotes;
+      if (!this.$("td:visible").length) {
+        quotes = ['"The scariest moment is always just before you start." ― Stephen King', '"There is nothing to writing. All you do is sit down at a typewriter and bleed." ― Ernest Hemingway', '"Start writing, no matter what. The water does not flow until the faucet is turned on." ―  Louis L\'Amour', '"All you have to do is write one true sentence. Write the truest sentence that you know." ― Ernest Hemingway', '"Being a writer is a very peculiar sort of a job: it\'s always you versus a blank sheet of paper (or a blank screen) and quite often the blank piece of paper wins." ― Neil Gaiman'];
+        this.$(".js-quote").text(quotes[_.random(quotes.length - 1)]);
+        this.$("table").addClass("hide");
+        return this.$(".no-posts").removeClass("hide").find('span').text(type);
+      }
     };
 
     Posts.prototype.hideAll = function() {
       return this.$el.find(".post-item").hide();
     };
 
-    Posts.prototype.filter = function(e) {
-      return this.handleFilter();
+    Posts.prototype.filterPosts = function(e) {
+      var $item, type;
+      e.preventDefault();
+      this.$("table").removeClass("hide");
+      this.$(".no-posts").addClass("hide");
+      $item = $(e.currentTarget);
+      type = $item.data("type");
+      this.$(".page-header").find(".active").removeClass("active");
+      $item.addClass("active");
+      return this.doFilter(type);
     };
 
-    Posts.prototype.sort = function(e) {
+    Posts.prototype.doFilter = function(type) {
+      this.hideAll();
+      this.$("tr." + type).show();
+      if (this.$("tr." + type).length === 0) {
+        return this.showEmpty(type);
+      }
+    };
+
+    Posts.prototype.search = function(e) {
       return this.handleFilter();
     };
 
     Posts.prototype.handleFilter = function() {
-      var filter, sorter,
+      var filter,
         _this = this;
       this.hideAll();
-      sorter = this.$("#js-sort").val();
       filter = this.$("#js-filter").val();
-      if (sorter === "" && filter === "") {
+      if (filter === "") {
         return this.$el.find(".post-item").show();
       }
       return this.collection.filter(function(post) {
-        return _this.isMatch(post, sorter, filter);
+        return _this.isMatch(post, filter);
       });
     };
 
-    Posts.prototype.isMatch = function(post, sorter, filter) {
+    Posts.prototype.isMatch = function(post, filter) {
       var foundId, pattern;
-      foundId = sorter === "" || post.get("active").toString() === sorter ? post.id : null;
-      if (foundId && filter !== "") {
-        pattern = new RegExp(filter, "gi");
-        foundId = pattern.test(post.get("title"));
-      }
+      pattern = new RegExp(filter, "gi");
+      foundId = pattern.test(post.get("title"));
       if (foundId) {
         return this.$el.find(".post-" + post.id).show();
       }

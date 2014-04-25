@@ -18,7 +18,7 @@ return array(
   'post_publish_date' => 'Publish Date',
   'post_publish_date_set' => 'Set',
   'post_publish' => 'Publish Post',
-  'post_save' => 'Save Post',
+  'post_save' => 'Save Draft',
   'post_preview' => 'Preview',
   'post_expand' => 'Expand for options',
   'post_success' => 'Success!',

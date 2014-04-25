@@ -6,11 +6,11 @@
 
     attributes: ->
       if @model.get("active") is "1" and @model.get("publish_date") > moment().format('YYYY-MM-DD HH:mm:ss')
-        class: "post-item post-#{@model.id} success"
+        class: "post-item scheduled post-#{@model.id}"
       else if @model.get("active") is "1"
-        class: "post-item post-#{@model.id}"
+        class: "post-item active post-#{@model.id}"
       else
-        class: "post-item draft post-#{@model.id} warning"
+        class: "post-item draft post-#{@model.id}"
 
     triggers:
       "click .delete" : "post:delete:clicked"
@@ -58,32 +58,57 @@
     itemView: List.PostItem
     emptyView: List.Empty
     itemViewContainer: "tbody"
-    className: "span12"
 
     events:
-      "keyup #js-filter" : "filter"
-      "change #js-sort" : "sort"
+      "click .js-filter" : "filterPosts"
+      "keyup #js-filter" : "search"
+
+    onCompositeCollectionRendered: ->
+      @doFilter "draft"
+
+    showEmpty: (type) ->
+      if not @$("td:visible").length
+        quotes = [
+          '"The scariest moment is always just before you start." ― Stephen King'
+          '"There is nothing to writing. All you do is sit down at a typewriter and bleed." ― Ernest Hemingway'
+          '"Start writing, no matter what. The water does not flow until the faucet is turned on." ―  Louis L\'Amour'
+          '"All you have to do is write one true sentence. Write the truest sentence that you know." ― Ernest Hemingway'
+          '"Being a writer is a very peculiar sort of a job: it\'s always you versus a blank sheet of paper (or a blank screen) and quite often the blank piece of paper wins." ― Neil Gaiman'
+        ]
+        @$(".js-quote").text quotes[_.random(quotes.length-1)]
+        @$("table").addClass "hide"
+        @$(".no-posts").removeClass("hide").find('span').text type
 
     hideAll: ->
       @$el.find(".post-item").hide()
 
-    filter: (e) ->
-      @handleFilter()
+    filterPosts: (e) ->
+      e.preventDefault()
+      @$("table").removeClass "hide"
+      @$(".no-posts").addClass "hide"
+      $item = $(e.currentTarget)
+      type = $item.data "type"
+      @$(".page-header").find(".active").removeClass("active")
+      $item.addClass "active"
+      @doFilter type
 
-    sort: (e) ->
+    doFilter: (type) ->
+      @hideAll()
+      @$("tr.#{type}").show()
+      if @$("tr.#{type}").length is 0
+        @showEmpty(type)
+
+    search: (e) ->
       @handleFilter()
 
     handleFilter: ->
       @hideAll()
-      sorter = @$("#js-sort").val()
       filter = @$("#js-filter").val()
-      return @$el.find(".post-item").show() if sorter is "" and filter is ""
+      return @$el.find(".post-item").show() if filter is ""
       @collection.filter (post) =>
-        @isMatch(post, sorter, filter)
+        @isMatch(post, filter)
 
-    isMatch: (post, sorter, filter) ->
-      foundId = if sorter is "" or post.get("active").toString() is sorter then post.id else null
-      if foundId and filter isnt ""
-        pattern = new RegExp(filter,"gi")
-        foundId = pattern.test post.get("title")
+    isMatch: (post, filter) ->
+      pattern = new RegExp(filter,"gi")
+      foundId = pattern.test post.get("title")
       @$el.find(".post-#{post.id}").show() if foundId
