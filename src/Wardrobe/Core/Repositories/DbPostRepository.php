@@ -101,8 +101,9 @@ class DbPostRepository implements PostRepositoryInterface {
 							->orWhere('content', 'like', '%'.$search.'%');
 			})
 			->orderBy('posts.publish_date', 'desc')
-			->where('posts.active', 1)
+			->where('posts.active', '=', 1)
 			->where('posts.publish_date', '<=', new DateTime)
+			->groupBy('id')
 			->distinct()
 			->paginate($per_page);
 	}
@@ -236,7 +237,7 @@ class DbPostRepository implements PostRepositoryInterface {
 	 */
 	public function allTags()
 	{
-		return Tag::orderBy('tag', 'asc')->groupBy('tag')->distinct()->get()->toArray();
+		return Tag::orderBy('tag', 'asc')->groupBy('tag')->distinct()->get(array('tag'))->toArray();
 	}
 
 	/**

@@ -57,6 +57,11 @@ class PostController extends BaseController {
 	{
 		$posts = $this->posts->activeByTag($tag, Config::get('wardrobe.per_page'));
 
+		if ( ! $posts)
+		{
+			return App::abort(404, 'Page not found');
+		}
+
 		return View::make($this->theme.'.archive', compact('posts', 'tag'));
 	}
 

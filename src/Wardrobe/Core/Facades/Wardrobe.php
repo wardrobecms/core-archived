@@ -27,6 +27,17 @@ class Wardrobe {
 	}
 
 	/**
+	 * Fetch post by slug
+	 *
+	 * @param string $slug
+	 * @return Post
+	 */
+	public function post($slug)
+	{
+		return $this->postsRepo->findBySlug($slug);
+	}
+
+	/**
 	 * Fetch Posts
 	 *
 	 * @param array $params
@@ -60,7 +71,7 @@ class Wardrobe {
 		}
 		else
 		{
-			return URL::route('wardrobe.'.$route, $param);
+			return \URL::route('wardrobe.'.$route, $param);
 		}
 	}
 
@@ -76,7 +87,7 @@ class Wardrobe {
 	{
 		$provider = $this->createEloquentProvider();
 
-		$guard = new Guard($provider, App::make('session.store'));
+		$guard = new Guard($provider, App::make('session.store'), App::make('request'));
 
 		$guard->setCookieJar(App::make('cookie'));
 

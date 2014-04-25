@@ -10,8 +10,8 @@
     "dropzone": "latest",
     "jstorage" : "latest",
     "js-md5" : "latest",
-    "selectize" : "latest",
-    "html5shiv" : "latest"
+    "selectize" : "~0.7.7",
+    "html5shiv" : "~3.7.0"
   },
   "devDependencies": {}
 }

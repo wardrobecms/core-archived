@@ -43,13 +43,13 @@
     App.navigate "post/edit/#{item.id}"
     API.edit item.id, item
 
-  # When the new post link is clicked the show the add routine.
+  # When the new post link is clicked then show the add routine.
   App.vent.on "post:new:clicked post:new", ->
     App.navigate "/",
       trigger: false
     API.add()
 
-  # When the edit post link is clicked the show the edit routine.
+  # When the edit post link is clicked then show the edit routine.
   App.vent.on "post:item:clicked", (item) ->
     App.navigate "post/edit/#{item.id}"
     API.edit item.id, item
