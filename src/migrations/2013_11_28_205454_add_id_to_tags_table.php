@@ -11,9 +11,16 @@ class AddIdToTagsTable extends Migration {
          */
         public function up()
         {
-                Schema::table('tags', function($t) {
-                        $t->increments('id');
+                Schema::create('tags_new', function($table)
+                {
+                    $table->increments('id');
+                    $table->integer('post_id');
+                    $table->string('tag');
+                    $table->unique(array('post_id', 'tag'));
                 });
+                DB::statement('INSERT INTO tags_new(`post_id`, `tag`) SELECT `post_id`, `tag` FROM tags');
+                Schema::drop('tags');
+                Schema::rename('tags_new', 'tags');
         }
 
         /**
@@ -23,9 +30,15 @@ class AddIdToTagsTable extends Migration {
          */
         public function down()
         {
-                Schema::table('tags', function($t) {
-                        $t->dropColumn('id');
+                Schema::create('tags_old', function($table)
+                {
+                    $table->integer('post_id');
+                    $table->string('tag');
+                    $table->unique(array('post_id', 'tag'));
                 });
+                DB::statement('INSERT INTO tags_old(`post_id`, `tag`) SELECT `post_id`, `tag` FROM tags');
+                Schema::drop('tags');
+                Schema::rename('tags_old', 'tags');
         }
 
 }
