@@ -120,4 +120,14 @@ return array(
     |
     */
     'view_dirs' => array(),
+
+    /*
+    |--------------------------------------------------------------------------
+    | User Password Min Length
+    |--------------------------------------------------------------------------
+    |
+    | Minimum length required for user passwords
+    |
+    */
+    'user_password_min_length' => 6,
 );
