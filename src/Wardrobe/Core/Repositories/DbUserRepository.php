@@ -1,6 +1,6 @@
 <?php namespace Wardrobe\Core\Repositories;
 
-use Auth, Hash, Validator, Wardrobe;
+use Auth, Config, Hash, Validator, Wardrobe;
 use Wardrobe\Core\Models\User;
 
 class DbUserRepository implements UserRepositoryInterface {
@@ -124,6 +124,7 @@ class DbUserRepository implements UserRepositoryInterface {
 			'first_name' => 'required|max:255',
 			'last_name'  => 'required|max:255',
 			'email'      => 'required|email|unique:users,email',
+			'password'   => 'min:'.Config::get('core::wardrobe.user_password_min_length'),
 		);
 
 		if ($id)
@@ -132,7 +133,7 @@ class DbUserRepository implements UserRepositoryInterface {
 		}
 		else
 		{
-			$rules['password']  = 'required|min:6';
+			$rules['password'] .= '|required';
 		}
 
 		$validator = Validator::make(
