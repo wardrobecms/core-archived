@@ -40,6 +40,19 @@ class WardrobeServiceProvider extends ServiceProvider {
 
 		$this->app->singleton('Wardrobe\Core\Repositories\UserRepositoryInterface', 'Wardrobe\Core\Repositories\DbUserRepository');
 
+		switch(strtolower(Config::get('core::wardrobe.file_storage')))
+		{
+			case "s3":
+				$this->app->bind('Wardrobe\Core\Repositories\FileStorageRepositoryInterface', function () {
+					return new \Wardrobe\Core\Repositories\S3FileStorageRepository(new \Illuminate\Support\MessageBag);
+				});
+				break;
+			default:
+				$this->app->bind('Wardrobe\Core\Repositories\FileStorageRepositoryInterface', function () {
+					return new \Wardrobe\Core\Repositories\LocalFileStorageRepository(new \Illuminate\Support\MessageBag);
+				});
+		}
+
 		$this->app->bind('Wardrobe', function()
 		{
 			return new \Wardrobe\Core\Facades\Wardrobe(new Repositories\DbPostRepository);
