@@ -20,7 +20,7 @@
       </div>
     @endif
 
-    <form method="post" action="/wardrobe/login/remind" class="form-horizontal">
+    <form method="post" action="{{ route('wardrobe.admin.remindForm') }}" class="form-horizontal">
       <p><input type="text" id="inputEmail" name="email" placeholder="{{ Lang::get('core::wardrobe.account_email') }}"></p>
       <button type="submit" class="btn">{{ Lang::get('core::wardrobe.forgot_send') }}</button>
       </div>
