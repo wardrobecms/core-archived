@@ -10,7 +10,7 @@
 		@if (Session::has('login_errors'))
 		<div class="alert alert-block alert-error">
 			<p>
-				{{ Lang::get('core::wardrobe.login_incorrect')}} <a href="{{ url('wardrobe/login/remind') }}">{{ Lang::get('core::wardrobe.login_forgot') }}</a>
+				{{ Lang::get('core::wardrobe.login_incorrect')}} <a href="{{ route('wardrobe.admin.remindForm') }}">{{ Lang::get('core::wardrobe.login_forgot') }}</a>
 			</p>
 		</div>
 		@endif
