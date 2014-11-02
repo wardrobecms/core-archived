@@ -25,8 +25,8 @@ class WardrobeServiceProvider extends ServiceProvider {
 		$this->bootCommands();
 
 		require_once __DIR__.'/../../themeHelpers.php';
-		require_once __DIR__.'/../../routes.php';
-		require_once __DIR__.'/../../filters.php';
+		require __DIR__.'/../../routes.php';
+		require __DIR__.'/../../filters.php';
 	}
 
 	/**
